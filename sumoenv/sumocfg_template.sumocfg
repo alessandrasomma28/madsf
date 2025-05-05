@@ -1,0 +1,33 @@
+<?xml version="1.0" ?>
+<configuration>
+   <input>
+      <net-file value="{net_file}"/>
+      <route-files value="{route_file}"/>
+      <additional-files value="{tazpoly_file}"/>
+   </input>
+
+   <time>
+       <end value="{end_time}" />
+   </time>
+
+   <output>
+      <tripinfo-output value="{output_dir}/tripinfos.xml"/>
+      <save-state.prefix value="{output_dir}/state"/>
+      <vehroute-output value="{output_dir}/vehroute.xml" />
+      <summary-output value="{output_dir}/summary.xml" />
+      <queue-output value="{output_dir}/queue.xml" />
+   </output>
+
+   <processing>
+      <threads value="4" />
+      <ignore-route-errors value="true"/>
+      <time-to-teleport value="35"/>
+      <ignore-junction-blocker value="1"/>
+   </processing>
+
+   <report>
+      <log value="{output_dir}/sumo_log.txt"/>
+      <no-step-log value="true"/>
+   </report>
+</configuration>
+
