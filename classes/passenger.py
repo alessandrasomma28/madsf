@@ -14,7 +14,17 @@ class Passenger(Agent):
         driver_id (int): ID of the matched driver.
     """
 
-## ADD INIT, THESE FUNCTIONS ARE JUST SAMPLES
+    def __init__(self, unique_id, model, origin_taz, request_time):
+        super().__init__(unique_id, model)
+        self.origin_taz = origin_taz
+        self.destination_taz = self._sample_destination()
+        self.request_time = request_time
+        self.wait_time = 0
+        self.matched = False
+        self.driver_id = None
+
+        self.origin_edge = None
+        self.destination_edge = None
 
     def _sample_destination(self):
         """

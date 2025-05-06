@@ -51,7 +51,7 @@ class RideSharingService(Agent):
             fare = self._calculate_fare(passenger, driver)
             driver.income += fare
 
-    def _match_passengers_to_drivers(self):
+    def _match_passengers_to_drivers(self): # Minimize distance
         """
         Match passengers to drivers in FIFO order.
 
@@ -98,3 +98,13 @@ class RideSharingService(Agent):
             return 2.0
         ratio = demand / supply
         return min(1.0 + 0.5 * ratio, 3.0)
+
+    def complete_ride(self, passenger):
+        # TODO
+        return
+
+    def assign_ride(self, driver):
+        # Assign the first pending request
+        if self.pending_requests:
+            return self.pending_requests.pop(0)
+        return None

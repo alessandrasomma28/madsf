@@ -33,25 +33,68 @@ import traci
 from libraries.data_utils import read_sf_traffic_data
 from constants.sumoenv_constants import SUMO_BIN_PATH
 
-def load_taz_polygons(shapefile_path):   
-     """    
-        Load TAZ polygons from a shapefile, reproject to match SUMO's coordinate system,    
-        and compute centroids. This function assumes that the original TAZ shapefile is in a different projection
-        (e.g., EPSG:2227) and reprojects it to EPSG:32610 (UTM Zone 10N), which is commonly
-        used by SUMO networks generated from OpenStreetMap in the San Francisco area.
-        The centroid is computed on the reprojected geometry and can be used safely for
-        SUMO edge lookup.    
-        
-        Args: shapefile_path (str): Path to the shapefile containing TAZ boundaries. 
-        Returns: GeoDataFrame: GeoDataFrame with columns 'TAZ', 'geometry', and 'centroid'.
-        All geometries and centroids are in EPSG:32610 (meters).   
-    """    
-     gdf = gpd.read_file(shapefile_path)    
-     gdf = gdf.to_crs(epsg=32610)  # Convert to UTM Zone 10N    
-     gdf['centroid'] = gdf['geometry'].centroid    
-     return gdf[['TAZ', 'geometry', 'centroid']]
 
-def get_nearest_edge(network, lon, lat, radius):
+def get_strongly_connected_edges(sf_map_file_path):
+    """
+    Identifies all strongly connected edges in a SUMO road network.
+    A strongly connected edge is one that is both reachable from, and can reach,
+    a given starting edge. This implies bidirectional connectivity within the road graph.
+
+    Parameters:
+    ----------
+    sf_map_file_path : str
+        Path to the SUMO network XML file.
+
+    Returns:
+    -------
+    set
+        A set of edge IDs (str) strongly connected.
+    """
+    net_data = net.readNet(sf_map_file_path)
+    edges = net_data.getEdges()
+    # Adjacency dictionaries for forward and reverse graph traversal
+    forward_graph = {}
+    reverse_graph = {}
+    # Empty adjacency lists for each edge
+    for edge in edges:
+        eid = edge.getID()
+        forward_graph[eid] = set()
+        reverse_graph[eid] = set()
+    for edge in edges:
+        eid = edge.getID()
+        for lane in edge.getLanes():
+            for conn in lane.getOutgoing():
+                # Get the destination edge of this connection
+                to_obj = conn.getTo()
+                to_edge = to_obj.getEdge() if hasattr(to_obj, "getEdge") else to_obj
+                to_eid = to_edge.getID()
+                # Add forward and reverse connections
+                forward_graph[eid].add(to_eid)
+                reverse_graph[to_eid].add(eid)
+
+    # Depth-first search to find all reachable nodes from a start node
+    def dfs(graph, start):
+        stack = [start]
+        visited = set()
+        while stack:
+            node = stack.pop()
+            if node not in visited:
+                visited.add(node)
+                stack.extend(graph.get(node, []))
+        return visited
+
+    # Compute reachable nodes in forward and reverse directions
+    all_nodes = list(forward_graph.keys())
+    forward_reachable = dfs(forward_graph, all_nodes[0])
+    reverse_reachable = dfs(reverse_graph, all_nodes[0])
+
+    # Strongly connected edges are those reachable in both directions
+    strongly_connected = forward_reachable & reverse_reachable
+    print(f"✅ Strongly connected edge count: {len(strongly_connected)} over {len(all_nodes)} total edges")
+    return strongly_connected
+
+
+def get_nearest_edge(network, lon, lat, radius, safe_edge_ids=None):
     """
        Finds the nearest edge in the SUMO network to a given geographic location.
 
@@ -65,6 +108,9 @@ def get_nearest_edge(network, lon, lat, radius):
            Latitude of the point.
        radius : float
            Search radius for neighboring edges (in SUMO units, typically meters).
+       safe_edge_ids : set or None, optional
+           Set of edge IDs to consider as valid (e.g., strongly connected edges).
+           If None, all edges are considered.
 
        Returns:
        -------
@@ -77,12 +123,16 @@ def get_nearest_edge(network, lon, lat, radius):
     edges = network.getNeighboringEdges(x, y, radius)
     # If any edges are found, sort them by distance and return the closest edge's ID.
     if edges:
-        distancesAndEdges = sorted([(dist, edge) for edge, dist in edges], key=lambda x: x[0])
-        return distancesAndEdges[0][1].getID()
+        # Filter only strongly connected edges if a filter is provided
+        if safe_edge_ids is not None:
+            edges = [(edge, dist) for edge, dist in edges if edge.getID() in safe_edge_ids]
+        if edges:
+            distancesAndEdges = sorted([(dist, edge) for edge, dist in edges], key=lambda x: x[0])
+            return distancesAndEdges[0][1].getID()
     return None
 
 def sf_traffic_map_matching(sf_map_file_path, sf_real_traffic_data_path, date,
-                            output_folder_path, radius):
+                            output_folder_path, radius, safe_edge_ids=None):
     """
     Performs map matching by assigning each GPS point to its nearest road network edge.
 
@@ -119,7 +169,7 @@ def sf_traffic_map_matching(sf_map_file_path, sf_real_traffic_data_path, date,
 
     # Map match each GPS point to the nearest edge
     df['edge_id'] = df.apply(
-        lambda row: get_nearest_edge(network, row['longitude'], row['latitude'], radius=radius),
+        lambda row: get_nearest_edge(network, row['longitude'], row['latitude'], radius=radius, safe_edge_ids=safe_edge_ids),
         axis=1
     )
 
@@ -421,14 +471,13 @@ def export_taz_coords(shapefile_path, output_csv_path):
 
     Notes:
         - Assumes the shapefile has a column named 'TAZ' for unique zone IDs.
-        - Converts geometries to WGS84 (EPSG:4326) to ensure lat/lon coordinates.
+        - Converts geometries to WGS84 (EPSG:32610) to ensure lat/lon coordinates.
         - If a geometry is empty or invalid, centroid_coords will be None.
     """
     # Load the shapefile
-    #gdf = gpd.read_file(shapefile_path)
-    gdf = load_taz_polygons(shapefile_path)
+    gdf = gpd.read_file(shapefile_path)
     # Ensure coordinates are in WGS84 (lat/lon)
-    #gdf = gdf.to_crs(epsg=4326)
+    gdf = gdf.to_crs(epsg=4326)
 
     # --- Coordinate Extraction ---
     def extract_coords(geometry):
@@ -595,7 +644,8 @@ def generate_drt_vtypes_distribution(output_path: str):
 def generate_vehicle_start_lanes_from_taz_polygons(
     shapefile_path: str,
     net_file: str,
-    vehicles_per_taz: int = 2
+    vehicles_per_taz: int = 2,
+    safe_edge_ids: set = None
 ) -> list:
     """
     Samples points inside each TAZ polygon and maps them to the nearest lane using SUMO net.
@@ -609,7 +659,9 @@ def generate_vehicle_start_lanes_from_taz_polygons(
         List[str]: List of lane IDs where vehicles should be placed.
     """
 
-    gdf = load_taz_polygons(shapefile_path)
+    gdf = gpd.read_file(shapefile_path)
+    # Ensure coordinates are in WGS84 (lat/lon)
+    gdf = gdf.to_crs(epsg=4326)
 
     network = net.readNet(net_file)
 
@@ -640,7 +692,7 @@ def generate_vehicle_start_lanes_from_taz_polygons(
 
         for pt in points:
             lon, lat = pt.x, pt.y
-            lane_id = get_nearest_edge(network, lon, lat, radius=100)
+            lane_id = get_nearest_edge(network, lon, lat, radius=100, safe_edge_ids=safe_edge_ids)
             if lane_id:
                 lanes = network.getEdge(lane_id).getLanes()
                 if lanes:
@@ -650,7 +702,7 @@ def generate_vehicle_start_lanes_from_taz_polygons(
     return start_lanes
 
 
-def get_valid_taxi_edges(net_file):
+def get_valid_taxi_edges(net_file, safe_edge_ids=None):
     """
     Extracts usable edge IDs where taxis can drive.
     Uses sumolib (static network loading).
@@ -669,6 +721,8 @@ def get_valid_taxi_edges(net_file):
             continue  # Skip internal/junction edges
         if not edge.getOutgoing():
             continue  # Skip dead-end edges
+        if safe_edge_ids is not None and edge.getID() not in safe_edge_ids:
+            continue  # Skip not strongly connnected edges
 
         # Check if any lane in this edge allows taxi or passenger
         for lane in edge.getLanes():
@@ -680,35 +734,6 @@ def get_valid_taxi_edges(net_file):
     print(f"✅ Found {len(valid_edges)} valid taxi edges.")
     return valid_edges
 
-def get_usable_lanes_for_taxis(net_file):
-    """
-    Extracts only reachable and usable lane IDs for taxis.
-    Skips junctions, isolated edges, and lanes not allowing cars.
-    Uses sumolib (static network loading).
-
-    Args:
-        net_file (str): Path to the SUMO .net.xml file.
-
-    Returns:
-        list: List of usable lane IDs.
-    """
-    sfnet = net.readNet(net_file)
-    usable_lanes = []
-
-    for edge in sfnet.getEdges():
-        if edge.isSpecial():
-            continue
-        if not edge.getOutgoing():
-            continue
-
-        for lane in edge.getLanes():
-            allowed_classes = getattr(lane, '_allowed', [])
-            if "passenger" in allowed_classes or "taxi" in allowed_classes:
-                usable_lanes.append(lane.getID())
-
-    print(f"✅ Found {len(usable_lanes)} usable lanes for taxis.")
-    return usable_lanes
-
 def generate_drt_vehicle_instances_from_lanes(lane_ids, output_path):
     """
     Generates a DRT fleet file with <vType> and <vehicle> entries, and dummy routes.
@@ -717,28 +742,28 @@ def generate_drt_vehicle_instances_from_lanes(lane_ids, output_path):
     vehicle_types = [
         {
             "id": "electric_eco",
-            "count": 400,
+            "count": 300,
             "color": "0,1,0",
             "emissionClass": "Energy",
             "vClass": "taxi"
         },
         {
             "id": "diesel_normal",
-            "count": 500,
+            "count": 300,
             "color": "1,0,0",
             "emissionClass": "HBEFA3/PC_D_EU4",
             "vClass": "taxi"
         },
         {
             "id": "gas_modern",
-            "count": 400,
+            "count": 300,
             "color": "0,0,1",
             "emissionClass": "HBEFA3/PC_G_EU6",
             "vClass": "taxi"
         },
         {
             "id": "zero_emis",
-            "count": 200,
+            "count": 100,
             "color": "0.5,0.5,0",
             "emissionClass": "Zero",
             "vClass": "taxi"
@@ -823,9 +848,11 @@ def generate_matched_drt_requests(
     pickups = []
     for taz, hour_data in uber_data.items():
         if taz not in taz_edge_mapping:
+            print(f"Pickup warning: TAZ {taz} not found in edge mapping.")
             continue
-        edge = random.choice(ast.literal_eval(taz_edge_mapping[taz]['polygon_edge_ids']))
+        edge = random.choice(taz_edge_mapping[taz]['polygon_edge_ids'])
         if edge not in valid_edge_ids or edge.startswith(":"):
+            print(f"Pickup warning: Edge {edge} not valid for TAZ {taz}.")
             continue
         for hour, stats in hour_data.items():
             pickups.extend([{"taz": taz, "edge": edge}] * stats['pickups'])
@@ -834,9 +861,11 @@ def generate_matched_drt_requests(
     dropoffs_by_taz = defaultdict(list)
     for taz, hour_data in uber_data.items():
         if taz not in taz_edge_mapping:
+            print(f"Dropoff warning: TAZ {taz} not found in edge mapping.")
             continue
-        edge = random.choice(ast.literal_eval(taz_edge_mapping[taz]['polygon_edge_ids']))
+        edge = random.choice(taz_edge_mapping[taz]['polygon_edge_ids'])
         if edge not in valid_edge_ids or edge.startswith(":"):
+            print(f"Dropoff warning: Edge {edge} not valid for TAZ {taz}.")
             continue
         for hour, stats in hour_data.items():
             dropoffs_by_taz[taz].extend([edge] * stats['dropoffs'])
