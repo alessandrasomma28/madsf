@@ -889,4 +889,422 @@ Warning: Teleporting vehicle 'taxi_153'; waited too long (yield), lane='51459314
 Warning: Vehicle 'taxi_153' ends teleporting on edge '-417400699#1', time=232.00.
 Warning: Teleporting vehicle 'taxi_336'; waited too long (yield), lane='-516594020#0_0', time=233.00.
 Warning: Vehicle 'taxi_336' ends teleporting on edge '437761157#1', time=233.00.
-Warning: Teleporting vehicle 'taxi_247'; waited to
+Warning: Teleporting vehicle 'taxi_247'; waited too long (yield), lane='255330068#0_0', time=234.00.
+Warning: Vehicle 'taxi_247' ends teleporting on edge '-228196396#1', time=234.00.
+Warning: Teleporting vehicle '6546'; waited too long (yield), lane='27432750_0', time=238.00.
+Warning: Vehicle '6546' ends teleporting on edge '-514593148#1', time=238.00.
+Warning: Teleporting vehicle '8607'; waited too long (yield), lane='397130093#0_0', time=239.00.
+Warning: Vehicle '8607' ends teleporting on edge '397129776#0', time=239.00.
+Warning: Teleporting vehicle 'taxi_846'; waited too long (yield), lane='468204139#0_2', time=242.00.
+Warning: Teleporting vehicle '8872'; waited too long (yield), lane='681971908#0_0', time=242.00.
+Warning: Teleporting vehicle '6516'; waited too long (yield), lane='394443198#0_0', time=242.00.
+Warning: Vehicle 'taxi_846' ends teleporting on edge '364480069#0', time=242.00.
+Warning: Vehicle '8872' ends teleporting on edge '681971904', time=242.00.
+Warning: Vehicle '6516' ends teleporting on edge '419633753#1', time=242.00.
+Warning: Teleporting vehicle '8964'; waited too long (yield), lane='681971908#0_0', time=243.00.
+Warning: Vehicle '8964' ends teleporting on edge '681971904', time=243.00.
+Warning: Teleporting vehicle 'taxi_867'; waited too long (yield), lane='417392975_3', time=245.00.
+Warning: Vehicle 'taxi_867' ends teleporting on edge '-E38', time=245.00.
+Warning: Teleporting vehicle 'taxi_566'; waited too long (yield), lane='721725416#2_0', time=246.00.
+Warning: Vehicle 'taxi_566' ends teleporting on edge '617990568#0', time=246.00.
+Warning: Teleporting vehicle '8701'; waited too long (yield), lane='417385434_2', time=247.00.
+Warning: Vehicle '8701' ends teleporting on edge '225516691#0', time=247.00.
+Warning: Teleporting vehicle 'taxi_678'; waited too long (yield), lane='721725416#2_1', time=248.00.
+Warning: Teleporting vehicle '2042'; waited too long (yield), lane='396957213#0_0', time=248.00.
+Warning: Teleporting vehicle 'taxi_364'; waited too long (yield), lane='1122575237#0_1', time=248.00.
+Warning: Vehicle 'taxi_364' ends teleporting on edge '514693611#0', time=248.00.
+Warning: Vehicle 'taxi_678' ends teleporting on edge '617990568#0', time=248.00.
+Warning: Vehicle '2042' ends teleporting on edge '8916586#0', time=248.00.
+Warning: Teleporting vehicle 'taxi_333'; waited too long (yield), lane='29480941#2_0', time=250.00.
+Warning: Vehicle 'taxi_333' ends teleporting on edge '-228354673#2', time=250.00.
+Warning: Teleporting vehicle '8914'; waited too long (yield), lane='-397120477_0', time=251.00.
+Warning: Teleporting vehicle '8946'; waited too long (yield), lane='89812488#0_0', time=251.00.
+Warning: Vehicle '8914' ends teleporting on edge '-469387974#0', time=251.00.
+Warning: Vehicle '8946' ends teleporting on edge '89812458#0', time=251.00.
+Warning: Teleporting vehicle '8608'; waited too long (yield), lane='397130093#0_0', time=252.00.
+Warning: Teleporting vehicle 'taxi_967'; waited too long (yield), lane='254982310#0_1', time=252.00.
+Warning: Teleporting vehicle '8829'; waited too long (yield), lane='397097601#1_0', time=252.00.
+Warning: Teleporting vehicle 'taxi_953'; waited too long (yield), lane='-419633759#1_0', time=252.00.
+Warning: Teleporting vehicle '8762'; waited too long (yield), lane='396951845_0', time=252.00.
+Warning: Teleporting vehicle '5753'; waited too long (yield), lane='1071595560#0_0', time=252.00.
+Warning: Vehicle 'taxi_953' ends teleporting on edge '-1124361415#1', time=252.00.
+Warning: Vehicle 'taxi_967' ends teleporting on edge '254982308#0', time=252.00.
+Warning: Vehicle '8762' ends teleporting on edge '396951847', time=252.00.
+Warning: Vehicle '8608' ends teleporting on edge '397129776#0', time=252.00.
+Warning: Vehicle '5753' ends teleporting on edge '527857394#0', time=252.00.
+Warning: Vehicle '8829' ends teleporting on edge '969998992', time=252.00.
+Warning: Teleporting vehicle '7222'; waited too long (yield), lane='1071595560#0_1', time=254.00.
+Warning: Teleporting vehicle '5741'; waited too long (yield), lane='-513699413#1_1', time=254.00.
+Warning: Teleporting vehicle '6528'; waited too long (yield), lane='286265340#0_0', time=254.00.
+Warning: Teleporting vehicle '6568'; waited too long (yield), lane='88466055#0_0', time=254.00.
+Warning: Teleporting vehicle 'taxi_840'; waited too long (yield), lane='111586254_0', time=254.00.
+Warning: Vehicle 'taxi_840' ends teleporting on edge '28841120#0', time=254.00.
+Warning: Vehicle '6568' ends teleporting on edge '99231468#0', time=254.00.
+Warning: Vehicle '5741' ends teleporting on edge '-417392962', time=254.00.
+Warning: Vehicle '6528' ends teleporting on edge '898469738#0', time=254.00.
+Warning: Teleporting vehicle '7210'; waited too long (yield), lane='417385467#0_0', time=255.00.
+Warning: Teleporting vehicle 'taxi_518'; waited too long (yield), lane='-1122268852_0', time=255.00.
+Warning: Teleporting vehicle '6661'; waited too long (yield), lane='158804433_0', time=255.00.
+Warning: Teleporting vehicle 'taxi_262'; waited too long (yield), lane='192368986#0_0', time=255.00.
+Warning: Teleporting vehicle 'taxi_654'; waited too long (yield), lane='-1108077480_1', time=255.00.
+Warning: Teleporting vehicle 'taxi_724'; waited too long (yield), lane='-255178139#1_0', time=255.00.
+Warning: Vehicle 'taxi_262' ends teleporting on edge '8917480', time=255.00.
+Warning: Vehicle 'taxi_518' ends teleporting on edge '-1122268855#1', time=255.00.
+Warning: Vehicle 'taxi_654' ends teleporting on edge '-408591443#1', time=255.00.
+Warning: Vehicle 'taxi_724' ends teleporting on edge '-1122268838#1', time=255.00.
+Warning: Vehicle '6661' ends teleporting on edge '396948935', time=255.00.
+Warning: Vehicle '7210' ends teleporting on edge '254758117#0', time=255.00.
+Warning: Teleporting vehicle 'taxi_123'; waited too long (yield), lane='1041356907#0_1', time=256.00.
+Warning: Teleporting vehicle '2068'; waited too long (yield), lane='107270330#0_0', time=256.00.
+Warning: Teleporting vehicle '7267'; waited too long (yield), lane='1047613705#0_1', time=256.00.
+Warning: Teleporting vehicle '8932'; waited too long (yield), lane='514685521#3_1', time=256.00.
+Warning: Teleporting vehicle '6723'; waited too long (yield), lane='-1122268835_0', time=256.00.
+Warning: Teleporting vehicle 'taxi_865'; waited too long (yield), lane='-27041779#1_0', time=256.00.
+Warning: Vehicle 'taxi_123' ends teleporting on edge '287658818', time=256.00.
+Warning: Vehicle 'taxi_865' ends teleporting on edge '-33783051#1', time=256.00.
+Warning: Vehicle '7267' ends teleporting on edge '527829985#0', time=256.00.
+Warning: Vehicle '2068' ends teleporting on edge '107270329#0', time=256.00.
+Warning: Vehicle '8932' ends teleporting on edge '306338109#1', time=256.00.
+Warning: Vehicle '6723' ends teleporting on edge '-1122268839#1', time=256.00.
+Warning: Teleporting vehicle 'taxi_864'; waited too long (yield), lane='254750814#1_0', time=257.00.
+Warning: Teleporting vehicle 'taxi_785'; waited too long (yield), lane='966188223_0', time=257.00.
+Warning: Teleporting vehicle '8717'; waited too long (yield), lane='395279942_0', time=257.00.
+Warning: Vehicle 'taxi_785' ends teleporting on edge '706551788#0', time=257.00.
+Warning: Vehicle 'taxi_864' ends teleporting on edge '285979101', time=257.00.
+Warning: Vehicle '8717' ends teleporting on edge '27183379#1', time=257.00.
+Warning: Teleporting vehicle '2028'; waited too long (yield), lane='107270330#0_0', time=258.00.
+Warning: Teleporting vehicle 'taxi_454'; waited too long (yield), lane='1062095136_0', time=258.00.
+Warning: Teleporting vehicle 'taxi_476'; waited too long (yield), lane='-1122268859_0', time=258.00.
+Warning: Teleporting vehicle '5734'; waited too long (yield), lane='1052594524#0_0', time=258.00.
+Warning: Teleporting vehicle 'taxi_947'; waited too long (yield), lane='-1122268848_0', time=258.00.
+Warning: Teleporting vehicle '8714'; waited too long (yield), lane='532855042#0_0', time=258.00.
+Warning: Teleporting vehicle 'taxi_508'; waited too long (yield), lane='28518589#0_0', time=258.00.
+Warning: Teleporting vehicle '6636'; waited too long (yield), lane='396950804_0', time=258.00.
+Warning: Vehicle 'taxi_454' ends teleporting on edge '461017935', time=258.00.
+Warning: Vehicle 'taxi_476' ends teleporting on edge '-1122268862#1', time=258.00.
+Warning: Vehicle 'taxi_508' ends teleporting on edge '922503884#0', time=258.00.
+Warning: Vehicle 'taxi_947' ends teleporting on edge '-1122268851#1', time=258.00.
+Warning: Vehicle '2028' ends teleporting on edge '107270329#0', time=258.00.
+Warning: Vehicle '5734' ends teleporting on edge '34128773#0', time=258.00.
+Warning: Vehicle '6636' ends teleporting on edge '158804430#0', time=258.00.
+Warning: Vehicle '8714' ends teleporting on edge '692647558#0', time=258.00.
+Warning: Teleporting vehicle 'taxi_583'; waited too long (yield), lane='263108751#6_0', time=259.00.
+Warning: Teleporting vehicle '5758'; waited too long (yield), lane='158468718#0_0', time=259.00.
+Warning: Teleporting vehicle '6642'; waited too long (yield), lane='89812522#0_0', time=259.00.
+Warning: Teleporting vehicle '6549'; waited too long (yield), lane='396950799_0', time=259.00.
+Warning: Teleporting vehicle 'taxi_84'; waited too long (yield), lane='396945236#0_1', time=259.00.
+Warning: Teleporting vehicle '6652'; waited too long (yield), lane='-1122268856_0', time=259.00.
+Warning: Teleporting vehicle '6727'; waited too long (yield), lane='682004790#0_0', time=259.00.
+Warning: Teleporting vehicle '8824'; waited too long (yield), lane='-224373746_1', time=259.00.
+Warning: Teleporting vehicle 'taxi_185'; waited too long (yield), lane='-E38_0', time=259.00.
+Warning: Vehicle 'taxi_84' ends teleporting on edge '682475682#0', time=259.00.
+Warning: Vehicle 'taxi_185' ends teleporting on edge '8920632', time=259.00.
+Warning: Vehicle 'taxi_583' ends teleporting on edge '8919163#10', time=259.00.
+Warning: Vehicle '6652' ends teleporting on edge '-1122268858#1', time=259.00.
+Warning: Vehicle '8824' ends teleporting on edge '-E38', time=259.00.
+Warning: Vehicle '6727' ends teleporting on edge '415292674#2', time=259.00.
+Warning: Vehicle '6642' ends teleporting on edge '89812504#0', time=259.00.
+Warning: Vehicle '6549' ends teleporting on edge '396950807', time=259.00.
+Warning: Vehicle '5758' ends teleporting on edge '396962029#0', time=259.00.
+Warning: Teleporting vehicle 'taxi_85'; waited too long (yield), lane='8916922#0_0', time=260.00.
+Warning: Teleporting vehicle '6544'; waited too long (yield), lane='158804437#0_1', time=260.00.
+Warning: Teleporting vehicle '6601'; waited too long (yield), lane='-243834647#3_0', time=260.00.
+Warning: Teleporting vehicle '5781'; waited too long (yield), lane='619535749#0_0', time=260.00.
+Warning: Teleporting vehicle '5811'; waited too long (yield), lane='158468954#0_0', time=260.00.
+Warning: Teleporting vehicle 'taxi_237'; waited too long (yield), lane='-406580281#1_0', time=260.00.
+Warning: Teleporting vehicle '5884'; waited too long (yield), lane='158804433_1', time=260.00.
+Warning: Teleporting vehicle 'taxi_634'; waited too long (yield), lane='91181771#4_2', time=260.00.
+Warning: Teleporting vehicle 'taxi_717'; waited too long (yield), lane='-27041250#1_0', time=260.00.
+Warning: Teleporting vehicle '7278'; waited too long (yield), lane='850242477#3_0', time=260.00.
+Warning: Teleporting vehicle 'taxi_220'; waited too long (yield), lane='123867455_0', time=260.00.
+Warning: Teleporting vehicle '6715'; waited too long (yield), lane='85644961#0_0', time=260.00.
+Warning: Teleporting vehicle 'taxi_38'; waited too long (yield), lane='-12247498#0_0', time=260.00.
+Warning: Vehicle 'taxi_38' ends teleporting on edge '254306573#0', time=260.00.
+Warning: Vehicle 'taxi_85' ends teleporting on edge '397148936#0', time=260.00.
+Warning: Vehicle 'taxi_220' ends teleporting on edge '8920391#0', time=260.00.
+Warning: Vehicle 'taxi_237' ends teleporting on edge '-87376682#2', time=260.00.
+Warning: Vehicle 'taxi_634' ends teleporting on edge '111050389#0', time=260.00.
+Warning: Vehicle 'taxi_717' ends teleporting on edge '-85644937#3', time=260.00.
+Warning: Vehicle '6544' ends teleporting on edge '158804447', time=260.00.
+Warning: Vehicle '5884' ends teleporting on edge '396948935', time=260.00.
+Warning: Vehicle '5811' ends teleporting on edge '158468960#0', time=260.00.
+Warning: Vehicle '6715' ends teleporting on edge '527829975#0', time=260.00.
+Warning: Vehicle '7278' ends teleporting on edge '25758528#0', time=260.00.
+Warning: Vehicle '6601' ends teleporting on edge '-243834647#1', time=260.00.
+Warning: Vehicle '5781' ends teleporting on edge '681012525#0', time=260.00.
+Warning: Teleporting vehicle '8969'; waited too long (yield), lane='397148787#0_1', time=261.00.
+Warning: Teleporting vehicle '6552'; waited too long (yield), lane='418522265_0', time=261.00.
+Warning: Teleporting vehicle '6697'; waited too long (yield), lane='-514461307_0', time=261.00.
+Warning: Teleporting vehicle '8611'; waited too long (yield), lane='397121315_3', time=261.00.
+Warning: Teleporting vehicle '30319'; waited too long (yield), lane='89802430#0_0', time=261.00.
+Warning: Teleporting vehicle '5868'; waited too long (yield), lane='1047613705#0_0', time=261.00.
+Warning: Teleporting vehicle 'taxi_429'; waited too long (yield), lane='417400734#0_0', time=261.00.
+Warning: Teleporting vehicle 'taxi_669'; waited too long (yield), lane='8916375#0_0', time=261.00.
+Warning: Teleporting vehicle 'taxi_714'; waited too long (yield), lane='935446073#0_0', time=261.00.
+Warning: Vehicle 'taxi_429' ends teleporting on edge '406944765', time=261.00.
+Warning: Vehicle 'taxi_669' ends teleporting on edge '417099330#0', time=261.00.
+Warning: Vehicle 'taxi_714' ends teleporting on edge '935446073#3', time=261.00.
+Warning: Vehicle '5868' ends teleporting on edge '527829985#0', time=261.00.
+Warning: Vehicle '8611' ends teleporting on edge '397121317', time=261.00.
+Warning: Vehicle '6697' ends teleporting on edge '-192552507#2', time=261.00.
+Warning: Vehicle '6552' ends teleporting on edge '254299111', time=261.00.
+Warning: Vehicle '8969' ends teleporting on edge '922496211', time=261.00.
+Warning: Vehicle '30319' ends teleporting on edge '89802407#0', time=261.00.
+Warning: Teleporting vehicle '2063'; waited too long (yield), lane='-224373746_1', time=262.00.
+Warning: Teleporting vehicle 'taxi_53'; waited too long (yield), lane='437913409#1_1', time=262.00.
+Warning: Teleporting vehicle '1463'; waited too long (yield), lane='247329530_0', time=262.00.
+Warning: Teleporting vehicle 'taxi_283'; waited too long (yield), lane='1122239019#0_0', time=262.00.
+Warning: Teleporting vehicle 'taxi_880'; waited too long (yield), lane='-48211487#2_0', time=262.00.
+Warning: Teleporting vehicle 'taxi_189'; waited too long (yield), lane='922503884#0_0', time=262.00.
+Warning: Teleporting vehicle '8888'; waited too long (yield), lane='397267192_1', time=262.00.
+Warning: Teleporting vehicle '6543'; waited too long (yield), lane='158468713#0_0', time=262.00.
+Warning: Teleporting vehicle '5801'; waited too long (yield), lane='396959901_0', time=262.00.
+Warning: Teleporting vehicle 'taxi_553'; waited too long (yield), lane='254756526#0_0', time=262.00.
+Warning: Teleporting vehicle 'taxi_12'; waited too long (yield), lane='-962138905#1_1', time=262.00.
+Warning: Teleporting vehicle 'taxi_325'; waited too long (yield), lane='985061729#0_0', time=262.00.
+Warning: Teleporting vehicle 'taxi_938'; waited too long (yield), lane='-26988007#2_0', time=262.00.
+Warning: Teleporting vehicle '6591'; waited too long (yield), lane='514604867_0', time=262.00.
+Warning: Teleporting vehicle 'taxi_579'; waited too long (yield), lane='-254308553#1_0', time=262.00.
+Warning: Teleporting vehicle '8958'; waited too long (yield), lane='87235203_0', time=262.00.
+Warning: Teleporting vehicle 'taxi_994'; waited too long (yield), lane='1112271467#0_0', time=262.00.
+Warning: Teleporting vehicle '6631'; waited too long (yield), lane='-48211487#2_1', time=262.00.
+Warning: Teleporting vehicle 'taxi_905'; waited too long (yield), lane='622297792#0_1', time=262.00.
+Warning: Teleporting vehicle 'taxi_117'; waited too long (yield), lane='-254466686#1_0', time=262.00.
+Warning: Teleporting vehicle '5782'; waited too long (yield), lane='396959350_0', time=262.00.
+Warning: Teleporting vehicle 'taxi_851'; waited too long (yield), lane='502795940#4_3', time=262.00.
+Warning: Teleporting vehicle '5760'; waited too long (yield), lane='546325025#2_0', time=262.00.
+Warning: Vehicle '6591' ends teleporting on edge '359898623#0', time=262.00.
+Warning: Vehicle 'taxi_12' ends teleporting on edge '-1120695897#1', time=262.00.
+Warning: Vehicle 'taxi_53' ends teleporting on edge '417396772', time=262.00.
+Warning: Vehicle 'taxi_117' ends teleporting on edge '619378866#0', time=262.00.
+Warning: Vehicle 'taxi_189' ends teleporting on edge '922508901#0', time=262.00.
+Warning: Vehicle 'taxi_283' ends teleporting on edge '512283899#0', time=262.00.
+Warning: Vehicle 'taxi_325' ends teleporting on edge '306338109#1', time=262.00.
+Warning: Vehicle 'taxi_553' ends teleporting on edge '254971069#0', time=262.00.
+Warning: Vehicle 'taxi_579' ends teleporting on edge '-437964226#1', time=262.00.
+Warning: Vehicle 'taxi_851' ends teleporting on edge '27166444#0', time=262.00.
+Warning: Vehicle 'taxi_880' ends teleporting on edge '-517260065#1', time=262.00.
+Warning: Vehicle 'taxi_905' ends teleporting on edge '88463827#0', time=262.00.
+Warning: Vehicle 'taxi_938' ends teleporting on edge '-1193764509#1', time=262.00.
+Warning: Vehicle 'taxi_994' ends teleporting on edge '1112271467#2', time=262.00.
+Warning: Vehicle '6543' ends teleporting on edge '99278918#0', time=262.00.
+Warning: Vehicle '8888' ends teleporting on edge '1034015969', time=262.00.
+Warning: Vehicle '5760' ends teleporting on edge '619568417', time=262.00.
+Warning: Vehicle '5782' ends teleporting on edge '396959339', time=262.00.
+Warning: Vehicle '7222' ends teleporting on edge '85644961#0', time=262.00.
+Warning: Vehicle '2063' ends teleporting on edge '-E38', time=262.00.
+Warning: Vehicle '6631' ends teleporting on edge '-517260065#1', time=262.00.
+Warning: Vehicle '5801' ends teleporting on edge '396959902#0', time=262.00.
+Warning: Vehicle '8958' ends teleporting on edge '8917365#0', time=262.00.
+Warning: Vehicle '1463' ends teleporting on edge '397138674#0', time=262.00.
+Warning: Teleporting vehicle 'taxi_849'; waited too long (yield), lane='-27041250#1_0', time=263.00.
+Warning: Teleporting vehicle '5750'; waited too long (yield), lane='-513699413#1_1', time=263.00.
+Warning: Teleporting vehicle 'taxi_391'; waited too long (yield), lane='415197400#0_0', time=263.00.
+Warning: Teleporting vehicle '8511'; waited too long (yield), lane='694654075#4_0', time=263.00.
+Warning: Teleporting vehicle '6682'; waited too long (yield), lane='155373677#3_0', time=263.00.
+Warning: Teleporting vehicle 'taxi_66'; waited too long (yield), lane='396961262#2_0', time=263.00.
+Warning: Teleporting vehicle '6686'; waited too long (yield), lane='-403152783#1_0', time=263.00.
+Warning: Teleporting vehicle 'taxi_186'; waited too long (yield), lane='25372358#0_0', time=263.00.
+Warning: Teleporting vehicle 'taxi_335'; waited too long (yield), lane='-781130063_0', time=263.00.
+Warning: Teleporting vehicle '8770'; waited too long (yield), lane='86334808_0', time=263.00.
+Warning: Teleporting vehicle '6634'; waited too long (yield), lane='1030287469#0_0', time=263.00.
+Warning: Teleporting vehicle 'taxi_543'; waited too long (yield), lane='397148934#0_2', time=263.00.
+Warning: Teleporting vehicle '5790'; waited too long (yield), lane='158804435_0', time=263.00.
+Warning: Teleporting vehicle '5761'; waited too long (yield), lane='26943549_1', time=263.00.
+Warning: Teleporting vehicle '8758'; waited too long (yield), lane='-224384041_0', time=263.00.
+Warning: Teleporting vehicle 'taxi_777'; waited too long (yield), lane='417400734#0_1', time=263.00.
+Warning: Teleporting vehicle '6617'; waited too long (yield), lane='192368992#0_0', time=263.00.
+Warning: Teleporting vehicle 'taxi_224'; waited too long (yield), lane='1110261471_0', time=263.00.
+Warning: Teleporting vehicle '6517'; waited too long (yield), lane='158804437#0_0', time=263.00.
+Warning: Teleporting vehicle '8723'; waited too long (yield), lane='8918917#4_0', time=263.00.
+Warning: Teleporting vehicle 'taxi_646'; waited too long (yield), lane='36331085#0_0', time=263.00.
+Warning: Vehicle 'taxi_66' ends teleporting on edge '158468712#0', time=263.00.
+Warning: Vehicle 'taxi_186' ends teleporting on edge '425516652#0', time=263.00.
+Warning: Vehicle 'taxi_224' ends teleporting on edge '133735128', time=263.00.
+Warning: Vehicle 'taxi_335' ends teleporting on edge '-225847532#2', time=263.00.
+Warning: Vehicle 'taxi_391' ends teleporting on edge '681183500#0', time=263.00.
+Warning: Vehicle 'taxi_543' ends teleporting on edge '684024428', time=263.00.
+Warning: Vehicle 'taxi_646' ends teleporting on edge '215528940', time=263.00.
+Warning: Vehicle 'taxi_777' ends teleporting on edge '406944765', time=263.00.
+Warning: Vehicle 'taxi_849' ends teleporting on edge '-85644937#3', time=263.00.
+Warning: Vehicle '6682' ends teleporting on edge '155373677#5', time=263.00.
+Warning: Vehicle '6617' ends teleporting on edge '192368986#0', time=263.00.
+Warning: Vehicle '8511' ends teleporting on edge '694654075#5', time=263.00.
+Warning: Vehicle '5761' ends teleporting on edge '162812824#0', time=263.00.
+Warning: Vehicle '6517' ends teleporting on edge '158804447', time=263.00.
+Warning: Vehicle '8758' ends teleporting on edge '-975979531', time=263.00.
+Warning: Vehicle '8723' ends teleporting on edge '415548406', time=263.00.
+Warning: Vehicle '6634' ends teleporting on edge '513701212#0', time=263.00.
+Warning: Vehicle '6686' ends teleporting on edge '-422638702', time=263.00.
+Warning: Vehicle '5750' ends teleporting on edge '-417392962', time=263.00.
+Warning: Vehicle '8770' ends teleporting on edge '514611115', time=263.00.
+Warning: Vehicle '5790' ends teleporting on edge '396959350', time=263.00.
+Warning: Teleporting vehicle '2040'; waited too long (yield), lane='24487846#0_0', time=264.00.
+Warning: Teleporting vehicle 'taxi_761'; waited too long (yield), lane='26938867#3_0', time=264.00.
+Warning: Teleporting vehicle '6651'; waited too long (yield), lane='396959904_2', time=264.00.
+Warning: Teleporting vehicle '2061'; waited too long (yield), lane='925092450_1', time=264.00.
+Warning: Teleporting vehicle '8802'; waited too long (yield), lane='-225847504_0', time=264.00.
+Warning: Teleporting vehicle 'taxi_182'; waited too long (yield), lane='85562583#0_0', time=264.00.
+Warning: Teleporting vehicle 'taxi_636'; waited too long (yield), lane='1030287469#0_2', time=264.00.
+Warning: Teleporting vehicle '5853'; waited too long (yield), lane='85562554#0_0', time=264.00.
+Warning: Teleporting vehicle '6605'; waited too long (yield), lane='264872663_0', time=264.00.
+Warning: Teleporting vehicle 'taxi_833'; waited too long (yield), lane='686250329#0_2', time=264.00.
+Warning: Teleporting vehicle '6614'; waited too long (yield), lane='158468718#0_1', time=264.00.
+Warning: Teleporting vehicle 'taxi_795'; waited too long (yield), lane='527857394#0_0', time=264.00.
+Warning: Teleporting vehicle 'taxi_550'; waited too long (yield), lane='397130093#0_2', time=264.00.
+Warning: Teleporting vehicle '8965'; waited too long (yield), lane='89802427#0_0', time=264.00.
+Warning: Teleporting vehicle '7290'; waited too long (yield), lane='225516713#1_0', time=264.00.
+Warning: Teleporting vehicle '8764'; waited too long (yield), lane='-254750503#2_1', time=264.00.
+Warning: Teleporting vehicle '6645'; waited too long (yield), lane='-8921059#1_0', time=264.00.
+Warning: Teleporting vehicle '5866'; waited too long (yield), lane='512283898#0_0', time=264.00.
+Warning: Vehicle 'taxi_182' ends teleporting on edge '85562503#0', time=264.00.
+Warning: Vehicle 'taxi_550' ends teleporting on edge '513700709#0', time=264.00.
+Warning: Vehicle 'taxi_636' ends teleporting on edge '290080810#0', time=264.00.
+Warning: Vehicle 'taxi_761' ends teleporting on edge '26938867#6', time=264.00.
+Warning: Vehicle 'taxi_795' ends teleporting on edge '85644961#0', time=264.00.
+Warning: Vehicle 'taxi_833' ends teleporting on edge '397151342#0', time=264.00.
+Warning: Vehicle '6605' ends teleporting on edge '159766611', time=264.00.
+Warning: Vehicle '2040' ends teleporting on edge '24487862#0', time=264.00.
+Warning: Vehicle '6614' ends teleporting on edge '396962029#0', time=264.00.
+Warning: Vehicle '6651' ends teleporting on edge '396959900', time=264.00.
+Warning: Vehicle '5866' ends teleporting on edge '-254466689', time=264.00.
+Warning: Vehicle '2061' ends teleporting on edge '254759951#1', time=264.00.
+Warning: Vehicle '8764' ends teleporting on edge '-514614748#1', time=264.00.
+Warning: Vehicle '5853' ends teleporting on edge '85562500#0', time=264.00.
+Warning: Vehicle '8965' ends teleporting on edge '89802447#0', time=264.00.
+Warning: Vehicle '8802' ends teleporting on edge '27023110', time=264.00.
+Warning: Vehicle '7290' ends teleporting on edge '225516712#0', time=264.00.
+Warning: Vehicle '6645' ends teleporting on edge '-397130406', time=264.00.
+Warning: Teleporting vehicle '8868'; waited too long (yield), lane='224373743#0_0', time=265.00.
+Warning: Teleporting vehicle 'taxi_439'; waited too long (yield), lane='717319387#0_1', time=265.00.
+Warning: Teleporting vehicle 'taxi_367'; waited too long (yield), lane='204967527#0_0', time=265.00.
+Warning: Teleporting vehicle '5882'; waited too long (yield), lane='396959350_1', time=265.00.
+Warning: Teleporting vehicle 'taxi_616'; waited too long (yield), lane='513703884#0_0', time=265.00.
+Warning: Teleporting vehicle 'taxi_188'; waited too long (yield), lane='85562490#0_0', time=265.00.
+Warning: Teleporting vehicle 'taxi_762'; waited too long (yield), lane='935446073#5_0', time=265.00.
+Warning: Teleporting vehicle '6691'; waited too long (yield), lane='-243834647#1_0', time=265.00.
+Warning: Teleporting vehicle 'taxi_417'; waited too long (yield), lane='47172745#0_0', time=265.00.
+Warning: Teleporting vehicle 'taxi_158'; waited too long (yield), lane='514675663_0', time=265.00.
+Warning: Teleporting vehicle '6584'; waited too long (yield), lane='-397127920_1', time=265.00.
+Warning: Teleporting vehicle '8952'; waited too long (yield), lane='89812458#0_0', time=265.00.
+Warning: Teleporting vehicle '6603'; waited too long (yield), lane='406581245_1', time=265.00.
+Warning: Teleporting vehicle '8633'; waited too long (yield), lane='375744879#0_0', time=265.00.
+Warning: Teleporting vehicle '8925'; waited too long (yield), lane='-254750503#2_0', time=265.00.
+Warning: Teleporting vehicle '6564'; waited too long (yield), lane='514442923#2_0', time=265.00.
+Warning: Vehicle '6564' ends teleporting on edge '514442923#3', time=265.00.
+Warning: Vehicle 'taxi_158' ends teleporting on edge '-29059461#1', time=265.00.
+Warning: Vehicle 'taxi_188' ends teleporting on edge '85562554#0', time=265.00.
+Warning: Vehicle 'taxi_367' ends teleporting on edge '204967524#0', time=265.00.
+Warning: Vehicle 'taxi_417' ends teleporting on edge '406944764#0', time=265.00.
+Warning: Vehicle 'taxi_439' ends teleporting on edge '717319386#0', time=265.00.
+Warning: Vehicle 'taxi_616' ends teleporting on edge '283537644', time=265.00.
+Warning: Vehicle 'taxi_762' ends teleporting on edge '935446073#6', time=265.00.
+Warning: Vehicle '6691' ends teleporting on edge '705655282#0', time=265.00.
+Warning: Vehicle '8925' ends teleporting on edge '-514614748#1', time=265.00.
+Warning: Vehicle '5882' ends teleporting on edge '396959339', time=265.00.
+Warning: Vehicle '6584' ends teleporting on edge '513704346#0', time=265.00.
+Warning: Vehicle '6603' ends teleporting on edge '406581246', time=265.00.
+Warning: Vehicle '8868' ends teleporting on edge '515859660#0', time=265.00.
+Warning: Vehicle '8952' ends teleporting on edge '89802429#0', time=265.00.
+Warning: Vehicle '8633' ends teleporting on edge '396937568#0', time=265.00.
+Warning: Teleporting vehicle '6613'; waited too long (yield), lane='254453308#0_0', time=266.00.
+Warning: Teleporting vehicle '6684'; waited too long (yield), lane='514577069#0_0', time=266.00.
+Warning: Teleporting vehicle 'taxi_835'; waited too long (yield), lane='228186482#0_0', time=266.00.
+Warning: Teleporting vehicle 'taxi_834'; waited too long (yield), lane='935446073#3_0', time=266.00.
+Warning: Teleporting vehicle 'taxi_489'; waited too long (yield), lane='255351722_0', time=266.00.
+Warning: Teleporting vehicle 'taxi_11'; waited too long (yield), lane='286004350#0_0', time=266.00.
+Warning: Teleporting vehicle 'taxi_23'; waited too long (yield), lane='1111695244#5_0', time=266.00.
+Warning: Teleporting vehicle '5848'; waited too long (yield), lane='406581245_2', time=266.00.
+Warning: Teleporting vehicle '6624'; waited too long (yield), lane='396962027_0', time=266.00.
+Warning: Teleporting vehicle 'taxi_541'; waited too long (yield), lane='686250328#0_0', time=266.00.
+Warning: Teleporting vehicle 'taxi_163'; waited too long (yield), lane='26943758#0_0', time=266.00.
+Warning: Vehicle 'taxi_11' ends teleporting on edge '27054294#0', time=266.00.
+Warning: Vehicle 'taxi_23' ends teleporting on edge '1111695244#7', time=266.00.
+Warning: Vehicle 'taxi_163' ends teleporting on edge '784325413#0', time=266.00.
+Warning: Vehicle 'taxi_489' ends teleporting on edge '512658274', time=266.00.
+Warning: Vehicle 'taxi_541' ends teleporting on edge '686250331#0', time=266.00.
+Warning: Vehicle 'taxi_834' ends teleporting on edge '935446073#5', time=266.00.
+Warning: Vehicle 'taxi_835' ends teleporting on edge '1076419799#0', time=266.00.
+Warning: Vehicle '6613' ends teleporting on edge '397105094#0', time=266.00.
+Warning: Vehicle '5848' ends teleporting on edge '406581246', time=266.00.
+Warning: Vehicle '6684' ends teleporting on edge '254982297#0', time=266.00.
+Warning: Vehicle '6624' ends teleporting on edge '396962024', time=266.00.
+Warning: Teleporting vehicle '6615'; waited too long (yield), lane='437753099_2', time=267.00.
+Warning: Teleporting vehicle '6522'; waited too long (yield), lane='396959904_1', time=267.00.
+Warning: Teleporting vehicle '8780'; waited too long (yield), lane='89802427#0_1', time=267.00.
+Warning: Teleporting vehicle 'taxi_371'; waited too long (yield), lane='397131363_1', time=267.00.
+Warning: Teleporting vehicle '6616'; waited too long (yield), lane='-8921059#1_1', time=267.00.
+Warning: Teleporting vehicle '6722'; waited too long (yield), lane='-286673287_1', time=267.00.
+Warning: Teleporting vehicle '8746'; waited too long (yield), lane='-255178102#4_0', time=267.00.
+Warning: Vehicle 'taxi_371' ends teleporting on edge '397137031#0', time=267.00.
+Warning: Vehicle '6722' ends teleporting on edge '-514461307', time=267.00.
+Warning: Vehicle '6522' ends teleporting on edge '396959900', time=267.00.
+Warning: Vehicle '8780' ends teleporting on edge '89802447#0', time=267.00.
+Warning: Vehicle '6615' ends teleporting on edge '286646570', time=267.00.
+Warning: Vehicle '6616' ends teleporting on edge '-397130406', time=267.00.
+Warning: Vehicle '8746' ends teleporting on edge '-255178102#2', time=267.00.
+Warning: Teleporting vehicle '6687'; waited too long (yield), lane='1062095136_0', time=268.00.
+Warning: Teleporting vehicle '8923'; waited too long (yield), lane='89812504#0_0', time=268.00.
+Warning: Teleporting vehicle '8884'; waited too long (yield), lane='158468718#0_2', time=268.00.
+Warning: Teleporting vehicle '6638'; waited too long (yield), lane='-635235528_1', time=268.00.
+Warning: Teleporting vehicle '5813'; waited too long (yield), lane='287658940#2_0', time=268.00.
+Warning: Teleporting vehicle '5764'; waited too long (yield), lane='1030287469#0_0', time=268.00.
+Warning: Vehicle '8884' ends teleporting on edge '396962029#0', time=268.00.
+Warning: Vehicle '6687' ends teleporting on edge '461017935', time=268.00.
+Warning: Vehicle '6638' ends teleporting on edge '-945294694#1', time=268.00.
+Warning: Vehicle '8923' ends teleporting on edge '89812488#0', time=268.00.
+Warning: Vehicle '5764' ends teleporting on edge '513701212#0', time=268.00.
+Warning: Vehicle '5813' ends teleporting on edge '287658940#4', time=268.00.
+Warning: Teleporting vehicle '6705'; waited too long (yield), lane='162812824#3_0', time=269.00.
+Warning: Teleporting vehicle '8776'; waited too long (yield), lane='-28952785#5_0', time=269.00.
+Warning: Teleporting vehicle '8817'; waited too long (yield), lane='133743886_1', time=269.00.
+Warning: Teleporting vehicle '6704'; waited too long (yield), lane='622297792#0_2', time=269.00.
+Warning: Teleporting vehicle '8943'; waited too long (yield), lane='89802439#0_0', time=269.00.
+Warning: Teleporting vehicle '1477'; waited too long (yield), lane='255351720#4_2', time=269.00.
+Warning: Teleporting vehicle 'taxi_708'; waited too long (yield), lane='279611139_2', time=269.00.
+Warning: Teleporting vehicle '8766'; waited too long (yield), lane='417097086_2', time=269.00.
+Warning: Teleporting vehicle '6541'; waited too long (yield), lane='396959904_0', time=269.00.
+Warning: Teleporting vehicle '6721'; waited too long (yield), lane='1058402957#0_0', time=269.00.
+Warning: Vehicle '6704' ends teleporting on edge '88463827#0', time=269.00.
+Warning: Vehicle 'taxi_708' ends teleporting on edge '-706534245', time=269.00.
+Warning: Vehicle '6721' ends teleporting on edge '527829989#0', time=269.00.
+Warning: Vehicle '6705' ends teleporting on edge '162812824#5', time=269.00.
+Warning: Vehicle '6541' ends teleporting on edge '396959900', time=269.00.
+Warning: Vehicle '8766' ends teleporting on edge '816334687#0', time=269.00.
+Warning: Vehicle '1477' ends teleporting on edge '8916725#0', time=269.00.
+Warning: Vehicle '8817' ends teleporting on edge '148899332', time=269.00.
+Warning: Vehicle '8943' ends teleporting on edge '89802442#0', time=269.00.
+Warning: Vehicle '8776' ends teleporting on edge '-28952785#3', time=269.00.
+Warning: Teleporting vehicle 'taxi_478'; waited too long (yield), lane='225808857#0_0', time=272.00.
+Warning: Vehicle 'taxi_478' ends teleporting on edge '619568398#0', time=272.00.
+Warning: Teleporting vehicle '8656'; waited too long (yield), lane='254759963_2', time=275.00.
+Warning: Vehicle '8656' ends teleporting on edge '28518589#0', time=275.00.
+Warning: Teleporting vehicle 'taxi_396'; waited too long (yield), lane='162931810#0_1', time=276.00.
+Warning: Teleporting vehicle 'taxi_946'; waited too long (yield), lane='-417314590_1', time=276.00.
+Warning: Vehicle 'taxi_396' ends teleporting on edge '256787755#0', time=276.00.
+Warning: Vehicle 'taxi_946' ends teleporting on edge '-133735880#1', time=276.00.
+Warning: Teleporting vehicle '8951'; waited too long (yield), lane='860937368_0', time=277.00.
+Warning: Teleporting vehicle 'taxi_537'; waited too long (yield), lane='719449212#0_1', time=277.00.
+Warning: Teleporting vehicle 'taxi_253'; waited too long (yield), lane='446233233_0', time=277.00.
+Warning: Vehicle 'taxi_253' ends teleporting on edge '446233235#0', time=277.00.
+Warning: Vehicle 'taxi_537' ends teleporting on edge '26944132#0', time=277.00.
+Warning: Vehicle '8951' ends teleporting on edge '417087280#0', time=277.00.
+Warning: Teleporting vehicle 'taxi_999'; waited too long (yield), lane='769473276#0_0', time=278.00.
+Warning: Teleporting vehicle 'taxi_825'; waited too long (yield), lane='27029265#0_0', time=278.00.
+Warning: Teleporting vehicle 'taxi_631'; waited too long (yield), lane='397127921_1', time=278.00.
+Warning: Vehicle 'taxi_631' ends teleporting on edge '617990571#0', time=278.00.
+Warning: Vehicle 'taxi_825' ends teleporting on edge '27029265#3', time=278.00.
+Warning: Vehicle 'taxi_999' ends teleporting on edge '254299118', time=278.00.
+Warning: Teleporting vehicle 'taxi_818'; waited too long (yield), lane='417400701#0_2', time=279.00.
+Warning: Vehicle 'taxi_818' ends teleporting on edge '428511530#0', time=279.00.
+Warning: Teleporting vehicle 'taxi_549'; waited too long (yield), lane='162931810#0_0', time=280.00.
+Warning: Vehicle 'taxi_549' ends teleporting on edge '417400709#2', time=280.00.
+Warning: Teleporting vehicle '2060'; waited too long (yield), lane='397271281_2', time=282.00.
+Warning: Teleporting vehicle '8503'; waited too long (yield), lane='-391862871#1_0', time=282.00.
+Warning: Vehicle '8503' ends teleporting on edge '-228354673#2', time=282.00.
+Warning: Vehicle '2060' ends teleporting on edge '715535740', time=282.00.
+Warning: Teleporting vehicle '8966'; waited too long (yield), lane='397148787#0_4', time=283.00.
+Warning: Vehicle '8966' ends teleporting on edge '159318747', time=283.00.
+Warning: Teleporting vehicle 'taxi_843'; waited too long (yield), lane='417087474_0', time=285.00.
+Warning: Vehicle 'taxi_843' ends teleporting on edge '23959829#0', time=285.00.
+Warning: Teleporting vehicle 'taxi_618'; waited too long (yield), lane='397093355#0_0', time=
