@@ -33,12 +33,15 @@ class Simulator:
         self.output_dir_path = None
         self.end_time = None
 
-    def configure_output_dir(self, sf_traffic_routes_folder_path, route_file_path, date, start_time, end_time):
+    def configure_output_dir(self, sf_traffic_routes_folder_path, route_file_path, taxi_route_file_path, passenger_file_path, date, start_time, end_time):
         """
         Builds output dir path and route file path based on date and time slot.
 
         Parameters:
         - sf_traffic_routes_folder_path: str - base scenario root folder
+        - route_file_path: str - path to the route file
+        - taxi_route_file_path: str - path to the taxi route file
+        - passenger_file_path: str - path to the passenger file
         - date: str - 'YYYY-MM-DD'
         - start_time: str - 'HH:MM'
         - end_time: str - 'HH:MM'
@@ -57,7 +60,11 @@ class Simulator:
 
         # Set internal state
         self.output_dir_path = full_folder_path
-        self.route_file_path = Path(route_file_path).absolute()
+        self.route_file_path = [
+            Path(route_file_path).absolute(),
+            Path(taxi_route_file_path).absolute(),
+            Path(passenger_file_path).absolute()
+        ]
         self.date_part = date_part
         self.timeslot_part = timeslot_part
 
@@ -96,11 +103,14 @@ class Simulator:
         # Read the template
         with open(self.config_template_path, 'r') as f:
             template = f.read()
-
+        if isinstance(self.route_file_path, list):
+            route_file_str = ", ".join([p.as_posix() for p in self.route_file_path])
+        else:
+            route_file_str = self.route_file_path.as_posix()
         # Format it with current instance values
         config_content = template.format(
             net_file=self.net_file_path.as_posix(),
-            route_file=self.route_file_path.as_posix(),
+            route_file=route_file_str,
             tazpoly_file=self.taz_file_path.as_posix(),
             output_dir=self.output_dir_path.as_posix(),
             end_time=self.end_time

@@ -152,6 +152,7 @@ def extract_sf_traffic_timeslot(input_csv_path, date_str, start_time_str, end_ti
 
     # Save file, overwrite if exists
     filtered_df.to_csv(output_csv_path, sep=";", index=False)
+    print(f"✅ Filtered traffic data saved to {output_csv_path}")
 
     return output_csv_path
 

@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <configuration>
    <input>
-      <net-file value="/Users/beyzaeken/Desktop/ridesharingmirror/sumoenv/sf.net.xml"/>
-      <route-files value="/Users/beyzaeken/Desktop/ridesharingmirror/sumoenv/scenario/normal/2021-01-14/10-13/sf_routes_210114_1013.rou.xml"/>
+      <net-file value="/Users/beyzaeken/Desktop/ridesharingmirror/sumoenv/sf_new.net.xml"/>
+      <route-files value="/Users/beyzaeken/Desktop/ridesharingmirror/sumoenv/scenario/normal/2021-01-14/10-13/sf_routes_210114_1013.rou.xml, /Users/beyzaeken/Desktop/ridesharingmirror/fleet_vehicles.rou.xml, /Users/beyzaeken/Desktop/ridesharingmirror/passenger_requests.rou.xml"/>
       <additional-files value="/Users/beyzaeken/Desktop/ridesharingmirror/sumoenv/taz_zones.poly.xml"/>
    </input>
 

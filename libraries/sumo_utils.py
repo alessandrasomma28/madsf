@@ -139,7 +139,7 @@ def sf_traffic_map_matching(sf_map_file_path, sf_real_traffic_data_path, date,
     This function:
     - Reads raw GPS traffic data.
     - Matches each point to the closest edge in the SUMO network.
-    - Saves the resulting file into a dated subfolder with a custom filename.
+    - Saves the resulting file into a subfolder with a custom filename.
     - Creates output directories if they do not exist.
     - Overwrites the output CSV if it already exists.
 
@@ -185,7 +185,7 @@ def sf_traffic_map_matching(sf_map_file_path, sf_real_traffic_data_path, date,
 
     # Save the updated DataFrame (overwrite if exists)
     df.to_csv(output_csv_path, index=False, sep=";")
-    print(f"New CSV file saved to {output_csv_path}")
+    print(f"✅ New CSV file saved to {output_csv_path}")
 
     return str(output_csv_path)
 
@@ -264,6 +264,7 @@ def sf_traffic_od_generation(sf_real_traffic_edge_path, sf_traffic_od_folder_pat
 
     # Save to file (overwrite if exists)
     od_df.to_csv(full_path, sep=";", index=False)
+    print(f"✅ OD file saved to {full_path}")
 
     return full_path
 
@@ -284,7 +285,7 @@ def add_sf_traffic_taz_matching(edge_file_path: str, shapefile_path: str, lat_co
 
         Updates:
         - Writes updated CSV with new TAZ column to same path
-        """
+    """
     df = pd.read_csv(edge_file_path, sep=';')
     if lat_col not in df or lon_col not in df:
         raise ValueError(f"Missing '{lat_col}' or '{lon_col}' in the edge file.")
@@ -316,7 +317,7 @@ def add_sf_traffic_taz_matching(edge_file_path: str, shapefile_path: str, lat_co
         od_gdf.loc[missing, zone_column] = nearest_zone_ids
 
     od_gdf.drop(columns="geometry").to_csv(edge_file_path, sep=';', index=False)
-    print(f"TAZ assignment complete. Saved to: {edge_file_path}")
+    print(f"✅ TAZ assignment complete. Saved to: {edge_file_path}")
 
 
 def sf_traffic_routes_generation(sf_traffic_od_path, sf_traffic_routes_folder_path,
@@ -504,7 +505,7 @@ def export_taz_coords(shapefile_path, output_csv_path):
 
     # Write to CSV, overwrite if exists
     gdf[['TAZ', 'polygon_coords', 'centroid_coords']].to_csv(output_csv_path,  sep=';', index=False)
-    print(f"Exported TAZ data to: {output_csv_path}")
+    print(f"✅ Exported TAZ data to: {output_csv_path}")
 
 
 def map_coords_to_sumo_edges(taz_csv_path, net_xml_path, output_csv_path):
@@ -914,3 +915,14 @@ def generate_matched_drt_requests(
     ET.indent(tree, space="  ")
     tree.write(output_path, encoding="utf-8", xml_declaration=True)
     print(f"✅ DRT passenger requests written to: {output_path} | Total persons generated: {person_id}")
+
+
+def filter_polygon_edges(polygon_edge_str, safe_edge_ids):
+    """Filter edge list string, keeping only strongly connected edges."""
+    edge_list = ast.literal_eval(polygon_edge_str)
+    return [e for e in edge_list if e in safe_edge_ids]
+
+def filter_polygon_lanes(polygon_lane_str, safe_edge_ids):
+    """Filter lane list string, keeping only lanes whose parent edge is in the strongly connected set."""
+    lane_list = ast.literal_eval(polygon_lane_str)
+    return [l for l in lane_list if l.split('_')[0] in safe_edge_ids]
