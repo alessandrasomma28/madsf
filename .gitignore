@@ -1,2 +1,3 @@
-sfdigitalmirror/sumoenv/scenario/normal/2021-01-14/09-10/sf_traffic_od_210114_0910.csv
-sfdigitalmirror/data/sf_traffic/sfmta_dataset/sf_vehicle_210110_210116.csv
+sumoenv/scenario/normal/2021-01-14/09-10/sf_traffic_od_210114_0910.csv
+data/ride_hailing_stats/
+data/sf_traffic/

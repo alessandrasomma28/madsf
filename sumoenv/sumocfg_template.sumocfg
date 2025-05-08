@@ -21,7 +21,7 @@
    <processing>
       <threads value="4" />
       <ignore-route-errors value="true"/>
-      <time-to-teleport value="35"/>
+      <time-to-teleport value="180"/>
       <ignore-junction-blocker value="1"/>
    </processing>
 

@@ -784,6 +784,7 @@ def generate_drt_vehicle_instances_from_lanes(lane_ids, output_path):
             "emissionClass": vt["emissionClass"]
         })
         ET.SubElement(vtype, "param", key="has.taxi.device", value="true")
+        ET.SubElement(vtype, "param", key="device.taxi.end", value="7200")
 
     # Create vehicles
     for vt in vehicle_types:

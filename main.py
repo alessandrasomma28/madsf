@@ -1,8 +1,7 @@
 from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generation, sf_traffic_routes_generation, \
     export_taz_coords, map_coords_to_sumo_edges, get_strongly_connected_edges, generate_matched_drt_requests, \
-    add_sf_traffic_taz_matching, convert_shapefile_to_sumo_poly_with_polyconvert, filter_polygon_edges, \
-    filter_polygon_lanes, generate_vehicle_start_lanes_from_taz_polygons, generate_drt_vehicle_instances_from_lanes, \
-    get_valid_taxi_edges
+    add_sf_traffic_taz_matching, filter_polygon_edges,filter_polygon_lanes, generate_vehicle_start_lanes_from_taz_polygons, \
+    generate_drt_vehicle_instances_from_lanes, get_valid_taxi_edges
 from constants.data_constants import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH,
                                       SF_TRAFFIC_VEHICLE_ONEWEEK_PATH, SF_TAZ_SHAPEFILE_PATH, SF_TAZ_COORDINATES_PATH,
                                       SF_RIDE_STATS_PATH)
@@ -64,7 +63,7 @@ mapping_df = mapping_df[mapping_df['polygon_lane_ids'].map(lambda x: len(x) > 0)
 taz_edge_mapping = mapping_df.set_index('TAZ')[['polygon_edge_ids', 'polygon_lane_ids']].dropna().to_dict('index')
 
 # 5.2. reading uber data
-data=read_uber_stats_data(SF_RIDE_STATS_PATH, start_time, end_time)
+data = read_uber_stats_data(SF_RIDE_STATS_PATH, start_time, end_time)
 total_pickups = sum(inner[9]['pickups'] for inner in data.values())
 total_dropoffs = sum(inner[9]['dropoffs'] for inner in data.values())
 print(f"Total pickups:  {total_pickups}")
@@ -78,7 +77,7 @@ start_lanes = generate_vehicle_start_lanes_from_taz_polygons(
 )
 
 # 5.3. generate taxi trips
-number_vehicles_available=1000
+number_vehicles_available = 1000
 generate_drt_vehicle_instances_from_lanes(
     lane_ids=random.sample(start_lanes, number_vehicles_available),
     output_path="fleet_vehicles.rou.xml"
