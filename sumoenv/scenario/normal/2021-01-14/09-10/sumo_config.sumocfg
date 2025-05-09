@@ -2,7 +2,7 @@
 <configuration>
    <input>
       <net-file value="/Users/beyzaeken/Desktop/sfdigitalmirror/sumoenv/sf_new.net.xml"/>
-      <route-files value="/Users/beyzaeken/Desktop/sfdigitalmirror/sumoenv/scenario/normal/2021-01-14/09-10/sf_routes_210114_0910.rou.xml, /Users/beyzaeken/Desktop/sfdigitalmirror/fleet_vehicles.rou.xml, /Users/beyzaeken/Desktop/sfdigitalmirror/passenger_requests.rou.xml"/>
+      <route-files value="/Users/beyzaeken/Desktop/sfdigitalmirror/sumoenv/scenario/normal/2021-01-14/09-10/sf_routes_210114_0910.rou.xml, /Users/beyzaeken/Desktop/sfdigitalmirror/sumoenv/scenario/normal/2021-01-14/09-10/sf_tnc_fleet_210114_0910.rou.xml, /Users/beyzaeken/Desktop/sfdigitalmirror/sumoenv/scenario/normal/2021-01-14/09-10/sf_passenger_requests_210114_0910.rou.xml"/>
       <additional-files value="/Users/beyzaeken/Desktop/sfdigitalmirror/sumoenv/taz_zones.poly.xml"/>
    </input>
 

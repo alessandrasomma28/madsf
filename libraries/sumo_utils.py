@@ -171,7 +171,7 @@ def get_nearest_edge(
 def sf_traffic_map_matching(
         sf_map_file_path: str, 
         sf_real_traffic_data_path: str, 
-        date: str,
+        date_str: str,
         output_folder_path: str, 
         radius: float, 
         safe_edge_ids: set = None
@@ -192,7 +192,7 @@ def sf_traffic_map_matching(
         Path to the SUMO network XML file.
     - sf_real_traffic_data_path : str
         Path to the raw traffic CSV file (preprocessed with read_sf_traffic_data).
-    - date: str
+    - date_str: str
         The date string (format: 'YYYY-MM-DD') used to name the subfolder.
     - output_folder_path: str
         The base folder where the output subfolder will be created.
@@ -223,7 +223,7 @@ def sf_traffic_map_matching(
     output_base = Path(output_folder_path)
     output_base.mkdir(parents=True, exist_ok=True)
 
-    date_subfolder = output_base / date
+    date_subfolder = output_base / date_str
     date_subfolder.mkdir(parents=True, exist_ok=True)
 
     input_filename = Path(sf_real_traffic_data_path).stem
@@ -239,9 +239,9 @@ def sf_traffic_map_matching(
 def sf_traffic_od_generation(
         sf_real_traffic_edge_path: str, 
         sf_traffic_od_folder_path: str,
-        date: str, 
-        start_time: str, 
-        end_time: str
+        date_str: str, 
+        start_time_str: str, 
+        end_time_str: str
         ) -> str:
     """
     Generates an Origin-Destination (OD) file from map-matched traffic data.
@@ -259,11 +259,11 @@ def sf_traffic_od_generation(
         Path to the input CSV containing traffic data with edge IDs.
     - sf_traffic_od_folder_path : str
         Path to the output folder where the OD file will be saved.
-    - date : str
+    - date_str : str
         Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
-    - start_time : str
+    - start_time_str : str
         Start time in 'HH:MM' format (e.g., '08:00').
-    - end_time : str
+    - end_time_str : str
         End time in 'HH:MM' format (e.g., '10:00').
 
     Returns:
@@ -301,14 +301,14 @@ def sf_traffic_od_generation(
     od_df = pd.DataFrame(od_data)
 
     # Format date and time parts
-    date_part = datetime.strptime(date, "%Y-%m-%d").strftime("%y%m%d")
-    start_hour = datetime.strptime(start_time, "%H:%M").strftime("%H")
-    end_hour = datetime.strptime(end_time, "%H:%M").strftime("%H")
+    date_part = datetime.strptime(date_str, "%Y-%m-%d").strftime("%y%m%d")
+    start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
+    end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
     timeslot_folder = f"{start_hour}-{end_hour}"
     timeslot_part = f"{start_hour}{end_hour}"
 
     # Prepare directory and filename
-    date_folder = os.path.join(sf_traffic_od_folder_path, date, timeslot_folder)
+    date_folder = os.path.join(sf_traffic_od_folder_path, date_str, timeslot_folder)
     os.makedirs(date_folder, exist_ok=True)
 
     filename = f"sf_traffic_od_{date_part}_{timeslot_part}.csv"
@@ -395,9 +395,9 @@ def add_sf_traffic_taz_matching(
 def sf_traffic_routes_generation(
         sf_traffic_od_path: str, 
         sf_traffic_routes_folder_path: str,
-        date: str, 
-        start_time: str, 
-        end_time: str
+        date_str: str, 
+        start_time_str: str, 
+        end_time_str: str
         ) -> str:
     """
     Generates a SUMO-compatible route file (XML) from an OD file.
@@ -417,15 +417,15 @@ def sf_traffic_routes_generation(
     
     Parameters:
     ----------
-    - sf_traffic_od_path : str
+    - sf_traffic_od_path: str
         Path to the OD CSV file.
-    - sf_traffic_routes_folder_path : str
+    - sf_traffic_routes_folder_path: str
         Root folder path where the generated route file will be saved.
-    - date : str
+    - date_str: str
         Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
-    - start_time : str
+    - start_time_str: str
         Start time in 'HH:MM' format (e.g., '08:00').
-    - end_time : str
+    - end_time_str: str
         End time in 'HH:MM' format (e.g., '10:00').
 
     Returns:
@@ -464,14 +464,14 @@ def sf_traffic_routes_generation(
                 print(f"Skipping vehicle {row['vehicle_id']} due to missing destination edge ID(s).")
 
     # Format parts for folder structure and filename
-    date_part = datetime.strptime(date, "%Y-%m-%d").strftime("%y%m%d")
-    start_hour = datetime.strptime(start_time, "%H:%M").strftime("%H")
-    end_hour = datetime.strptime(end_time, "%H:%M").strftime("%H")
+    date_part = datetime.strptime(date_str, "%Y-%m-%d").strftime("%y%m%d")
+    start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
+    end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
     timeslot_folder = f"{start_hour}-{end_hour}"
     timeslot_part = f"{start_hour}{end_hour}"
 
     # Create full folder path: root/date/timeslot/
-    full_folder_path = os.path.join(sf_traffic_routes_folder_path, date, timeslot_folder)
+    full_folder_path = os.path.join(sf_traffic_routes_folder_path, date_str, timeslot_folder)
     os.makedirs(full_folder_path, exist_ok=True)
 
     # Filename and full path
@@ -760,7 +760,7 @@ def generate_vehicle_start_lanes_from_taz_polygons(
     net_file: str,
     vehicles_per_taz: int = 2,
     safe_edge_ids: set = None
-) -> list:
+    ) -> list:
     """
     Samples points inside each TAZ polygon and maps them to the nearest lane using SUMO net.
 
@@ -884,9 +884,9 @@ def get_valid_taxi_edges(
 
 def generate_drt_vehicle_instances_from_lanes(
         lane_ids: list, 
-        date: str,
-        start_time: str,
-        end_time: str,
+        date_str: str,
+        start_time_str: str,
+        end_time_str: str,
         sf_tnc_fleet_folder_path: str
         ) -> str:
     """
@@ -902,11 +902,11 @@ def generate_drt_vehicle_instances_from_lanes(
     ----------
     - lane_ids: list
         List of lane IDs where vehicles will be placed.
-    - date: str
+    - date_str: str
         Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
-    - start_time: str
+    - start_time_str: str
         Start time in 'HH:MM' format (e.g., '08:00').
-    - end_time: str
+    - end_time_str: str
         End time in 'HH:MM' format (e.g., '10:00').
     - sf_tnc_fleet_folder_path: str
         Path to save the resulting SUMO .rou.xml file with <vehicle> entries.
@@ -987,14 +987,14 @@ def generate_drt_vehicle_instances_from_lanes(
             
             vehicle_counter += 1
 
-    date_part = datetime.strptime(date, "%Y-%m-%d").strftime("%y%m%d")
-    start_hour = datetime.strptime(start_time, "%H:%M").strftime("%H")
-    end_hour = datetime.strptime(end_time, "%H:%M").strftime("%H")
+    date_part = datetime.strptime(date_str, "%Y-%m-%d").strftime("%y%m%d")
+    start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
+    end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
     timeslot_folder = f"{start_hour}-{end_hour}"
     timeslot_part = f"{start_hour}{end_hour}"
 
     # Create full folder path: root/date/timeslot/
-    full_folder_path = os.path.join(sf_tnc_fleet_folder_path, date, timeslot_folder)
+    full_folder_path = os.path.join(sf_tnc_fleet_folder_path, date_str, timeslot_folder)
     os.makedirs(full_folder_path, exist_ok=True)
 
     # Filename and full path
@@ -1012,12 +1012,12 @@ def generate_drt_vehicle_instances_from_lanes(
 
 
 def generate_matched_drt_requests(
-        uber_data: dict,
+        tnc_data: dict,
         taz_edge_mapping: dict,
-        date: str,
-        start_time: str,
-        end_time: str,
-        sf_passenger_folder_path: str,
+        date_str: str,
+        start_time_str: str,
+        end_time_str: str,
+        sf_requests_folder_path: str,
         valid_edge_ids: set
         ) -> str:
     """
@@ -1034,17 +1034,17 @@ def generate_matched_drt_requests(
 
     Parameters:
     ----------
-    - uber_data: dict
+    - tnc_data: dict
         Nested dictionary of Uber pickups and dropoffs per TAZ and hour.
     - taz_edge_mapping: dict
         Mapping {taz_id: {'centroid_edge_id': edge_id}}.
-    - date: str
+    - date_str: str
         Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
-    - start_time: str
+    - start_time_str: str
         Start time in 'HH:MM' format (e.g., '08:00').
-    - end_time: str
+    - end_time_str: str
         End time in 'HH:MM' format (e.g., '10:00').
-    - output_path: str
+    - sf_requests_folder_path: str
         Path to save the resulting SUMO .rou.xml file with <person> requests.
     - valid_edge_ids: set
         Set of SUMO edge IDs validated for taxi routing (connected, non-junction, drivable).
@@ -1058,14 +1058,14 @@ def generate_matched_drt_requests(
     person_id = 0
 
     # Compute simulation start and end times
-    sim_start = datetime.strptime(f"{date} {start_time}", "%Y-%m-%d %H:%M")
-    sim_end = datetime.strptime(f"{date} {end_time}", "%Y-%m-%d %H:%M")
+    sim_start = datetime.strptime(f"{date_str} {start_time_str}", "%Y-%m-%d %H:%M")
+    sim_end = datetime.strptime(f"{date_str} {end_time_str}", "%Y-%m-%d %H:%M")
     sim_start_s = 0
     sim_end_s = int((sim_end - sim_start).total_seconds())
 
     # Build pickup list
     pickups = []
-    for taz, hour_data in uber_data.items():
+    for taz, hour_data in tnc_data.items():
         if taz not in taz_edge_mapping:
             print(f"Pickup warning: TAZ {taz} not found in edge mapping.")
             continue
@@ -1078,7 +1078,7 @@ def generate_matched_drt_requests(
 
     # Build dropoff list
     dropoffs_by_taz = defaultdict(list)
-    for taz, hour_data in uber_data.items():
+    for taz, hour_data in tnc_data.items():
         if taz not in taz_edge_mapping:
             print(f"Dropoff warning: TAZ {taz} not found in edge mapping.")
             continue
@@ -1129,14 +1129,14 @@ def generate_matched_drt_requests(
     for _, person in person_elements:
         root.append(person)
 
-    date_part = datetime.strptime(date, "%Y-%m-%d").strftime("%y%m%d")
-    start_hour = datetime.strptime(start_time, "%H:%M").strftime("%H")
-    end_hour = datetime.strptime(end_time, "%H:%M").strftime("%H")
+    date_part = datetime.strptime(date_str, "%Y-%m-%d").strftime("%y%m%d")
+    start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
+    end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
     timeslot_folder = f"{start_hour}-{end_hour}"
     timeslot_part = f"{start_hour}{end_hour}"
 
     # Create full folder path: root/date/timeslot/
-    full_folder_path = os.path.join(sf_passenger_folder_path, date, timeslot_folder)
+    full_folder_path = os.path.join(sf_requests_folder_path, date_str, timeslot_folder)
     os.makedirs(full_folder_path, exist_ok=True)
 
     # Filename and full path
@@ -1147,7 +1147,9 @@ def generate_matched_drt_requests(
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ")
     tree.write(full_path, encoding="utf-8", xml_declaration=True)
-    print(f"✅ DRT passenger requests written to: {full_path} | Total persons generated: {person_id}")
+    print(f"✅ DRT passenger requests written to: {full_path} | Total requests generated: {person_id}")
+
+    return full_path
 
 
 def filter_polygon_edges(

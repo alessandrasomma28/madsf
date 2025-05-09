@@ -171,9 +171,9 @@ def extract_sf_traffic_timeslot(
 
 
 def read_tnc_stats_data(
-        file_path: str, 
-        starttime: str, 
-        endtime: str
+        sf_rides_stats_path: str, 
+        start_time_str: str, 
+        end_time_str: str
         ) -> dict:
     """
     Reads TNC hourly pickup/dropoff data from a CSV file and filters it based on a specified time window.
@@ -186,11 +186,11 @@ def read_tnc_stats_data(
 
     Parameters:
     ----------
-    - file_path (str): 
+    - sf_rides_stats_path (str): 
         Path to the CSV file with columns: 'taz', 'day_of_week', 'hour', 'pickups', 'dropoffs'.
-    - starttime (str):
+    - start_time_str (str):
         Start time (HH:MM format).
-    - endtime (str): 
+    - end_time_str (str): 
         End time (HH:MM format). Can wrap around midnight.
 
     Returns:
@@ -203,8 +203,8 @@ def read_tnc_stats_data(
         return int(datetime.strptime(time_str, "%H:%M").hour)
     
     # Parse start and end times
-    start_hour = parse_hour(starttime)
-    end_hour = parse_hour(endtime)
+    start_hour = parse_hour(start_time_str)
+    end_hour = parse_hour(end_time_str)
     if start_hour < end_hour:
         selected_hours_std = list(range(start_hour, end_hour))
     else:
@@ -218,7 +218,7 @@ def read_tnc_stats_data(
     zone_data = {}
 
     # Read the CSV file
-    with open(file_path, mode='r') as file:
+    with open(sf_rides_stats_path, mode='r') as file:
         reader = csv.DictReader(file, delimiter=',')
         for row in reader:
             # Only process data for Monday (day_of_week == 0)
@@ -237,7 +237,7 @@ def read_tnc_stats_data(
                         'pickups': int(row['pickups']),
                         'dropoffs': int(row['dropoffs'])
                     }
-    print(f"✅ TNC stats data read from {file_path} and filtered to time window {starttime} - {endtime}")
+    print(f"✅ TNC stats data read from {sf_rides_stats_path} and filtered to time window {start_time_str} - {end_time_str}")
 
     # Compute pickups and dropoffs across all zones and selected hours
     total_pickups = sum(hour_data['pickups'] for zone in zone_data.values() for hour_data in zone.values())
