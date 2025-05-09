@@ -7,7 +7,7 @@
    </input>
 
    <time>
-       <end value="8000" />
+       <end value="3600" />
    </time>
 
    <output>

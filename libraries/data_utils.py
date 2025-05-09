@@ -5,10 +5,12 @@ This module provides utility functions to handle and process traffic data collec
 from the San Francisco Municipal Transportation Agency (SFMTA). It supports the
 following operations:
 
-1. Reading and cleaning raw traffic CSV data files.
-2. Converting traffic CSV files from one format to another with specific formatting.
-3. Extracting a time-based subset of vehicle data into a new CSV file.
+1. read_sf_traffic_data: Reading and cleaning raw traffic CSV data files.
+2. convert_sf_traffic_csv_format: Converting traffic CSV files from one format to another with specific formatting.
+3. extract_sf_traffic_timeslot: Extracting a time-based subset of vehicle data into a new CSV file.
+4. read_tnc_stats_data: Reading TNC pickup/dropoff data and filtering it based on a specified time window.
 """
+
 
 import pandas as pd
 from datetime import datetime
@@ -18,27 +20,27 @@ import csv
 from collections import defaultdict
 
 
-def read_sf_traffic_data(file_path):
+def read_sf_traffic_data(file_path: str) -> pd.DataFrame:
     """
-      Reads and processes raw San Francisco traffic data from a CSV file.
+    Reads and processes raw San Francisco traffic data from a CSV file.
 
-      This function:
-      - Parses the data with semicolon delimiter.
-      - Converts coordinates and speed to float.
-      - Filters out vehicles that never moved (i.e., always speed == 0).
-      - Computes relative time from the first timestamp in seconds.
+    This function:
+    - Parses the data with semicolon delimiter.
+    - Converts coordinates and speed to float.
+    - Filters out vehicles that never moved (i.e., always speed == 0).
+    - Computes relative time from the first timestamp in seconds.
 
-      Parameters:
-      ----------
-      file_path : str
-          Path to the input CSV file.
+    Parameters:
+    ----------
+    - file_path : str
+        Path to the input CSV file.
 
-      Returns:
-      -------
-      pandas.DataFrame
-          Cleaned DataFrame with the following columns:
-          ['timestamp', 'vehicle_id', 'longitude', 'latitude', 'heading', 'speed', 'relative_time']
-      """
+    Returns:
+    -------
+    pandas.DataFrame
+        Cleaned DataFrame with the following columns:
+        ['timestamp', 'vehicle_id', 'longitude', 'latitude', 'heading', 'speed', 'relative_time']
+    """
 
     df = pd.read_csv(file_path, sep=";")
     df.columns = ["timestamp", "vehicle_id", "longitude", "latitude", "heading", "speed"]
@@ -56,27 +58,31 @@ def read_sf_traffic_data(file_path):
     df['relative_time'] = (df['timestamp'] - df['timestamp'].min()).dt.total_seconds()
     return df
 
-def convert_sf_traffic_csv_format(input_csv_path, output_csv_path):
+
+def convert_sf_traffic_csv_format(
+        input_csv_path: str,
+          output_csv_path: str
+          ) -> None:
     """
-      Converts a San Francisco traffic CSV from original format to a localized format.
+    Converts a San Francisco traffic CSV from original format to a localized format.
 
-      This function:
-      - Renames columns to a standard set.
-      - Converts timestamps to ISO 8601 format.
-      - Converts decimal separators from '.' to ',' for European locale.
-      - Writes the reformatted data to a new file with semicolon delimiter.
+    This function:
+    - Renames columns to a standard set.
+    - Converts timestamps to ISO 8601 format.
+    - Converts decimal separators from '.' to ',' for European locale.
+    - Writes the reformatted data to a new file with semicolon delimiter.
 
-      Parameters:
-      ----------
-      input_csv_path : str
-          Path to the original CSV file using comma as decimal separator.
-      output_csv_path : str
-          Path where the reformatted CSV will be saved.
+    Parameters:
+    ----------
+    - input_csv_path : str
+        Path to the original CSV file using comma as decimal separator.
+    - output_csv_path : str
+        Path where the reformatted CSV will be saved.
 
-      Returns:
-      -------
-      None
-      """
+    Returns:
+    -------
+    None
+    """
     # Read original CSV with comma delimiter
     df = pd.read_csv(input_csv_path)
 
@@ -93,7 +99,14 @@ def convert_sf_traffic_csv_format(input_csv_path, output_csv_path):
     df.to_csv(output_csv_path, sep=";", index=False)
     print(f"Formatted CSV saved to {output_csv_path}")
 
-def extract_sf_traffic_timeslot(input_csv_path, date_str, start_time_str, end_time_str, output_csv_folder):
+
+def extract_sf_traffic_timeslot(
+        input_csv_path: str, 
+        date_str: str, 
+        start_time_str: str,
+        end_time_str: str, 
+        output_csv_folder: str
+        ) -> str:
     """
     Extracts a time slot of traffic data for a specific date and time range,
     and saves the filtered data in a structured folder format.
@@ -107,15 +120,15 @@ def extract_sf_traffic_timeslot(input_csv_path, date_str, start_time_str, end_ti
 
     Parameters:
     ----------
-    input_csv_path : str
+    - input_csv_path : str
         Path to the input CSV file with semicolon delimiter.
-    date_str : str
+    - date_str : str
         Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
-    start_time_str : str
+    - start_time_str : str
         Start time in 'HH:MM' format (e.g., '08:00').
-    end_time_str : str
+    - end_time_str : str
         End time in 'HH:MM' format (e.g., '10:00').
-    output_csv_folder : str
+    - output_csv_folder : str
         Path to the root output folder where the dated folder and file will be saved.
 
     Returns:
@@ -156,42 +169,61 @@ def extract_sf_traffic_timeslot(input_csv_path, date_str, start_time_str, end_ti
 
     return output_csv_path
 
-def read_uber_stats_data(file_path, starttime: str, endtime: str):
+
+def read_tnc_stats_data(
+        file_path: str, 
+        starttime: str, 
+        endtime: str
+        ) -> dict:
     """
-    Reads Uber hourly pickup/dropoff data per TAZ from CSV and filters it
-    based on the specified time window.
+    Reads TNC hourly pickup/dropoff data from a CSV file and filters it based on a specified time window.
+
+    This function:
+    - Reads TNC hourly pickup/dropoff data from a CSV file.
+    - Filters the data based on the specified time window.
+    - Computes total pickups and dropoffs across all zones and selected hours.
+    - Returns a nested dictionary with TAZ as keys and hour data as values.
 
     Parameters:
-        file_path (str): Path to the CSV file with columns:
-                         'taz', 'day_of_week', 'hour', 'pickups', 'dropoffs'.
-        starttime (str): Start time (HH:MM format).
-        endtime (str): End time (HH:MM format). Can wrap around midnight.
+    ----------
+    - file_path (str): 
+        Path to the CSV file with columns: 'taz', 'day_of_week', 'hour', 'pickups', 'dropoffs'.
+    - starttime (str):
+        Start time (HH:MM format).
+    - endtime (str): 
+        End time (HH:MM format). Can wrap around midnight.
 
     Returns:
-        dict: Nested dictionary {taz: {hour: {'pickups': x, 'dropoffs': y}}}
-              where `hour` is in standard 0–23 format.
+    -------
+    dict
+        Nested dictionary {taz: {hour: {'pickups': x, 'dropoffs': y}}} where `hour` is in standard 0-23 format.
     """
     def parse_hour(time_str):
+        # Convert time string (HH:MM) to hour in standard 0-23 format
         return int(datetime.strptime(time_str, "%H:%M").hour)
-
+    
+    # Parse start and end times
     start_hour = parse_hour(starttime)
     end_hour = parse_hour(endtime)
-
     if start_hour < end_hour:
         selected_hours_std = list(range(start_hour, end_hour))
     else:
         selected_hours_std = list(range(start_hour, 24)) + list(range(0, end_hour))
 
+    # Create a mapping of dataset hours to standard hours
     dataset_hour_map = {h: h % 24 for h in range(3, 27)}
     selected_dataset_hours = {h: std_hour for h, std_hour in dataset_hour_map.items() if std_hour in selected_hours_std}
 
+    # Initialize a dictionary to hold the data
     zone_data = {}
 
+    # Read the CSV file
     with open(file_path, mode='r') as file:
         reader = csv.DictReader(file, delimiter=',')
         for row in reader:
-            if int(row['day_of_week']) == 0:
             # Only process data for Monday (day_of_week == 0)
+            # TODO: Extend to other days
+            if int(row['day_of_week']) == 0:
                 taz = int(row['taz'])
                 dataset_hour = int(row['hour'])
                 if dataset_hour in selected_dataset_hours:
@@ -205,5 +237,12 @@ def read_uber_stats_data(file_path, starttime: str, endtime: str):
                         'pickups': int(row['pickups']),
                         'dropoffs': int(row['dropoffs'])
                     }
+    print(f"✅ TNC stats data read from {file_path} and filtered to time window {starttime} - {endtime}")
+
+    # Compute pickups and dropoffs across all zones and selected hours
+    total_pickups = sum(hour_data['pickups'] for zone in zone_data.values() for hour_data in zone.values())
+    total_dropoffs = sum(hour_data['dropoffs'] for zone in zone_data.values() for hour_data in zone.values())
+    print(f"Total pickups:  {total_pickups}")
+    print(f"Total dropoffs: {total_dropoffs}")
 
     return zone_data

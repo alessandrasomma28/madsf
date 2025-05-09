@@ -275,7 +275,6 @@
   <trip id="8768" depart="21" from="-69598564" to="-1193764509#1" arrival="3577" />
   <trip id="8766" depart="21" from="28572356" to="680402692" arrival="3572" />
   <trip id="8851" depart="21" from="8920632" to="-255178140#0" arrival="3573" />
-  <trip id="8831" depart="21" from="619568414" to="689603994" arrival="3587" />
   <trip id="5849" depart="21" from="-262935286" to="44671098#3" arrival="3558" />
   <trip id="8937" depart="22" from="-505761791#1" to="143666212#0" arrival="3559" />
   <trip id="2055" depart="22" from="32007659" to="32007659" arrival="3586" />
@@ -408,7 +407,6 @@
   <trip id="8759" depart="43" from="681758091" to="681758091" arrival="3537" />
   <trip id="2020" depart="43" from="283530637#2" to="255166640#0" arrival="3581" />
   <trip id="8607" depart="43" from="1034015967" to="772972816" arrival="3580" />
-  <trip id="8650" depart="43" from="8917593#3" to="689603978" arrival="3584" />
   <trip id="8893" depart="43" from="-124671897" to="255330068#0" arrival="3595" />
   <trip id="2003" depart="43" from="283527490#0" to="224384019#0" arrival="3595" />
   <trip id="2060" depart="43" from="437564096" to="224384019#0" arrival="3599" />

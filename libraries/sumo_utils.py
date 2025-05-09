@@ -4,12 +4,25 @@ sumo_utils.py
 This module provides tools to perform map-matching and route processing on San Francisco
 real traffic data using a SUMO network. It includes utilities for:
 
-1. Finding the nearest road network edge to each GPS point.
-2. Map-matching raw GPS traffic data to network edges.
-3. Generating Origin-Destination (OD) files from matched data.
-4. Creating SUMO-compatible route files (in XML) from OD data.
-
+1. get_strongly_connected_edges: Identifying strongly connected edges in a SUMO network.
+2. get_nearest_edge: Finding the nearest edge in the SUMO network to a given geographic location.
+3. sf_traffic_map_matching: Map-matching raw GPS traffic data to network edges.
+4. sf_traffic_od_generation: Generating Origin-Destination (OD) files from matched data.
+5. add_sf_traffic_taz_matching: Adding TAZ information to OD trips based on GPS coordinates and TAZ polygons.
+6. sf_traffic_routes_generation: Creating SUMO-compatible route files (in XML) from OD data.
+7. convert_shapefile_to_sumo_poly_with_polyconvert: Converting a shapefile to a SUMO polygon file.
+8. export_taz_coords: Extracting polygon boundary and centroid coordinates from a TAZ shapefile.
+9. map_coords_to_sumo_edges: Mapping TAZ polygon and centroid coordinates to nearest SUMO edges and lanes.
+10. map_taz_to_edges: Mapping TAZ IDs to SUMO edges.
+11. generate_vehicle_start_lanes_from_taz_polygons: Mapping points inside each TAZ polygon to the nearest lane.
+12. get_valid_taxi_edges: Getting valid edges for taxi routes.
+13. generate_drt_vehicle_instances_from_lanes: Generating a DRT fleet file with <vType> and <vehicle> entries, and dummy routes.
+14. generate_matched_drt_requests: Generating matched DRT requests based on TNC data and TAZ mapping.
+15. filter_polygon_edges: Filter edge list string, keeping only strongly connected edges
+16. filter_polygon_lanes: Filter lane list string, keeping only those lanes whose parent edge is in the strongly connected set.
 """
+
+
 import pandas as pd
 import xml.etree.ElementTree as ET
 from collections import defaultdict
@@ -29,27 +42,40 @@ import ast
 import math
 import random
 import traci
+import xml.etree.ElementTree as ET
+import random
+from collections import defaultdict
+import ast
+
 
 from libraries.data_utils import read_sf_traffic_data
 from constants.sumoenv_constants import SUMO_BIN_PATH
 
 
-def get_strongly_connected_edges(sf_map_file_path):
+def get_strongly_connected_edges(sf_map_file_path: str) -> set:
     """
-    Identifies all strongly connected edges in a SUMO road network.
-    A strongly connected edge is one that is both reachable from, and can reach,
-    a given starting edge. This implies bidirectional connectivity within the road graph.
+    Identifies strongly connected edges in a SUMO network.
+
+    This function:
+    - Reads a SUMO network XML file.
+    - Constructs a directed graph of edges.
+    - Identifies strongly connected edges using depth-first search (DFS).
+    - Returns a set of edge IDs that are strongly connected.
 
     Parameters:
     ----------
-    sf_map_file_path : str
+    - sf_map_file_path : str
         Path to the SUMO network XML file.
 
     Returns:
     -------
     set
         A set of edge IDs (str) strongly connected.
+    
+    Note:
+    Strongly connected edges are those that can be reached from each other in both directions.
     """
+    # Load the SUMO network
     net_data = net.readNet(sf_map_file_path)
     edges = net_data.getEdges()
     # Adjacency dictionaries for forward and reverse graph traversal
@@ -90,38 +116,48 @@ def get_strongly_connected_edges(sf_map_file_path):
 
     # Strongly connected edges are those reachable in both directions
     strongly_connected = forward_reachable & reverse_reachable
-    print(f"✅ Strongly connected edge count: {len(strongly_connected)} over {len(all_nodes)} total edges")
+    print(f"✅ Strongly connected edges count: {len(strongly_connected)} over {len(all_nodes)} total edges")
     return strongly_connected
 
 
-def get_nearest_edge(network, lon, lat, radius, safe_edge_ids=None):
+def get_nearest_edge(
+        network: net, 
+        lon: float, 
+        lat: float, 
+        radius: float, 
+        safe_edge_ids: set = None):
     """
-       Finds the nearest edge in the SUMO network to a given geographic location.
+    Finds the nearest edge in the SUMO network to a given geographic location.
 
-       Parameters:
-       ----------
-       network : sumolib.net.Net
-           The loaded SUMO network.
-       lon : float
-           Longitude of the point.
-       lat : float
-           Latitude of the point.
-       radius : float
-           Search radius for neighboring edges (in SUMO units, typically meters).
-       safe_edge_ids : set or None, optional
-           Set of edge IDs to consider as valid (e.g., strongly connected edges).
-           If None, all edges are considered.
+    This function:
+    - Converts geographic coordinates (longitude, latitude) to network XY coordinates.
+    - Searches for neighboring edges within a specified radius.
+    - Returns the ID of the nearest edge if found, otherwise None.
 
-       Returns:
-       -------
-       str or None
-           The ID of the nearest edge if found, otherwise None.
-       """
-    # Convert geographic coordinates (lon, lat) to network XY coordinates.
+    Parameters:
+    ----------
+    - network : sumolib.net.Net
+        The loaded SUMO network.
+    - lon : float
+        Longitude of the point.
+    - lat : float
+        Latitude of the point.
+    - radius : float
+        Search radius for neighboring edges (in SUMO units, typically meters).
+    - safe_edge_ids : set or None, optional
+        Set of edge IDs to consider as valid (e.g., strongly connected edges).
+        If None, all edges are considered.
+
+    Returns:
+    -------
+    str or None
+        The ID of the nearest edge if found, otherwise None.
+    """
+    # Convert geographic coordinates (lon, lat) to network XY coordinates
     x, y = network.convertLonLat2XY(lon, lat)
-    # Get neighboring edges within the specified radius.
+    # Get neighboring edges within the specified radius
     edges = network.getNeighboringEdges(x, y, radius)
-    # If any edges are found, sort them by distance and return the closest edge's ID.
+    # If any edges are found, sort them by distance and return the closest edge's ID
     if edges:
         # Filter only strongly connected edges if a filter is provided
         if safe_edge_ids is not None:
@@ -131,8 +167,15 @@ def get_nearest_edge(network, lon, lat, radius, safe_edge_ids=None):
             return distancesAndEdges[0][1].getID()
     return None
 
-def sf_traffic_map_matching(sf_map_file_path, sf_real_traffic_data_path, date,
-                            output_folder_path, radius, safe_edge_ids=None):
+
+def sf_traffic_map_matching(
+        sf_map_file_path: str, 
+        sf_real_traffic_data_path: str, 
+        date: str,
+        output_folder_path: str, 
+        radius: float, 
+        safe_edge_ids: set = None
+        ) -> str:
     """
     Performs map matching by assigning each GPS point to its nearest road network edge.
 
@@ -145,16 +188,19 @@ def sf_traffic_map_matching(sf_map_file_path, sf_real_traffic_data_path, date,
 
     Parameters:
     ----------
-    sf_map_file_path : str
+    - sf_map_file_path: str
         Path to the SUMO network XML file.
-    sf_real_traffic_data_path : str
+    - sf_real_traffic_data_path : str
         Path to the raw traffic CSV file (preprocessed with read_sf_traffic_data).
-    date : str
+    - date: str
         The date string (format: 'YYYY-MM-DD') used to name the subfolder.
-    output_folder_path : str
+    - output_folder_path: str
         The base folder where the output subfolder will be created.
-    radius : float
+    - radius: float
         Radius (in meters) to search for neighboring edges.
+    - safe_edge_ids: set or None, optional
+        Set of edge IDs to consider as valid (e.g., strongly connected edges).
+        If None, all edges are considered.
 
     Returns:
     -------
@@ -185,32 +231,39 @@ def sf_traffic_map_matching(sf_map_file_path, sf_real_traffic_data_path, date,
 
     # Save the updated DataFrame (overwrite if exists)
     df.to_csv(output_csv_path, index=False, sep=";")
-    print(f"✅ New CSV file saved to {output_csv_path}")
+    print(f"✅ Mapped traffic coordinates to SUMO edges. Saved to: {output_csv_path}")
 
     return str(output_csv_path)
 
-def sf_traffic_od_generation(sf_real_traffic_edge_path, sf_traffic_od_folder_path, date, start_time, end_time):
+
+def sf_traffic_od_generation(
+        sf_real_traffic_edge_path: str, 
+        sf_traffic_od_folder_path: str,
+        date: str, 
+        start_time: str, 
+        end_time: str
+        ) -> str:
     """
     Generates an Origin-Destination (OD) file from map-matched traffic data.
 
-    For each vehicle:
-    - Extracts the first and last edge IDs (origin and destination).
-    - Captures the corresponding timestamps.
-
-    The resulting OD data is saved in a folder named after the date inside the specified output folder.
-    The filename follows the format: sf_traffic_od_{YYMMDD}_{HHHH}.csv.
+    This function:
+    - Reads the map-matched traffic data with edge IDs.
+    - Groups the data by vehicle ID.
+    - For each vehicle, extracts the first and last edge IDs (origin and destination),
+      and captures the corresponding timestamps.
+    - Saves the resulting OD data in a structured folder format (sf_traffic_od_{YYMMDD}_{HHHH}.csv).
 
     Parameters:
     ----------
-    sf_real_traffic_edge_path : str
+    - sf_real_traffic_edge_path : str
         Path to the input CSV containing traffic data with edge IDs.
-    sf_traffic_od_folder_path : str
+    - sf_traffic_od_folder_path : str
         Path to the output folder where the OD file will be saved.
-    date : str
+    - date : str
         Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
-    start_time : str
+    - start_time : str
         Start time in 'HH:MM' format (e.g., '08:00').
-    end_time : str
+    - end_time : str
         End time in 'HH:MM' format (e.g., '10:00').
 
     Returns:
@@ -258,33 +311,52 @@ def sf_traffic_od_generation(sf_real_traffic_edge_path, sf_traffic_od_folder_pat
     date_folder = os.path.join(sf_traffic_od_folder_path, date, timeslot_folder)
     os.makedirs(date_folder, exist_ok=True)
 
-
     filename = f"sf_traffic_od_{date_part}_{timeslot_part}.csv"
     full_path = os.path.join(date_folder, filename)
 
     # Save to file (overwrite if exists)
     od_df.to_csv(full_path, sep=";", index=False)
-    print(f"✅ OD file saved to {full_path}")
+    print(f"✅ Origin-Destination traffic file saved to {full_path}")
 
     return full_path
 
 
-def add_sf_traffic_taz_matching(edge_file_path: str, shapefile_path: str, lat_col="latitude", lon_col="longitude",
-                              zone_column: str = "assigned_taz",
-                              zone_id_field: str = "TAZ"):
+def add_sf_traffic_taz_matching(
+        edge_file_path: str, 
+        shapefile_path: str, 
+        lat_col: str = "latitude", 
+        lon_col: str = "longitude",
+        zone_column: str = "assigned_taz",
+        zone_id_field: str = "TAZ"
+        ) -> None:
     """
-        Adds TAZ info to OD trips based on origin GPS coords and TAZ polygons.
+    Adds TAZ info to OD trips based on origin GPS coords and TAZ polygons.
 
-        Parameters:
-        - ledge_file_path: CSV with columns latitude and longitude
-        - shapefile_path: Path to .shp fie
-        - lat_col: Name of latitude column
-        - lon_col: Name of longitude column
-        - zone_column: New column to assign TAZ ID
-        - zone_id_field: Field name in shapefile for TAZ ID
+    This function:
+    - Reads a CSV file with latitude and longitude columns.
+    - Loads a shapefile containing TAZ polygons.
+    - Assigns TAZ IDs to the CSV based on the polygons.
+    - If a point is not contained in any polygon, assigns the nearest TAZ centroid.
+    - Saves the updated CSV with a new TAZ column.
 
-        Updates:
-        - Writes updated CSV with new TAZ column to same path
+    Parameters:
+    ----------
+    - edge_file_path: str
+        CSV with columns latitude and longitude
+    - shapefile_path: str
+        Path to .shp fie
+    - lat_col: str
+        Name of latitude column
+    - lon_col: str
+        Name of longitude column
+    - zone_column: str
+        New column to assign TAZ ID
+    - zone_id_field: str
+        Field name in shapefile for TAZ ID
+
+    Returns:
+    -------
+    None
     """
     df = pd.read_csv(edge_file_path, sep=';')
     if lat_col not in df or lon_col not in df:
@@ -320,10 +392,21 @@ def add_sf_traffic_taz_matching(edge_file_path: str, shapefile_path: str, lat_co
     print(f"✅ TAZ assignment complete. Saved to: {edge_file_path}")
 
 
-def sf_traffic_routes_generation(sf_traffic_od_path, sf_traffic_routes_folder_path,
-                                  date, start_time, end_time):
+def sf_traffic_routes_generation(
+        sf_traffic_od_path: str, 
+        sf_traffic_routes_folder_path: str,
+        date: str, 
+        start_time: str, 
+        end_time: str
+        ) -> str:
     """
     Generates a SUMO-compatible route file (XML) from an OD file.
+
+    This function:
+    - Reads the OD CSV file.
+    - Creates a SUMO route XML structure.
+    - Saves the route file in a structured folder format in
+      {sf_traffic_routes_folder_path}/{date}/{HH}-{HH}/sf_routes_{YYMMDD}_{HHHH}.rou.xml
 
     Each trip contains:
     - Vehicle ID
@@ -331,23 +414,18 @@ def sf_traffic_routes_generation(sf_traffic_od_path, sf_traffic_routes_folder_pa
     - Origin edge
     - Destination edge
     - Expected arrival time (seconds from simulation start)
-
-      Generates a SUMO-compatible route file (XML) from an OD file.
-
-    The resulting route file is saved in:
-        {sf_traffic_routes_folder_path}/{date}/{HH}-{HH}/sf_routes_{YYMMDD}_{HHHH}.rou.xml
-
+    
     Parameters:
     ----------
-    sf_traffic_od_path : str
+    - sf_traffic_od_path : str
         Path to the OD CSV file.
-    sf_traffic_routes_folder_path : str
+    - sf_traffic_routes_folder_path : str
         Root folder path where the generated route file will be saved.
-    date : str
+    - date : str
         Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
-    start_time : str
+    - start_time : str
         Start time in 'HH:MM' format (e.g., '08:00').
-    end_time : str
+    - end_time : str
         End time in 'HH:MM' format (e.g., '10:00').
 
     Returns:
@@ -380,7 +458,10 @@ def sf_traffic_routes_generation(sf_traffic_od_path, sf_traffic_routes_folder_pa
                 "arrival": str(arrival)
             })
         else:
-            print(f"Skipping vehicle {row['vehicle_id']} due to missing edge ID(s).")
+            if pd.isna(row['origin_edge_id']):
+                print(f"Skipping vehicle {row['vehicle_id']} due to missing origin edge ID(s).")
+            else:
+                print(f"Skipping vehicle {row['vehicle_id']} due to missing destination edge ID(s).")
 
     # Format parts for folder structure and filename
     date_part = datetime.strptime(date, "%Y-%m-%d").strftime("%y%m%d")
@@ -405,23 +486,37 @@ def sf_traffic_routes_generation(sf_traffic_od_path, sf_traffic_routes_folder_pa
     return full_path
 
 
-def convert_shapefile_to_sumo_poly_with_polyconvert(net_file: str, shapefile_path: str, output_dir: str,
-                                                    type_field: str = "zone", id_field: str = "TAZ",
-                                                    output_filename: str = "taz_zones.poly.xml") -> Path:
+def convert_shapefile_to_sumo_poly_with_polyconvert(
+        net_file: str, 
+        shapefile_path: str, 
+        output_dir: str,
+        type_field: str = "zone", 
+        id_field: str = "TAZ",
+        output_filename: str = "taz_zones.poly.xml"
+        ) -> Path:
     """
-        Converts a shapefile into a SUMO .poly.xml using polyconvert.
+    This function uses the polyconvert tool to convert a shapefile into a SUMO polygon file.
 
-        Parameters:
-        - net_file: Path to the SUMO network file (.net.xml)
-        - shapefile_path: Path to the .shp file (will strip .shp automatically)
-        - output_dir: Output folder where the .poly.xml will be saved
-        - type_field: Attribute column to use as the polygon type
-        - id_field: Attribute column to use as polygon ID
-        - output_filename: Name of the resulting .poly.xml file
+    Parameters:
+    ----------
+    - net_file: str
+        Path to the SUMO network file (.net.xml)
+    - shapefile_path: str
+        Path to the .shp file (will strip .shp automatically)
+    - output_dir: str
+        Output folder where the .poly.xml will be saved
+    - type_field: str
+        Attribute column to use as the polygon type
+    - id_field: str
+        Attribute column to use as polygon ID
+    - output_filename: str
+        Name of the resulting .poly.xml file
 
-        Returns:
-        - Path to the generated .poly.xml file
-        """
+    Returns:
+    -------
+    str
+        Full path to the generated .poly.xml file
+     """
 
     polyconvert_bin = os.path.join(SUMO_BIN_PATH, "polyconvert.exe")
     net_file = os.path.abspath(net_file)
@@ -454,26 +549,33 @@ def convert_shapefile_to_sumo_poly_with_polyconvert(net_file: str, shapefile_pat
 
     return output_path
 
-def export_taz_coords(shapefile_path, output_csv_path):
+
+def export_taz_coords(
+        shapefile_path: str, 
+        output_csv_path: str
+        ) -> None:
     """
-    Extracts polygon boundary and centroid coordinates from a TAZ shapefile
-    and exports the data to a CSV file.
+    Extracts polygon boundary and centroid coordinates from a TAZ shapefile.
 
-    Args:
-        shapefile_path (str): Full path to the input TAZ shapefile (.shp).
-        output_csv_path (str): Path where the output CSV will be saved.
-                               If the file exists, it will be overwritten.
+    This function:
+    - Reads a TAZ shapefile.
+    - Extracts the polygon coordinates and centroid coordinates.
+    - Saves the data to a CSV file with columns: TAZ, polygon_coords, centroid_coords.
 
-    The output CSV will include:
-        - 'TAZ': The zone ID.
-        - 'polygon_coords': List of (lon, lat) tuples for the TAZ boundary.
-                            MultiPolygons will have a list of lists.
-        - 'centroid_coords': (lon, lat) tuple of the TAZ centroid.
+    Parameters:
+    ----------
+    - shapefile_path: str
+        Full path to the input TAZ shapefile (.shp).
+    - output_csv_path: str
+        Path where the output CSV will be saved. If the file exists, it will be overwritten.
+
+    Returns:
+    -------
+    None
 
     Notes:
-        - Assumes the shapefile has a column named 'TAZ' for unique zone IDs.
-        - Converts geometries to WGS84 (EPSG:32610) to ensure lat/lon coordinates.
-        - If a geometry is empty or invalid, centroid_coords will be None.
+    - Assumes the shapefile has a column named 'TAZ' for unique zone IDs.
+    - If a geometry is empty or invalid, centroid_coords will be None.
     """
     # Load the shapefile
     gdf = gpd.read_file(shapefile_path)
@@ -508,19 +610,36 @@ def export_taz_coords(shapefile_path, output_csv_path):
     print(f"✅ Exported TAZ data to: {output_csv_path}")
 
 
-def map_coords_to_sumo_edges(taz_csv_path, net_xml_path, output_csv_path):
+def map_coords_to_sumo_edges(
+        taz_csv_path: str, 
+        net_xml_path: str, 
+        output_csv_path: str
+        ) -> None:
     """
     Maps each coordinate from TAZ polygon and centroid to nearest SUMO edge and lane.
-    Adds the following columns:
-        - polygon_edge_ids: list of unique edge IDs touched by polygon coords
-        - polygon_lane_ids: list of unique lane IDs touched by polygon coords
-        - centroid_edge_id: edge ID mapped to the centroid
-        - centroid_lane_id: lane ID mapped to the centroid
 
-    Args:
-        taz_csv_path (str): Path to the TAZ CSV file with 'polygon_coords' and 'centroid_coords'
-        net_xml_path (str): Path to the SUMO network.xml
-        output_csv_path (str): Path to save the output CSV with mappings
+    This function:
+    - Reads a CSV file with TAZ polygon and centroid coordinates.
+    - For each polygon, finds all edges and lanes that touch the polygon.
+    - For each centroid, finds the nearest edge and lane.
+    - Saves the results in a new CSV file with additional columns:
+        - 'polygon_edge_ids': List of unique edge IDs touched by polygon coords.
+        - 'polygon_lane_ids': List of unique lane IDs touched by polygon coords.
+        - 'centroid_edge_id': Edge ID mapped to the centroid.
+        - 'centroid_lane_id': Lane ID mapped to the centroid.
+
+    Parameters:
+    ----------
+    - taz_csv_path: str
+        Path to the TAZ CSV file with 'polygon_coords' and 'centroid_coords'.
+    - net_xml_path: str
+        Path to the SUMO network.xml.
+    - output_csv_path: str
+        Path to save the output CSV with mappings.
+
+    Returns:
+    -------
+    None
     """
     df = pd.read_csv(taz_csv_path, sep=';')
     network = net.readNet(net_xml_path)
@@ -580,66 +699,60 @@ def map_coords_to_sumo_edges(taz_csv_path, net_xml_path, output_csv_path):
     print(f"✅ Mapped polygon + centroid to SUMO edges. Saved to: {output_csv_path}")
 
 
-def generate_drt_vtypes_distribution(output_path: str):
+def map_taz_to_edges(
+        taz_csv_path: str, 
+        safe_edge_ids: set = None
+        ) -> dict:
     """
-    Generates a SUMO fleet_vtypes.add.xml file with diverse vehicle types
-    for use in DRT simulation (with emission tracking support).
+    Maps TAZ polygons to their corresponding edges and lanes.
 
-    Args:
-        output_path (str): Path to save the XML file.
+    This function:
+    - Reads a CSV file with TAZ polygon and centroid coordinates.
+    - For each TAZ, finds all edges and lanes that touch the polygon.
+    - For each centroid, finds the nearest edge and lane.
+    - Returns a dictionary mapping TAZ IDs to their corresponding edge and lane IDs.
+    - Filters out entries with empty edge and lane lists.
+    - If safe_edge_ids is provided, only includes edges in that set.
+
+    Parameters:
+    ----------
+    - taz_csv_path: str
+        Path to the TAZ CSV file with 'polygon_edge_ids' and 'centroid_edge_id'.
+    - safe_edge_ids: set or None, optional
+        Set of edge IDs to consider as valid (e.g., strongly connected edges).
+        If None, all edges are considered.
+
+    Returns:
+    -------
+    dict
+        Dictionary mapping TAZ IDs to their corresponding edge and lane IDs.
     """
-    vehicle_types = [
-        {
-            "id": "electric_eco",
-            "count": 400,
-            "vClass": "taxi",
-            "color": "0,1,0",
-            "emissionClass": "Energy"
-        },
-        {
-            "id": "diesel_normal",
-            "count": 500,
-            "vClass": "taxi",
-            "color": "1,0,0",
-            "emissionClass": "HBEFA3/PC_D_EU4"
-        },
-        {
-            "id": "gas_modern",
-            "count": 400,
-            "vClass": "taxi",
-            "color": "0,0,1",
-            "emissionClass": "HBEFA3/PC_G_EU6"
-        },
-        {
-            "id": "zero_emis",
-            "count": 200,
-            "vClass": "taxi",
-            "color": "0.5,0.5,0",
-            "emissionClass": "Zero"
+    df = pd.read_csv(taz_csv_path, sep=';')
+    taz_edge_mapping = {}
+    for _, row in df.iterrows():
+        taz_id = row['TAZ']
+        polygon_edge_ids = ast.literal_eval(row['polygon_edge_ids'])
+        polygon_lane_ids = ast.literal_eval(row['polygon_lane_ids'])
+        centroid_edge_id = row['centroid_edge_id']
+        centroid_lane_id = row['centroid_lane_id']
+        # Filter only strongly connected edges
+        if safe_edge_ids is not None:
+            polygon_edge_ids = [e for e in polygon_edge_ids if e in safe_edge_ids]
+            polygon_lane_ids = [l for l in polygon_lane_ids if l.split('_')[0] in safe_edge_ids]
+
+        taz_edge_mapping[taz_id] = {
+            'polygon_edge_ids': polygon_edge_ids,
+            'polygon_lane_ids': polygon_lane_ids,
+            'centroid_edge_id': centroid_edge_id,
+            'centroid_lane_id': centroid_lane_id
         }
-    ]
+        # Keep only entries with non-empty edge and lane lists
+        taz_edge_mapping = {
+            k: v for k, v in taz_edge_mapping.items()
+            if len(v['polygon_edge_ids']) > 0 and len(v['polygon_lane_ids']) > 0
+        }
 
-    root = ET.Element("routes")
-
-    for vt in vehicle_types:
-        dist_elem = ET.SubElement(root, "vTypeDistribution", id=vt['id'])
-
-        for i in range(vt['count']):
-            vtype = ET.SubElement(dist_elem, "vType", {
-                "id": f"{vt['id']}_{i}",
-                "vClass": vt['vClass'],
-                "color": vt['color'],
-                "emissionClass": vt['emissionClass'],
-                "lines": "taxi"
-            })
-            ET.SubElement(vtype, "param", key="has.taxi.device", value="true")
-
-    # Save file
-    tree = ET.ElementTree(root)
-    ET.indent(tree, space="  ")
-    tree.write(output_path, encoding="utf-8", xml_declaration=True)
-    print(f"✅ Generated fleet vehicle types in: {output_path}")
-
+    return taz_edge_mapping
 
 
 def generate_vehicle_start_lanes_from_taz_polygons(
@@ -651,13 +764,29 @@ def generate_vehicle_start_lanes_from_taz_polygons(
     """
     Samples points inside each TAZ polygon and maps them to the nearest lane using SUMO net.
 
-    Args:
-        shapefile_path (str): Path to TAZ polygon shapefile.
-        net_file (str): Path to SUMO net.xml.
-        vehicles_per_taz (int): Number of vehicle start points per TAZ.
+    This function:
+    - Reads a TAZ shapefile and converts it to WGS84 coordinates.
+    - For each TAZ polygon, samples random points.
+    - For each point, finds the nearest edge and lane in the SUMO network.
+    - Returns a list of lane IDs where vehicles should be placed.
+    - If safe_edge_ids is provided, only considers edges in that set.
+
+    Parameters:
+    ----------
+    - shapefile_path: str
+        Path to TAZ polygon shapefile.
+    - net_file: str
+        Path to SUMO net.xml.
+    - vehicles_per_taz: int
+        Number of vehicle start points per TAZ.
+    - safe_edge_ids: set or None, optional
+        Set of edge IDs to consider as valid (e.g., strongly connected edges).
+        If None, all edges are considered.
 
     Returns:
-        List[str]: List of lane IDs where vehicles should be placed.
+    -------
+    List[str]
+        List of lane IDs where vehicles should be placed.
     """
 
     gdf = gpd.read_file(shapefile_path)
@@ -703,17 +832,33 @@ def generate_vehicle_start_lanes_from_taz_polygons(
     return start_lanes
 
 
-def get_valid_taxi_edges(net_file, safe_edge_ids=None):
+def get_valid_taxi_edges(
+        net_file: str,
+        safe_edge_ids: set = None
+        ) -> set:
     """
-    Extracts usable edge IDs where taxis can drive.
-    Uses sumolib (static network loading).
+    Extracts usable edge IDs where taxis can drive. Uses sumolib (static network loading).
 
-    Args:
-        net_file (str): Path to the SUMO .net.xml file.
+    This function:
+    - Reads the SUMO network file.
+    - Iterates through edges and checks if they are valid for taxi routing.
+    - Filters out edges that are internal, dead-end, or not strongly connected.
+    - Returns a set of valid edge IDs.
+
+    Parameters:
+    ----------
+    - net_file: str
+        Path to the SUMO .net.xml file.
+    - safe_edge_ids: set or None, optional
+        Set of edge IDs to consider as valid (e.g., strongly connected edges).
+        If None, all edges are considered.
 
     Returns:
-        set: Set of valid edge IDs.
+    -------
+    set
+        Set of valid edge IDs.
     """
+    # Load the SUMO network
     sfnet = net.readNet(net_file)
     valid_edges = set()
 
@@ -735,11 +880,31 @@ def get_valid_taxi_edges(net_file, safe_edge_ids=None):
     print(f"✅ Found {len(valid_edges)} valid taxi edges.")
     return valid_edges
 
-def generate_drt_vehicle_instances_from_lanes(lane_ids, output_path):
+
+def generate_drt_vehicle_instances_from_lanes(
+        lane_ids: list, 
+        output_path: str
+        ) -> None:
     """
     Generates a DRT fleet file with <vType> and <vehicle> entries, and dummy routes.
-    """
 
+    This function:
+    - Creates a SUMO route XML structure with <vType> and <vehicle> entries.
+    - Each vehicle is assigned a lane ID from the provided list.
+    - The vehicle types are defined with specific emission classes and colors.
+    - The output is saved to the specified path.
+
+    Parameters:
+    ----------
+    - lane_ids: list
+        List of lane IDs where vehicles will be placed.
+    - output_path: str
+        Path to save the resulting SUMO .rou.xml file with <vehicle> entries.
+
+    Returns:
+    -------
+    None
+    """
     vehicle_types = [
         {
             "id": "electric_eco",
@@ -815,34 +980,49 @@ def generate_drt_vehicle_instances_from_lanes(lane_ids, output_path):
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ")
     tree.write(output_path, encoding="utf-8", xml_declaration=True)
+
     print(f"✅ DRT vehicle fleet with dummy routes written to: {output_path} ({vehicle_counter} vehicles)")
 
 
 def generate_matched_drt_requests(
-    uber_data: dict,
-    taz_edge_mapping: dict,
-    sim_start_s: int,
-    sim_end_s: int,
-    output_path: str,
-    valid_edge_ids: set
-):
+        uber_data: dict,
+        taz_edge_mapping: dict,
+        sim_start_s: int,
+        sim_end_s: int,
+        output_path: str,
+        valid_edge_ids: set
+        ) -> None:
     """
-    Generates DRT requests for SUMO from Uber data and TAZ-edge mapping,
+    Generates DRT requests for SUMO from TNC data and TAZ-edge mapping,
     ensuring all persons depart from and arrive at valid, reachable edges.
 
-    Args:
-        uber_data (dict): Nested dictionary of Uber pickups and dropoffs per TAZ and hour.
-        taz_edge_mapping (dict): Mapping {taz_id: {'centroid_edge_id': edge_id}}.
-        sim_start_s (int): Simulation start time in seconds.
-        sim_end_s (int): Simulation end time in seconds.
-        output_path (str): Path to save the resulting SUMO .rou.xml file with <person> requests.
-        valid_edge_ids (set): Set of SUMO edge IDs validated for taxi routing (connected, non-junction, drivable).
-    """
-    import xml.etree.ElementTree as ET
-    import random
-    from collections import defaultdict
-    import ast
+    This function:
+    - Reads a nested dictionary of TNC pickups and dropoffs per TAZ and hour.
+    - For each TAZ, randomly selects an edge from the mapping.
+    - For each pickup, finds a valid dropoff edge in a different TAZ.
+    - Creates a SUMO route XML structure with <person> entries.
+    - Each person is assigned a departure time and a ride from pickup to dropoff.
+    - The output is saved to the specified path.
 
+    Parameters:
+    ----------
+    - uber_data: dict
+        Nested dictionary of Uber pickups and dropoffs per TAZ and hour.
+    - taz_edge_mapping: dict
+        Mapping {taz_id: {'centroid_edge_id': edge_id}}.
+    - sim_start_s: int
+        Simulation start time in seconds.
+    - sim_end_s: int
+        Simulation end time in seconds.
+    - output_path: str
+        Path to save the resulting SUMO .rou.xml file with <person> requests.
+    - valid_edge_ids: set
+        Set of SUMO edge IDs validated for taxi routing (connected, non-junction, drivable).
+
+    Returns:
+    -------
+    None
+    """
     person_elements = []
     person_id = 0
 
@@ -918,12 +1098,18 @@ def generate_matched_drt_requests(
     print(f"✅ DRT passenger requests written to: {output_path} | Total persons generated: {person_id}")
 
 
-def filter_polygon_edges(polygon_edge_str, safe_edge_ids):
+def filter_polygon_edges(
+        polygon_edge_str: str,
+        safe_edge_ids: set
+        ) -> list:
     """Filter edge list string, keeping only strongly connected edges."""
     edge_list = ast.literal_eval(polygon_edge_str)
     return [e for e in edge_list if e in safe_edge_ids]
 
-def filter_polygon_lanes(polygon_lane_str, safe_edge_ids):
+def filter_polygon_lanes(
+        polygon_lane_str: str,
+        safe_edge_ids: set
+        ) -> list:
     """Filter lane list string, keeping only lanes whose parent edge is in the strongly connected set."""
     lane_list = ast.literal_eval(polygon_lane_str)
     return [l for l in lane_list if l.split('_')[0] in safe_edge_ids]
