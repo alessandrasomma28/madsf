@@ -117,6 +117,7 @@ def get_strongly_connected_edges(sf_map_file_path: str) -> set:
     # Strongly connected edges are those reachable in both directions
     strongly_connected = forward_reachable & reverse_reachable
     print(f"✅ Strongly connected edges count: {len(strongly_connected)} over {len(all_nodes)} total edges")
+    
     return strongly_connected
 
 
@@ -758,7 +759,7 @@ def map_taz_to_edges(
 def generate_vehicle_start_lanes_from_taz_polygons(
     shapefile_path: str,
     net_file: str,
-    vehicles_per_taz: int = 2,
+    points_per_taz: int = 2,
     safe_edge_ids: set = None
     ) -> list:
     """
@@ -777,7 +778,7 @@ def generate_vehicle_start_lanes_from_taz_polygons(
         Path to TAZ polygon shapefile.
     - net_file: str
         Path to SUMO net.xml.
-    - vehicles_per_taz: int
+    - points_per_taz: int
         Number of vehicle start points per TAZ.
     - safe_edge_ids: set or None, optional
         Set of edge IDs to consider as valid (e.g., strongly connected edges).
@@ -812,7 +813,7 @@ def generate_vehicle_start_lanes_from_taz_polygons(
 
         points = []
         attempts = 0
-        while len(points) < vehicles_per_taz and attempts < 50:
+        while len(points) < points_per_taz and attempts < 50:
             x = random.uniform(minx, maxx)
             y = random.uniform(miny, maxy)
             pt = Point(x, y)
@@ -916,31 +917,35 @@ def generate_drt_vehicle_instances_from_lanes(
     str
         Full path to the saved XML file.
     """
+    eco = int(len(lane_ids) // 3.5)
+    diesel = int(len(lane_ids) // 3.5)
+    gas = int(len(lane_ids) // 3.5)
+    zero = len(lane_ids) - eco - diesel - gas
     vehicle_types = [
         {
             "id": "electric_eco",
-            "count": 300,
+            "count": eco,
             "color": "0,1,0",
             "emissionClass": "Energy",
             "vClass": "taxi"
         },
         {
             "id": "diesel_normal",
-            "count": 300,
+            "count": diesel,
             "color": "1,0,0",
             "emissionClass": "HBEFA3/PC_D_EU4",
             "vClass": "taxi"
         },
         {
             "id": "gas_modern",
-            "count": 300,
+            "count": gas,
             "color": "0,0,1",
             "emissionClass": "HBEFA3/PC_G_EU6",
             "vClass": "taxi"
         },
         {
             "id": "zero_emis",
-            "count": 100,
+            "count": zero,
             "color": "0.5,0.5,0",
             "emissionClass": "Zero",
             "vClass": "taxi"
@@ -959,8 +964,8 @@ def generate_drt_vehicle_instances_from_lanes(
             "color": vt["color"],
             "emissionClass": vt["emissionClass"]
         })
-        ET.SubElement(vtype, "param", key="has.taxi.device", value="true")
-        ET.SubElement(vtype, "param", key="device.taxi.end", value="7200")
+        ET.SubElement(vtype, "param",key="has.taxi.device", value="true")
+        ET.SubElement(vtype, "param", key="device.taxi.end", value="10800")
 
     # Create vehicles
     for vt in vehicle_types:

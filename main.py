@@ -88,16 +88,16 @@ data = read_tnc_stats_data(
     )
 
 # 7. Map TAZ polygons to lanes
-vehicles_taz = 2   # 2 vehicles per TAZ → ~1960 total
+points_taz = 3   # 3 start lanes per TAZ → ~2800 total
 start_lanes = generate_vehicle_start_lanes_from_taz_polygons(
     shapefile_path=SF_TAZ_SHAPEFILE_PATH,
     net_file=SUMO_NET_PATH,
-    vehicles_per_taz=vehicles_taz,
+    points_per_taz=points_taz,
     safe_edge_ids=safe_edge_ids
 )
 
 # 8. Generate taxi trips
-number_vehicles_available = 1000
+number_vehicles_available = 1500
 SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     lane_ids=random.sample(start_lanes, number_vehicles_available),
     date_str=date,
@@ -127,12 +127,13 @@ SF_TNC_REQUESTS_PATH = generate_matched_drt_requests(
 SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(
     sf_routes_folder_path=SUMO_BASE_SCENARIO_FOLDER_PATH,
     sf_traffic_route_file_path=SF_TRAFFIC_ROUTE_PATH,
-    sf_tnc_fleet_file_path = SF_TNC_FLEET_PATH,
-    sf_tnc_requests_file_path = SF_TNC_REQUESTS_PATH,
-    date=date,
-    start_time=start_time,
-    end_time=end_time
+    sf_tnc_fleet_file_path=SF_TNC_FLEET_PATH,
+    sf_tnc_requests_file_path=SF_TNC_REQUESTS_PATH,
+    date_str=date,
+    start_time_str=start_time,
+    end_time_str=end_time
     )
 
+# 12. Generate SUMO configuration file and run simulation
 sumoSimulator.generate_config()
-sumoSimulator.run_simulation(activeGui=True)
+sumoSimulator.run_simulation(activeGui=False)

@@ -46,9 +46,9 @@ class Simulator:
             sf_traffic_route_file_path: str, 
             sf_tnc_fleet_file_path: str, 
             sf_tnc_requests_file_path: str, 
-            date: str, 
-            start_time: str, 
-            end_time: str
+            date_str: str, 
+            start_time_str: str, 
+            end_time_str: str
             ):
         """
         Builds output dir path and route file path based on date and time slot.
@@ -69,11 +69,11 @@ class Simulator:
             Path to the taxi route file.
         - sf_tnc_requests_file_path: str
             Path to the passenger requests file.
-        - date: str
+        - date_str: str
             Date in 'YYYY-MM-DD' format.
-        - start_time: str
+        - start_time_str: str
             Start time in 'HH:MM' format.
-        - end_time: str
+        - end_time_str: str
             End time in 'HH:MM' format.
 
         Returns:
@@ -81,14 +81,14 @@ class Simulator:
         str 
             Path to the generated directory
         """
-        date_part = datetime.strptime(date, "%Y-%m-%d").strftime("%y%m%d")
-        start_hour = datetime.strptime(start_time, "%H:%M").strftime("%H")
-        end_hour = datetime.strptime(end_time, "%H:%M").strftime("%H")
+        date_part = datetime.strptime(date_str, "%Y-%m-%d").strftime("%y%m%d")
+        start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
+        end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
         timeslot_folder = f"{start_hour}-{end_hour}"
         timeslot_part = f"{start_hour}{end_hour}"
 
         # Only calculate the path — don't create it
-        full_folder_path = Path(sf_routes_folder_path, date, timeslot_folder).absolute()
+        full_folder_path = Path(sf_routes_folder_path, date_str, timeslot_folder).absolute()
 
         # Set internal state
         self.output_dir_path = full_folder_path
@@ -101,8 +101,8 @@ class Simulator:
         self.timeslot_part = timeslot_part
 
         # Calculate end time in seconds
-        sim_start = datetime.strptime(start_time, "%H:%M")
-        sim_end = datetime.strptime(end_time, "%H:%M")
+        sim_start = datetime.strptime(start_time_str, "%H:%M")
+        sim_end = datetime.strptime(end_time_str, "%H:%M")
         self.end_time = int((sim_end - sim_start).total_seconds())
 
         return self.output_dir_path
@@ -201,8 +201,14 @@ class Simulator:
         print("Simulation started...")
 
         try:
-            while traci.simulation.getMinExpectedNumber() > 0:
+            while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time+10800:
+                if traci.simulation.getTime() % 1000 == 0:
+                    print("Simulation time:", traci.simulation.getTime())
+                    print("Expected number of vehicles:", traci.simulation.getMinExpectedNumber())
+                    print("Pending vehicles:", len(traci.vehicle.getIDList()))
+                    print("Pending persons:", len(traci.person.getIDList()))
                 traci.simulationStep()
+
             print("Simulation finished.")
         finally:
             traci.close()
