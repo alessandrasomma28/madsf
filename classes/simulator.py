@@ -17,7 +17,13 @@ class Simulator:
     sumocfg_file_path: Path
     taz_file_path: Path
 
-    def __init__(self, net_file, config_template_path, taz_file_path: Optional[str]):
+
+    def __init__(
+            self,
+            net_file: str, 
+            config_template_path: str,
+            taz_file_path: Optional[str]
+            ):
         self.net_file_path = Path(net_file).resolve()
         self.config_template_path = Path(config_template_path).resolve()
         if taz_file_path is None:
@@ -33,21 +39,47 @@ class Simulator:
         self.output_dir_path = None
         self.end_time = None
 
-    def configure_output_dir(self, sf_traffic_routes_folder_path, route_file_path, taxi_route_file_path, passenger_file_path, date, start_time, end_time):
+
+    def configure_output_dir(
+            self, 
+            sf_routes_folder_path: str, 
+            sf_traffic_route_file_path: str, 
+            sf_tnc_fleet_file_path: str, 
+            sf_tnc_requests_file_path: str, 
+            date: str, 
+            start_time: str, 
+            end_time: str
+            ):
         """
         Builds output dir path and route file path based on date and time slot.
 
+        This function:
+        - Creates a folder structure based on the date and time slot.
+        - Sets the output directory path, route file paths, date part, and timeslot part.
+        - Sets the route file paths for traffic, taxi, and passenger data.
+        - Sets the simulation end time in seconds.
+
         Parameters:
-        - sf_traffic_routes_folder_path: str - base scenario root folder
-        - route_file_path: str - path to the route file
-        - taxi_route_file_path: str - path to the taxi route file
-        - passenger_file_path: str - path to the passenger file
-        - date: str - 'YYYY-MM-DD'
-        - start_time: str - 'HH:MM'
-        - end_time: str - 'HH:MM'
+        -----------
+        - sf_routes_folder_path: str 
+            Base scenario root folder.
+        - sf_traffic_route_file_path: str
+            Path to the route file.
+        - sf_tnc_fleet_file_path: str
+            Path to the taxi route file.
+        - sf_tnc_requests_file_path: str
+            Path to the passenger requests file.
+        - date: str
+            Date in 'YYYY-MM-DD' format.
+        - start_time: str
+            Start time in 'HH:MM' format.
+        - end_time: str
+            End time in 'HH:MM' format.
 
         Returns:
-        - output_dir_path (Path): the generated directory path
+        --------
+        str 
+            Path to the generated directory
         """
         date_part = datetime.strptime(date, "%Y-%m-%d").strftime("%y%m%d")
         start_hour = datetime.strptime(start_time, "%H:%M").strftime("%H")
@@ -56,14 +88,14 @@ class Simulator:
         timeslot_part = f"{start_hour}{end_hour}"
 
         # Only calculate the path — don't create it
-        full_folder_path = Path(sf_traffic_routes_folder_path, date, timeslot_folder).absolute()
+        full_folder_path = Path(sf_routes_folder_path, date, timeslot_folder).absolute()
 
         # Set internal state
         self.output_dir_path = full_folder_path
         self.route_file_path = [
-            Path(route_file_path).absolute(),
-            Path(taxi_route_file_path).absolute(),
-            Path(passenger_file_path).absolute()
+            Path(sf_traffic_route_file_path).absolute(),
+            Path(sf_tnc_fleet_file_path).absolute(),
+            Path(sf_tnc_requests_file_path).absolute()
         ]
         self.date_part = date_part
         self.timeslot_part = timeslot_part
@@ -74,6 +106,7 @@ class Simulator:
         self.end_time = int((sim_end - sim_start).total_seconds())
 
         return self.output_dir_path
+
 
     def generate_config(self):
         """
@@ -89,8 +122,13 @@ class Simulator:
             - {output_dir}
             - {end_time}
 
+        Returns:
+        -------
+        None
+
         Raises:
-            ValueError: If output_dir_path is not set before calling this method.
+        -------
+        ValueError: If output_dir_path is not set before calling this method.
         """
         if self.output_dir_path is None:
             raise ValueError("output_dir_path must be configured before generating the config file.")
@@ -127,14 +165,21 @@ class Simulator:
 
         print(f"Generated SUMO config at: {generated_config_path}")
 
-    def run_simulation(self, activeGui: bool = False):
+
+    def run_simulation(
+            self,
+            activeGui: bool = False
+            ):
         """
         Runs the SUMO simulation using the generated configuration file.
 
         Parameters:
-        - activeGui (bool): If True, runs with SUMO-GUI. If False, runs headless.
+        -----------
+        - activeGui (bool): 
+            If True, runs with SUMO-GUI. If False, runs headless.
 
         Raises:
+        -------
         - FileNotFoundError: If the SUMO config file is not generated.
         - ImportError: If traci or libsumo is not installed or SUMO_HOME is not set.
         """

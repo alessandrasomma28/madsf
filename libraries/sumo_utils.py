@@ -431,7 +431,7 @@ def sf_traffic_routes_generation(
     Returns:
     -------
     str
-        Full path to the saved SUMO route XML file.
+        Full path to the saved XML file.
     """
     # Load OD data
     df = pd.read_csv(sf_traffic_od_path, sep=";")
@@ -829,6 +829,7 @@ def generate_vehicle_start_lanes_from_taz_polygons(
                     start_lanes.append(lanes[0].getID())
 
     print(f"✅ Found {len(start_lanes)} start lanes across TAZs.")
+
     return start_lanes
 
 
@@ -883,8 +884,11 @@ def get_valid_taxi_edges(
 
 def generate_drt_vehicle_instances_from_lanes(
         lane_ids: list, 
-        output_path: str
-        ) -> None:
+        date: str,
+        start_time: str,
+        end_time: str,
+        sf_tnc_fleet_folder_path: str
+        ) -> str:
     """
     Generates a DRT fleet file with <vType> and <vehicle> entries, and dummy routes.
 
@@ -898,12 +902,19 @@ def generate_drt_vehicle_instances_from_lanes(
     ----------
     - lane_ids: list
         List of lane IDs where vehicles will be placed.
-    - output_path: str
+    - date: str
+        Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
+    - start_time: str
+        Start time in 'HH:MM' format (e.g., '08:00').
+    - end_time: str
+        End time in 'HH:MM' format (e.g., '10:00').
+    - sf_tnc_fleet_folder_path: str
         Path to save the resulting SUMO .rou.xml file with <vehicle> entries.
 
     Returns:
     -------
-    None
+    str
+        Full path to the saved XML file.
     """
     vehicle_types = [
         {
@@ -976,22 +987,39 @@ def generate_drt_vehicle_instances_from_lanes(
             
             vehicle_counter += 1
 
+    date_part = datetime.strptime(date, "%Y-%m-%d").strftime("%y%m%d")
+    start_hour = datetime.strptime(start_time, "%H:%M").strftime("%H")
+    end_hour = datetime.strptime(end_time, "%H:%M").strftime("%H")
+    timeslot_folder = f"{start_hour}-{end_hour}"
+    timeslot_part = f"{start_hour}{end_hour}"
+
+    # Create full folder path: root/date/timeslot/
+    full_folder_path = os.path.join(sf_tnc_fleet_folder_path, date, timeslot_folder)
+    os.makedirs(full_folder_path, exist_ok=True)
+
+    # Filename and full path
+    filename = f"sf_tnc_fleet_{date_part}_{timeslot_part}.rou.xml"
+    full_path = os.path.join(full_folder_path, filename)
+
     # Write XML
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ")
-    tree.write(output_path, encoding="utf-8", xml_declaration=True)
+    tree.write(full_path, encoding="utf-8", xml_declaration=True)
 
-    print(f"✅ DRT vehicle fleet with dummy routes written to: {output_path} ({vehicle_counter} vehicles)")
+    print(f"✅ DRT vehicle fleet with dummy routes written to: {full_path} ({vehicle_counter} vehicles)")
+
+    return full_path
 
 
 def generate_matched_drt_requests(
         uber_data: dict,
         taz_edge_mapping: dict,
-        sim_start_s: int,
-        sim_end_s: int,
-        output_path: str,
+        date: str,
+        start_time: str,
+        end_time: str,
+        sf_passenger_folder_path: str,
         valid_edge_ids: set
-        ) -> None:
+        ) -> str:
     """
     Generates DRT requests for SUMO from TNC data and TAZ-edge mapping,
     ensuring all persons depart from and arrive at valid, reachable edges.
@@ -1010,10 +1038,12 @@ def generate_matched_drt_requests(
         Nested dictionary of Uber pickups and dropoffs per TAZ and hour.
     - taz_edge_mapping: dict
         Mapping {taz_id: {'centroid_edge_id': edge_id}}.
-    - sim_start_s: int
-        Simulation start time in seconds.
-    - sim_end_s: int
-        Simulation end time in seconds.
+    - date: str
+        Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
+    - start_time: str
+        Start time in 'HH:MM' format (e.g., '08:00').
+    - end_time: str
+        End time in 'HH:MM' format (e.g., '10:00').
     - output_path: str
         Path to save the resulting SUMO .rou.xml file with <person> requests.
     - valid_edge_ids: set
@@ -1021,10 +1051,17 @@ def generate_matched_drt_requests(
 
     Returns:
     -------
-    None
+    str
+        Full path to the saved XML file.
     """
     person_elements = []
     person_id = 0
+
+    # Compute simulation start and end times
+    sim_start = datetime.strptime(f"{date} {start_time}", "%Y-%m-%d %H:%M")
+    sim_end = datetime.strptime(f"{date} {end_time}", "%Y-%m-%d %H:%M")
+    sim_start_s = 0
+    sim_end_s = int((sim_end - sim_start).total_seconds())
 
     # Build pickup list
     pickups = []
@@ -1092,10 +1129,25 @@ def generate_matched_drt_requests(
     for _, person in person_elements:
         root.append(person)
 
+    date_part = datetime.strptime(date, "%Y-%m-%d").strftime("%y%m%d")
+    start_hour = datetime.strptime(start_time, "%H:%M").strftime("%H")
+    end_hour = datetime.strptime(end_time, "%H:%M").strftime("%H")
+    timeslot_folder = f"{start_hour}-{end_hour}"
+    timeslot_part = f"{start_hour}{end_hour}"
+
+    # Create full folder path: root/date/timeslot/
+    full_folder_path = os.path.join(sf_passenger_folder_path, date, timeslot_folder)
+    os.makedirs(full_folder_path, exist_ok=True)
+
+    # Filename and full path
+    filename = f"sf_passenger_requests_{date_part}_{timeslot_part}.rou.xml"
+    full_path = os.path.join(full_folder_path, filename)
+
+    # Write XML
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ")
-    tree.write(output_path, encoding="utf-8", xml_declaration=True)
-    print(f"✅ DRT passenger requests written to: {output_path} | Total persons generated: {person_id}")
+    tree.write(full_path, encoding="utf-8", xml_declaration=True)
+    print(f"✅ DRT passenger requests written to: {full_path} | Total persons generated: {person_id}")
 
 
 def filter_polygon_edges(
