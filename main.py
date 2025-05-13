@@ -134,6 +134,8 @@ SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(
     end_time_str=end_time
     )
 
-# 12. Generate SUMO configuration file and run simulation
+# 12. Generate SUMO configuration file
 sumoSimulator.generate_config()
-sumoSimulator.run_simulation(activeGui=False)
+
+# 13. Run simulation
+sumoSimulator.run_simulation(activeGui=True)

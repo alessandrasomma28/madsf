@@ -7,6 +7,7 @@ from libraries.sumo_utils import convert_shapefile_to_sumo_poly_with_polyconvert
 from constants.sumoenv_constants import SUMOENV_PATH
 from constants.data_constants import SF_TAZ_SHAPEFILE_PATH
 from typing import Optional
+from classes.model import Model  # Import MESA-SUMO multi-agent model
 
 
 class Simulator:
@@ -169,14 +170,19 @@ class Simulator:
     def run_simulation(
             self,
             activeGui: bool = False
-            ):
+        ):
         """
-        Runs the SUMO simulation using the generated configuration file.
+        Runs the SUMO simulation using the generated configuration file,
+        and integrates the multi-agent system.
 
         Parameters:
         -----------
         - activeGui (bool): 
             If True, runs with SUMO-GUI. If False, runs headless.
+
+        Returns:
+        -------
+        None
 
         Raises:
         -------
@@ -187,29 +193,23 @@ class Simulator:
             raise FileNotFoundError("SUMO configuration file not found. Please generate it first.")
 
         try:
-            import traci
             from sumolib import checkBinary
         except ImportError:
             raise ImportError("SUMO Python tools not found. Install with: pip install eclipse-sumo")
 
-        # Select the right binary
+        # Choose GUI or headless mode
         sumo_binary = checkBinary("sumo-gui" if activeGui else "sumo")
 
-        # Start simulation with traci
+        # Start SUMO with TraCI
         traci.start([sumo_binary, "-c", str(self.sumocfg_file_path)])
 
-        print("Simulation started...")
+        print("Simulation started with multi-agent-based logic...")
 
         try:
-            while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time+10800:
-                if traci.simulation.getTime() % 1000 == 0:
-                    print("Simulation time:", traci.simulation.getTime())
-                    print("Expected number of vehicles:", traci.simulation.getMinExpectedNumber())
-                    print("Pending vehicles:", len(traci.vehicle.getIDList()))
-                    print("Pending persons:", len(traci.person.getIDList()))
-                traci.simulationStep()
-
-            print("Simulation finished.")
+            # Run integrated model here
+            drt_model = Model(str(self.sumocfg_file_path), self.end_time)
+            # Delegates control to custom step logic
+            drt_model.run()
         finally:
             traci.close()
-
+            print("Simulation finished.")

@@ -12,13 +12,13 @@ class Driver(Agent):
         current_passenger (int): ID of the current passenger if matched.
     """
 
-    def __init__(self, unique_id, model, current_taz, vehicle_id):
-        super().__init__(unique_id, model)
-        self.current_taz = current_taz
-        self.income = 0.0
-        self.available = True
+    def __init__(self, vid, model, start_lane, depart_time):
+        super().__init__(vid, model)
+        self.start_lane = start_lane
+        self.depart_time = depart_time
+        self.status = "idle"
         self.current_passenger = None
-        self.vehicle_id = vehicle_id
+        self.income = 0.0
 
     def step(self):
         if self.available:
@@ -35,11 +35,3 @@ class Driver(Agent):
                 self.available = True
                 self.model.rideservice.complete_ride(self.current_passenger)
                 self.current_passenger = None
-
-    def set_route_to(self, destination_edge):
-        # Integrate with SUMO via traci
-        return
-
-    def reached(self, target_edge):
-        # Check if the SUMO vehicle reached the edge
-        return False

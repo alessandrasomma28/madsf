@@ -1,110 +1,59 @@
-from mesa import Agent
+import traci
+import math
 
-class RideSharingService(Agent):
+class RideService:
     """
-    RideSharingService acts as a centralized dispatcher for ride-matching.
-
-    Attributes:
-        pending_requests (list): Queue of unmatched PassengerAgents.
-        available_drivers (list): List of available DriverAgents.
+    This class manages the ride service operations, including dispatching taxis to unassigned reservations.
+    It uses the SUMO TraCI API to interact with the simulation environment.
     """
-    def __init__(self, unique_id, model):
+    def __init__(self, model):
+        self.model = model
+
+    def step(self, model):
+        self._dispatch_taxis()
+
+    def _dispatch_taxis(self):
         """
-        Initialize a RideSharingService.
-
-        Args:
-            unique_id (int): Unique identifier for the service agent.
-            model (Model): The simulation model instance.
+        Dispatch taxis to unassigned reservations based on proximity.
+        This function checks for idle taxis and unassigned reservations, and assigns the closest taxi to each reservation.
         """
-        super().__init__(unique_id, model)
-        self.pending_requests = []
-        self.available_drivers = []
+        # Get the list of idle taxis and unassigned reservations
+        idle_taxis = list(traci.vehicle.getTaxiFleet(0))
+        unassigned_reservations = traci.person.getTaxiReservations(3)
+        if not idle_taxis or not unassigned_reservations:
+            return
 
-    def register_request(self, passenger):
-        """
-        Add a passenger to the queue of ride requests.
+        assignments = []  # (taxiID, reservationID)
 
-        Args:
-            passenger (PassengerAgent): Passenger needing a ride.
-        """
-        self.pending_requests.append(passenger)
+        # Iterate over unassigned reservations and find the closest idle taxi to each reservation
+        for reservation in unassigned_reservations:
+            pax_id = reservation.persons[0]
+            try:
+                pax_pos = traci.person.getPosition(pax_id)
+            except traci.TraCIException as e:
+                print(f"⚠️ Could not get position for {pax_id}: {e}")
+                continue
+            
+            best_taxi = None
+            best_distance = float("inf")
+            for taxi_id in idle_taxis:
+                taxi_pos = traci.vehicle.getPosition(taxi_id)
+                # Calculate the distance between the taxi and the passenger with Euclidean distance
+                dist = math.hypot(taxi_pos[0] - pax_pos[0], taxi_pos[1] - pax_pos[1])
+                # Check if this taxi is closer than the best found so far
+                if dist < best_distance:
+                    best_distance = dist
+                    best_taxi = taxi_id
 
-    def register_driver(self, driver):
-        """
-        Add a driver to the list of available drivers.
+            if best_taxi:
+                # Assign the best taxi to the reservation
+                assignments.append((best_taxi, reservation.id))
+                # Remove assigned taxi from the list of idle taxis
+                idle_taxis.remove(best_taxi)
 
-        Args:
-            driver (DriverAgent): Driver available for matching.
-        """
-        self.available_drivers.append(driver)
-
-    def step(self):
-        """
-        Called at each simulation step. Matches available drivers to waiting passengers
-        and calculates fare including surge pricing.
-        """
-        matches = self._match_passengers_to_drivers()
-        for passenger, driver in matches:
-            passenger.match_with_driver(driver.unique_id)
-            driver.available = False
-            driver.current_passenger = passenger.unique_id
-            fare = self._calculate_fare(passenger, driver)
-            driver.income += fare
-
-    def _match_passengers_to_drivers(self): # Minimize distance
-        """
-        Match passengers to drivers in FIFO order.
-
-        Returns:
-            list of tuples: Each tuple is (PassengerAgent, DriverAgent)
-        """
-        matches = []
-        while self.pending_requests and self.available_drivers:
-            passenger = self.pending_requests.pop(0)
-            driver = self.available_drivers.pop(0)
-            matches.append((passenger, driver))
-        return matches
-
-    def _calculate_fare(self, passenger, driver):
-        """
-        Compute fare based on base fare, distance, and surge multiplier.
-
-        Args:
-            passenger (PassengerAgent): The matched passenger.
-            driver (DriverAgent): The matched driver.
-
-        Returns:
-            float: Calculated fare.
-        """
-        base_fare = 3.0
-        surge = self._compute_surge(passenger.origin_taz)
-        distance = 5  # Placeholder for route distance
-        fare = base_fare + (distance * 1.5 * surge)
-        return fare
-
-    def _compute_surge(self, taz):
-        """
-        Compute a surge multiplier for the given TAZ.
-
-        Args:
-            taz (int): Traffic Analysis Zone.
-
-        Returns:
-            float: Surge multiplier.
-        """
-        demand = sum(p.origin_taz == taz for p in self.model.passengers)
-        supply = sum(d.current_taz == taz for d in self.model.drivers if d.available)
-        if supply == 0:
-            return 2.0
-        ratio = demand / supply
-        return min(1.0 + 0.5 * ratio, 3.0)
-
-    def complete_ride(self, passenger):
-        # TODO
-        return
-
-    def assign_ride(self, driver):
-        # Assign the first pending request
-        if self.pending_requests:
-            return self.pending_requests.pop(0)
-        return None
+        # Perform the dispatches
+        for taxi_id, res_id in assignments:
+            try:
+                traci.vehicle.dispatchTaxi(taxi_id, [res_id])
+            except traci.TraCIException as e:
+                print(f"⚠️ Dispatch failed ({taxi_id} → {res_id}): {e}")

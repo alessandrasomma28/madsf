@@ -4,6 +4,7 @@
       <net-file value="{net_file}"/>
       <route-files value="{route_file}"/>
       <additional-files value="{tazpoly_file}"/>
+      <device.taxi.dispatch-algorithm value="traci"/>
    </input>
 
    <time>
