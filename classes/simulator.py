@@ -203,12 +203,12 @@ class Simulator:
         # Start SUMO with TraCI
         traci.start([sumo_binary, "-c", str(self.sumocfg_file_path)])
 
-        print("Simulation started with multi-agent-based logic...")
+        print("Simulation started with MAB logic...")
 
         try:
             # Run integrated model here
             drt_model = Model(str(self.sumocfg_file_path), self.end_time)
-            # Delegates control to custom step logic
+            # Delegates control to custom multi-agent logic
             drt_model.run()
         finally:
             traci.close()

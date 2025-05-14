@@ -1,37 +1,17 @@
-from mesa import Agent
+import traci
+import random
 
-class Driver(Agent):
-    """
-    Driver represents a ride-hailing driver.
 
-    Attributes:
-        current_taz (int): TAZ where the driver currently is.
-        (income (float): Total income earned by the driver.)
-        available (bool): Whether the driver is available to take a ride.
-        (status (str): Idle, Pickup, Moving, OnRoad.)
-        current_passenger (int): ID of the current passenger if matched.
-    """
-
-    def __init__(self, vid, model, start_lane, depart_time):
-        super().__init__(vid, model)
-        self.start_lane = start_lane
-        self.depart_time = depart_time
-        self.status = "idle"
-        self.current_passenger = None
-        self.income = 0.0
+class Driver:
+    def __init__(self, model):
+        self.model = model
+        self.idle_drivers = set()
 
     def step(self):
-        if self.available:
-            self.current_passenger = self.model.rideservice.assign_ride(self)
-            if self.current_passenger:
-                self.available = False
-                self.set_route_to(self.current_passenger.origin_edge)
+        self.idle_drivers = list(traci.vehicle.getTaxiFleet(0))
 
-        if self.current_passenger:
-            if self.reached(self.current_passenger.origin_edge):
-                self.set_route_to(self.current_passenger.destination_edge)
-
-            if self.reached(self.current_passenger.destination_edge):
-                self.available = True
-                self.model.rideservice.complete_ride(self.current_passenger)
-                self.current_passenger = None
+        offers = self.model.ride_service.get_offers_for_drivers(self.idle_drivers)
+        for driver_id, offer in offers.items():
+            # Simulate random acceptance
+            if random.random() <= 1.0:
+                self.model.ride_service.accept_offer(driver_id, "driver")
