@@ -1,5 +1,6 @@
 import traci
 import math
+import heapq
 from collections import defaultdict
 
 
@@ -7,59 +8,92 @@ class RideService:
     def __init__(self, model):
         self.model = model
         self.offers = {}  # key: (res_id, driver_id), value: dict with time, distance, price
-        self.acceptances = defaultdict(set)  # "driver"/"passenger" keys
+        self.acceptances = {}  # key: (res_id, driver_id), value: (set of agents, timestamp)
 
 
     def step(self):
+        print(f"🧍 {len(set(traci.person.getTaxiReservations(3)))} unassigned passengers")
+        print(f"🧍 {len(set(traci.person.getTaxiReservations(4)))} assigned passengers")
+        print(f"🧍 {len(set(traci.person.getTaxiReservations(8)))} picked-up passengers")
+        print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(0)))} idle taxis")
+        print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(1)))} picked-up taxis")
+        print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(2)))} occupied taxis")
         self._generate_offers()
         self._check_matches()
+        print(f"🧍 {len(set(traci.person.getTaxiReservations(3)))} unassigned passengers")
+        print(f"🧍 {len(set(traci.person.getTaxiReservations(4)))} assigned passengers")
+        print(f"🧍 {len(set(traci.person.getTaxiReservations(8)))} picked-up passengers")
+        print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(0)))} idle taxis")
+        print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(1)))} picked-up taxis")
+        print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(2)))} occupied taxis")
 
     def _generate_offers(self):
         idle_taxis = self.model.driver.idle_drivers
         unassigned = self.model.passenger.unassigned_requests
+        now = self.model.time
+        timeout_p = self.model.passenger.timeout
+        timeout_d = self.model.driver.timeout
+
+        # Clean up stale partial acceptances
+        for key, (agents, timestamp) in list(self.acceptances.items()):
+            age = now - timestamp
+            if len(agents) == 1:
+                if "passenger" in agents and age > timeout_p:
+                    self.acceptances.pop(key, None)
+                    self.offers.pop(key, None)
+                elif "driver" in agents and age > timeout_d:
+                    self.acceptances.pop(key, None)
+                    self.offers.pop(key, None)
 
         for reservation in unassigned:
             res_id = reservation.id
+            # Skip reservation if it's already being considered
+            if any(res_id == r_id for (r_id, _) in self.offers):
+                print(f"⚠️ Reservation {res_id} already has an offer — skipping")
+                continue
             try:
                 pax_pos = traci.person.getPosition(reservation.persons[0])
             except traci.TraCIException:
                 print(f"⚠️ Failed to get position for reservation {res_id}: {reservation}")
                 continue
 
-            taxis_sorted = []
+            taxis_with_dist = []
             for taxi_id in idle_taxis:
-                if any(res_id == r_id for (r_id, _) in self.offers):  
-                    print(f"⚠️ Reservation {res_id} already has an offer — skipping")
-                    continue  # already being considered
                 try:
                     taxi_pos = traci.vehicle.getPosition(taxi_id)
                     dist = math.hypot(taxi_pos[0] - pax_pos[0], taxi_pos[1] - pax_pos[1])
-                    taxis_sorted.append((dist, taxi_id))
+                    taxis_with_dist.append((dist, taxi_id))
                 except traci.TraCIException:
                     print(f"⚠️ Failed to get position for taxi {taxi_id}: {reservation}")
                     continue
 
-            taxis_sorted.sort()
-            for _, taxi_id in taxis_sorted[:8]:
-                offer_key = (res_id, taxi_id)
-                self.offers[offer_key] = {
-                    "time": 300,  # dummy
-                    "distance": dist,
-                    "price": 10 # dummy
-                }
+            # Get top 8 closest taxis using heapq
+            closest_taxis = heapq.nsmallest(8, taxis_with_dist)
+
+            # Create offers
+            if closest_taxis:
+                for dist, taxi_id in closest_taxis:
+                    offer_key = (res_id, taxi_id)
+                    self.offers[offer_key] = {
+                        "time": 300,
+                        "distance": dist,
+                        "price": 10
+                    }
+            else:
+                print(f"⚠️ No taxis available for reservation {res_id} — skipping")
+                continue
 
 
     def _check_matches(self):
         reservations = traci.person.getTaxiReservations(3)
         valid_res_ids = {r.id for r in reservations}
 
-        for (res_id, driver_id), agents in list(self.acceptances.items()):
+        for (res_id, driver_id), (agents, _) in list(self.acceptances.items()):
             if "driver" in agents and "passenger" in agents:
                 if res_id not in valid_res_ids:
                     print(f"⚠️ Reservation {res_id} no longer valid — cleaning up")
                     self.acceptances.pop((res_id, driver_id), None)
                     continue
-
                 try:
                     if not driver_id in traci.vehicle.getTaxiFleet(0):
                         print(f"⚠️ Driver {driver_id} no longer exists — skipping dispatch")
@@ -68,7 +102,6 @@ class RideService:
                         print(f"⚠️ Reservation {res_id} vanished since last check — skipping dispatch")
                         continue
 
-                    print(f"🚕 Dispatching driver {driver_id} to reservation {res_id}")
                     traci.vehicle.dispatchTaxi(driver_id, [res_id])
 
                 except traci.TraCIException as e:
@@ -76,40 +109,29 @@ class RideService:
                 except Exception as e:
                     print(f"❌ Unknown error during dispatch: {e}")
                 finally:
-                    self.acceptances.pop((res_id, driver_id), None)
+                    # Remove other complete and partial matches for same passenger or driver
+                    for k in list(self.acceptances):
+                        if (k[0] == res_id or k[1] == driver_id):
+                            self.acceptances.pop(k, None)
+                            self.offers.pop(k, None)
 
 
     def get_offers_for_drivers(self, drivers):
         return {
-            k[1]: v for k, v in self.offers.items()
+            k: v for k, v in self.offers.items()
             if k[1] in drivers
         }
 
     def get_offers_for_passengers(self, passengers):
         return {
-            k[0]: v for k, v in self.offers.items()
+            k: v for k, v in self.offers.items()
             if k[0] in passengers
         }
     
-    def accept_offer(self, agent_id, agent):
-        for (res_id, driver_id) in list(self.offers.keys()):
-            if (agent == "driver" and driver_id == agent_id) or (agent == "passenger" and res_id == agent_id):
-                self.acceptances[(res_id, driver_id)].add(agent)
-
-                if agent == "driver" and driver_id in self.model.driver.idle_drivers:
-                    self.model.driver.idle_drivers.remove(driver_id)
-                elif agent == "passenger":
-                    self.model.passenger.unassigned_requests = [
-                        r for r in self.model.passenger.unassigned_requests if r.id != res_id
-                    ]
-
-                # Remove other offers for the same agent
-                to_remove = [
-                    key for key in self.offers
-                    if ((agent == "driver" and key[1] == agent_id) or
-                        (agent == "passenger" and key[0] == agent_id)) and
-                        key != (res_id, driver_id)
-                ]
-                for key in to_remove:
-                    self.offers.pop(key, None)
-                return
+    def accept_offer(self, res_id, driver_id, agent):
+        now = self.model.time
+        key = (res_id, driver_id)
+        agents, _ = self.acceptances.setdefault(key, (set(), now))
+        agents.add(agent)
+        if len(agents) == 2:
+            self.offers.pop(key, None)
