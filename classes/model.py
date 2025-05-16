@@ -16,9 +16,9 @@ class Model:
     def run(self):
         while traci.simulation.getMinExpectedNumber() > 0:
             traci.simulationStep()
-            if int(traci.simulation.getTime()) % 60 == 0:
+            if int(traci.simulation.getTime()) % 10 == 0:
                 print(f"Simulation time: {traci.simulation.getTime()} seconds")
                 self.time = traci.simulation.getTime()
-                self.driver.step()
                 self.passenger.step()
+                self.driver.step()
                 self.rideservice.step()

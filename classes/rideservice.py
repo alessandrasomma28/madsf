@@ -16,15 +16,16 @@ class RideService:
         print(f"🧍 {len(set(traci.person.getTaxiReservations(4)))} assigned passengers")
         print(f"🧍 {len(set(traci.person.getTaxiReservations(8)))} picked-up passengers")
         print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(0)))} idle taxis")
-        print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(1)))} picked-up taxis")
+        print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(1)))} pick-up taxis")
         print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(2)))} occupied taxis")
         self._generate_offers()
+        print(f"Generated {len(self.offers)} offers")
         self._check_matches()
         print(f"🧍 {len(set(traci.person.getTaxiReservations(3)))} unassigned passengers")
         print(f"🧍 {len(set(traci.person.getTaxiReservations(4)))} assigned passengers")
         print(f"🧍 {len(set(traci.person.getTaxiReservations(8)))} picked-up passengers")
         print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(0)))} idle taxis")
-        print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(1)))} picked-up taxis")
+        print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(1)))} pick-up taxis")
         print(f"🚕 {len(set(traci.vehicle.getTaxiFleet(2)))} occupied taxis")
 
     def _generate_offers(self):
@@ -34,7 +35,7 @@ class RideService:
         timeout_p = self.model.passenger.timeout
         timeout_d = self.model.driver.timeout
 
-        # Clean up stale partial acceptances
+        # Clean up partial acceptances
         for key, (agents, timestamp) in list(self.acceptances.items()):
             age = now - timestamp
             if len(agents) == 1:
@@ -68,6 +69,7 @@ class RideService:
                     continue
 
             # Get top 8 closest taxis using heapq
+            closest_taxis = [(dist, taxi_id) for (dist, taxi_id) in taxis_with_dist if dist <= 10000]
             closest_taxis = heapq.nsmallest(8, taxis_with_dist)
 
             # Create offers
@@ -87,19 +89,29 @@ class RideService:
     def _check_matches(self):
         reservations = traci.person.getTaxiReservations(3)
         valid_res_ids = {r.id for r in reservations}
+        matched = [
+            key for key, (agents, _) in self.acceptances.items()
+            if "driver" in agents and "passenger" in agents
+        ]
+        print(f"✅ Accepted {len(matched)} trips (fully matched)")
 
         for (res_id, driver_id), (agents, _) in list(self.acceptances.items()):
             if "driver" in agents and "passenger" in agents:
                 if res_id not in valid_res_ids:
                     print(f"⚠️ Reservation {res_id} no longer valid — cleaning up")
                     self.acceptances.pop((res_id, driver_id), None)
+                    self.offers.pop((res_id, driver_id), None)
                     continue
                 try:
                     if not driver_id in traci.vehicle.getTaxiFleet(0):
                         print(f"⚠️ Driver {driver_id} no longer exists — skipping dispatch")
+                        self.acceptances.pop((res_id, driver_id), None)
+                        self.offers.pop((res_id, driver_id), None)
                         continue
                     if res_id not in valid_res_ids:
                         print(f"⚠️ Reservation {res_id} vanished since last check — skipping dispatch")
+                        self.acceptances.pop((res_id, driver_id), None)
+                        self.offers.pop((res_id, driver_id), None)
                         continue
 
                     traci.vehicle.dispatchTaxi(driver_id, [res_id])

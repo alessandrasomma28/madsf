@@ -5,7 +5,6 @@
       <route-files value="{route_file}"/>
       <additional-files value="{tazpoly_file}"/>
       <device.taxi.dispatch-algorithm value="traci"/>
-      <device.taxi.idle-algorithm value="randomCircling"/>
    </input>
 
    <time>

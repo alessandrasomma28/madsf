@@ -976,15 +976,17 @@ def generate_drt_vehicle_instances_from_lanes(
 
             edge_id = lane_id.split("_")[0]  # Take the edge ID part (remove "_0" lane suffix)
 
-            vehicle = ET.SubElement(root, "vehicle", {
+            trip = ET.SubElement(root, "trip", {
                 "id": f"taxi_{vehicle_counter}",
                 "depart": "0.00",
-                "type": vt["id"]
+                "type": vt["id"],
+                "personCapacity": "4"
             })
 
             # ➔ Dummy initial route = just the edge where the vehicle is starting
-            vehicle = ET.SubElement(vehicle, "route", {
-                "edges": edge_id
+            trip = ET.SubElement(trip, "stop", {
+                "lane": lane_id,
+                "triggered": "person"
             })
             
             vehicle_counter += 1
