@@ -7,7 +7,8 @@ from libraries.sumo_utils import convert_shapefile_to_sumo_poly_with_polyconvert
 from constants.sumoenv_constants import SUMOENV_PATH
 from constants.data_constants import SF_TAZ_SHAPEFILE_PATH
 from typing import Optional
-from classes.model import Model  # Import MESA-SUMO multi-agent model
+from classes.model import Model  # Import multi-agent model
+import time
 
 
 class Simulator:
@@ -206,10 +207,14 @@ class Simulator:
         print("Simulation started with MAB logic...")
 
         try:
-            # Run integrated model here
+            start_time = time.time()
+            # Initialize multi-agent model
             drt_model = Model(str(self.sumocfg_file_path), self.end_time)
             # Delegates control to custom multi-agent logic
             drt_model.run()
         finally:
             traci.close()
+            end_time = time.time()
+            elapsed = end_time - start_time
             print("Simulation finished.")
+            print(f"⏱️ Total computation time: {elapsed:.2f} seconds")

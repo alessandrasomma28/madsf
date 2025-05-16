@@ -48,10 +48,12 @@ class RideService:
 
         for reservation in unassigned:
             res_id = reservation.id
+            
             # Skip reservation if it's already being considered
             if any(res_id == r_id for (r_id, _) in self.offers):
                 print(f"⚠️ Reservation {res_id} already has an offer — skipping")
                 continue
+
             try:
                 pax_pos = traci.person.getPosition(reservation.persons[0])
             except traci.TraCIException:

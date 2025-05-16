@@ -97,7 +97,7 @@ start_lanes = generate_vehicle_start_lanes_from_taz_polygons(
 )
 
 # 8. Generate taxi trips
-number_vehicles_available = 1500
+number_vehicles_available = 2000
 SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     lane_ids=random.sample(start_lanes, number_vehicles_available),
     date_str=date,

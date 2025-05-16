@@ -38,7 +38,6 @@ class Passenger:
 
             # If no available driver, skip
             if best_driver_id is None:
-                print(f"No available drivers for reservation {res_id}")
                 # Clean up offers for this reservation
                 self.unassigned_requests = {
                     r for r in self.unassigned_requests if r.id != res_id
