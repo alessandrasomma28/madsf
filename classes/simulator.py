@@ -1,3 +1,16 @@
+"""
+simulator.py
+
+This module defines the Simulator class, which manages the configuration and
+execution of the simulations, including the integration with a multi-agent system.
+It supports the following operations:
+
+1. configure_output_dir: Sets up output paths and simulation time.
+2. generate_config: Creates the SUMO configuration file starting from the template.
+3. run_simulation: Initializes the multi-agent model and executes the simulation with or without GUI.
+"""
+
+
 import os
 from pathlib import Path
 from datetime import datetime
@@ -25,7 +38,7 @@ class Simulator:
             net_file: str, 
             config_template_path: str,
             taz_file_path: Optional[str]
-            ):
+        ):
         self.net_file_path = Path(net_file).resolve()
         self.config_template_path = Path(config_template_path).resolve()
         if taz_file_path is None:
@@ -51,7 +64,7 @@ class Simulator:
             date_str: str, 
             start_time_str: str, 
             end_time_str: str
-            ):
+        ):
         """
         Builds output dir path and route file path based on date and time slot.
 
@@ -170,7 +183,8 @@ class Simulator:
 
     def run_simulation(
             self,
-            activeGui: bool = False
+            activeGui: bool = False,
+            agents_interval: int = 60
         ):
         """
         Runs the SUMO simulation using the generated configuration file,
@@ -180,6 +194,8 @@ class Simulator:
         -----------
         - activeGui (bool): 
             If True, runs with SUMO-GUI. If False, runs headless.
+        - agents_interval: int
+            Interval (timestamps) for agents execution.
 
         Returns:
         -------
@@ -211,7 +227,7 @@ class Simulator:
             # Initialize multi-agent model
             drt_model = Model(str(self.sumocfg_file_path), self.end_time)
             # Delegates control to custom multi-agent logic
-            drt_model.run()
+            drt_model.run(agents_interval)
         finally:
             traci.close()
             end_time = time.time()

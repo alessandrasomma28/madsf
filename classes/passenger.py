@@ -1,67 +1,93 @@
+"""
+passenger.py
+
+This module defines the Passenger class, which manages unassigned ride requests and
+interacts with the ride service to accept offers from drivers.
+It supports the following operations:
+
+1. step: Advances the passenger logic by: (i) updating the set of unassigned requests, (ii) processing unassigned ride requests,
+   (iii) evaluating driver offers, (iv) assigning the best offer to each request, and (v) cleaning up redundant offers.
+2. get_unassigned_requests: Returns the set of unassigned requests.
+3. get_passenger_timeout: Returns the timeout value for the passenger.
+"""
+
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from classes.model import Model
 import traci
-import random
+from collections import defaultdict
 
 
 class Passenger:
-    def __init__(self, model):
+    def __init__(
+            self,
+            model: "Model",
+            timeout: int
+        ):
         self.model = model
         self.unassigned_requests = set()
-        self.timeout = 900
+        self.timeout = timeout
 
-    def step(self):
+
+    def step(self) -> None:
+        # Get the set of unassigned reservations from TraCI
         self.unassigned_requests = set(traci.person.getTaxiReservations(3))
-
+        # Get ID from each reservation object
         unassigned_requests_ids = {res.id for res in self.unassigned_requests}
-        print(f"Passengers pending offers: {len(self.model.rideservice.get_offers_for_passengers(unassigned_requests_ids).items())}")
-        # Group offers by reservation
-        pending_offers = {}
+
+        # Group offers by reservation ID
+        offers_by_passenger = defaultdict(list)
         for (res_id, driver_id), offer in self.model.rideservice.get_offers_for_passengers(unassigned_requests_ids).items():
-            if res_id not in pending_offers:
-                pending_offers[res_id] = []
-            pending_offers[res_id].append((driver_id, offer))
+            offers_by_passenger[res_id].append((driver_id, offer))
 
-        accepted = 0
-        removed = 0
-        used_drivers = set()
-        for res_id, driver_offers in pending_offers.items():
-            # Sort drivers by distance
-            sorted_offers = sorted(driver_offers, key=lambda x: x[1]["distance"])
-            best_driver_id = None
+        # Keep track of already assigned drivers
+        assigned_drivers = set()
+        reservations_to_remove = set()
+
+        # Iterate over grouped offers
+        for res_id, offers in offers_by_passenger.items():
             best_offer = None
-
-            # Pick the closest driver not already used
-            for driver_id, offer in sorted_offers:
-                if driver_id not in used_drivers:
-                    best_driver_id = driver_id
+            # Sort drivers by closest distance
+            for driver_id, offer in sorted(offers, key=lambda x: x[1]["distance"]):
+                if driver_id not in assigned_drivers:
                     best_offer = offer
+                    best_driver_id = driver_id
+                    assigned_drivers.add(driver_id)
+                    self.model.rideservice.accept_offer((res_id, driver_id), "passenger")
                     break
+                else:
+                    # No available driver, mark reservation for removal
+                    reservations_to_remove.add(res_id)
 
-            # If no available driver, skip
-            if best_driver_id is None:
-                # Clean up offers for this reservation
-                self.unassigned_requests = {
-                    r for r in self.unassigned_requests if r.id != res_id
-                }
-                unassigned_requests_ids.discard(res_id)
-                for driver_id, _ in driver_offers:
-                    if driver_id != best_driver_id:
-                        self.model.rideservice.offers.pop((res_id, driver_id), None)
-                        removed += 1
-                continue
-
-            # Accept the offer
-            self.model.rideservice.accept_offer(res_id, best_driver_id, "passenger")
-            used_drivers.add(best_driver_id)
-            accepted += 1
-
-            # Clean up offers for this reservation
-            self.unassigned_requests = {
-                r for r in self.unassigned_requests if r.id != res_id
-            }
-            unassigned_requests_ids.discard(res_id)
-            for driver_id, _ in driver_offers:
+            # Remove all other offers for this reservation (except the best one)
+            for driver_id, _ in offers:
                 if driver_id != best_driver_id:
-                    self.model.rideservice.offers.pop((res_id, driver_id), None)
-                    removed += 1
-        print(f"Passengers accepted {accepted} rides")
-        print(f"Removed {removed} duplicated reservations")
+                    self.model.rideservice.remove_offer((res_id, driver_id))
+
+            # Final cleanup
+            self.unassigned_requests = {r for r in self.unassigned_requests if r.id not in reservations_to_remove}
+
+
+    def get_unassigned_requests(self) -> set:
+        """
+        Gets the set of unassigned requests.
+
+        Returns:
+        -------
+        set
+            A set containing all the unassigned requests.
+        """
+        return self.unassigned_requests
+    
+
+    def get_passenger_timeout(self) -> int:
+        """
+        Gets the timeout for passengers.
+
+        Returns:
+        -------
+        int
+            An int containing the max waiting time for passengers.
+        """
+        return self.timeout

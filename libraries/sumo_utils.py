@@ -27,13 +27,10 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from sumolib import net
-import pyproj
-import rtree
 from datetime import datetime
 import os
 import geopandas as gpd
-from shapely.geometry import Point, MultiPolygon, Polygon, LineString
-from shapely.strtree import STRtree
+from shapely.geometry import Point, MultiPolygon, Polygon
 from scipy.spatial import cKDTree
 import numpy as np
 import subprocess
@@ -46,7 +43,7 @@ import xml.etree.ElementTree as ET
 import random
 from collections import defaultdict
 import ast
-
+from typing import Optional
 
 from libraries.data_utils import read_sf_traffic_data
 from constants.sumoenv_constants import SUMO_BIN_PATH
@@ -126,7 +123,8 @@ def get_nearest_edge(
         lon: float, 
         lat: float, 
         radius: float, 
-        safe_edge_ids: set = None):
+        safe_edge_ids: set = None
+    ) -> Optional[str]:
     """
     Finds the nearest edge in the SUMO network to a given geographic location.
 
@@ -176,7 +174,7 @@ def sf_traffic_map_matching(
         output_folder_path: str, 
         radius: float, 
         safe_edge_ids: set = None
-        ) -> str:
+    ) -> str:
     """
     Performs map matching by assigning each GPS point to its nearest road network edge.
 
@@ -243,7 +241,7 @@ def sf_traffic_od_generation(
         date_str: str, 
         start_time_str: str, 
         end_time_str: str
-        ) -> str:
+    ) -> str:
     """
     Generates an Origin-Destination (OD) file from map-matched traffic data.
 
@@ -329,7 +327,7 @@ def add_sf_traffic_taz_matching(
         lon_col: str = "longitude",
         zone_column: str = "assigned_taz",
         zone_id_field: str = "TAZ"
-        ) -> None:
+    ) -> None:
     """
     Adds TAZ info to OD trips based on origin GPS coords and TAZ polygons.
 
@@ -399,7 +397,7 @@ def sf_traffic_routes_generation(
         date_str: str, 
         start_time_str: str, 
         end_time_str: str
-        ) -> str:
+    ) -> str:
     """
     Generates a SUMO-compatible route file (XML) from an OD file.
 
@@ -494,7 +492,7 @@ def convert_shapefile_to_sumo_poly_with_polyconvert(
         type_field: str = "zone", 
         id_field: str = "TAZ",
         output_filename: str = "taz_zones.poly.xml"
-        ) -> Path:
+    ) -> Path:
     """
     This function uses the polyconvert tool to convert a shapefile into a SUMO polygon file.
 
@@ -554,7 +552,7 @@ def convert_shapefile_to_sumo_poly_with_polyconvert(
 def export_taz_coords(
         shapefile_path: str, 
         output_csv_path: str
-        ) -> None:
+    ) -> None:
     """
     Extracts polygon boundary and centroid coordinates from a TAZ shapefile.
 
@@ -615,7 +613,7 @@ def map_coords_to_sumo_edges(
         taz_csv_path: str, 
         net_xml_path: str, 
         output_csv_path: str
-        ) -> None:
+    ) -> None:
     """
     Maps each coordinate from TAZ polygon and centroid to nearest SUMO edge and lane.
 
@@ -703,7 +701,7 @@ def map_coords_to_sumo_edges(
 def map_taz_to_edges(
         taz_csv_path: str, 
         safe_edge_ids: set = None
-        ) -> dict:
+    ) -> dict:
     """
     Maps TAZ polygons to their corresponding edges and lanes.
 
@@ -757,10 +755,10 @@ def map_taz_to_edges(
 
 
 def generate_vehicle_start_lanes_from_taz_polygons(
-    shapefile_path: str,
-    net_file: str,
-    points_per_taz: int = 2,
-    safe_edge_ids: set = None
+        shapefile_path: str,
+        net_file: str,
+        points_per_taz: int = 2,
+        safe_edge_ids: set = None
     ) -> list:
     """
     Samples points inside each TAZ polygon and maps them to the nearest lane using SUMO net.
@@ -837,7 +835,7 @@ def generate_vehicle_start_lanes_from_taz_polygons(
 def get_valid_taxi_edges(
         net_file: str,
         safe_edge_ids: set = None
-        ) -> set:
+    ) -> set:
     """
     Extracts usable edge IDs where taxis can drive. Uses sumolib (static network loading).
 
@@ -889,7 +887,7 @@ def generate_drt_vehicle_instances_from_lanes(
         start_time_str: str,
         end_time_str: str,
         sf_tnc_fleet_folder_path: str
-        ) -> str:
+    ) -> str:
     """
     Generates a DRT fleet file with <vType> and <vehicle> entries, and dummy routes.
 
@@ -1023,7 +1021,7 @@ def generate_matched_drt_requests(
         end_time_str: str,
         sf_requests_folder_path: str,
         valid_edge_ids: set
-        ) -> str:
+    ) -> str:
     """
     Generates DRT requests for SUMO from TNC data and TAZ-edge mapping,
     ensuring all persons depart from and arrive at valid, reachable edges.

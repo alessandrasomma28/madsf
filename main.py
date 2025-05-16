@@ -138,4 +138,7 @@ SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(
 sumoSimulator.generate_config()
 
 # 13. Run simulation
-sumoSimulator.run_simulation(activeGui=True)
+sumoSimulator.run_simulation(
+    activeGui=True,
+    agents_interval=30
+    )

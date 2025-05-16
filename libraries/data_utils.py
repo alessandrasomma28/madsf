@@ -61,8 +61,8 @@ def read_sf_traffic_data(file_path: str) -> pd.DataFrame:
 
 def convert_sf_traffic_csv_format(
         input_csv_path: str,
-          output_csv_path: str
-          ) -> None:
+        output_csv_path: str
+    ) -> None:
     """
     Converts a San Francisco traffic CSV from original format to a localized format.
 
@@ -106,7 +106,7 @@ def extract_sf_traffic_timeslot(
         start_time_str: str,
         end_time_str: str, 
         output_csv_folder: str
-        ) -> str:
+    ) -> str:
     """
     Extracts a time slot of traffic data for a specific date and time range,
     and saves the filtered data in a structured folder format.
@@ -174,7 +174,7 @@ def read_tnc_stats_data(
         sf_rides_stats_path: str, 
         start_time_str: str, 
         end_time_str: str
-        ) -> dict:
+    ) -> dict:
     """
     Reads TNC hourly pickup/dropoff data from a CSV file and filters it based on a specified time window.
 

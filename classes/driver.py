@@ -1,47 +1,83 @@
+"""
+driver.py
+
+This module defines the Driver class, which manages idle drivers and
+interacts with the ride service to accept offers from passengers.
+It supports the following operations:
+
+1. step: Advances the passenger logic by: (i) updating the set of idle drivers, (ii) processing pending ride offers where
+the passenger has already accepted, (iii) assigning the best offer to each idle driver, and (iv) cleaning up redundant offers.
+2. get_idle_drivers: Returns the set of idle drivers.
+3. get_driver_timeout: Returns the timeout value for the driver.
+"""
+
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from classes.model import Model
 import traci
-import random
 from collections import defaultdict
 
 
 class Driver:
-    def __init__(self, model):
+    model: "Model"
+    idle_drivers: set
+    timeout: int
+
+
+    def __init__(
+            self,
+            model: "Model",
+            timeout: int
+        ):
         self.model = model
         self.idle_drivers = set()
-        self.timeout = 120
+        self.timeout = timeout
 
-    def step(self):
+
+    def step(self) -> None:
+        # Get the set of idle drivers from TraCI
         self.idle_drivers = set(traci.vehicle.getTaxiFleet(0))
 
-        # Find all pending offers where passenger has already accepted
-        pending_offers = {
-            (res_id, driver_id): offer
-            for (res_id, driver_id), offer in self.model.rideservice.offers.items()
-            if (res_id, driver_id) in self.model.rideservice.acceptances
-            and "passenger" in self.model.rideservice.acceptances[(res_id, driver_id)][0]
-            and driver_id in self.idle_drivers
-        }
+        # Collect pending offers where passenger has already accepted
+        offers_by_driver = defaultdict(list)
+        for (res_id, driver_id), offer in self.model.rideservice.get_offers_for_drivers(self.idle_drivers).items():
+            if self.model.rideservice.is_passenger_accepted(res_id, driver_id):
+                offers_by_driver[driver_id].append((res_id, offer))
 
-        print(f"Drivers pending offers: {len(pending_offers)}")
-
-        # Group offers by driver and pick best (lowest distance)
-        driver_best_offer = defaultdict(list)
-        for (res_id, driver_id), offer in pending_offers.items():
-            driver_best_offer[driver_id].append((offer["distance"], res_id))
-
-        accepted = 0
-        removed = 0
-        print(f"Unique drivers available: {len(driver_best_offer)}")
-        for driver_id, offers in driver_best_offer.items():
-            best_distance, best_res = min(offers, key=lambda x: x[0])
-            self.model.rideservice.accept_offer(best_res, driver_id, "driver")
-            accepted+=1
-            to_remove = [
-                k for k in pending_offers
-                if k[1] == driver_id and k[0] != best_res
-            ]
-            removed+=len(to_remove)
+        # Iterate over grouped offers
+        for driver_id, offers in offers_by_driver.items():
+            # Choose the closest passenger (min distance) and accept the offer
+            best_res_id, _ = min(offers, key=lambda x: x[1]["distance"])
+            key = (best_res_id, driver_id)
+            self.model.rideservice.accept_offer(key, "driver")
             self.idle_drivers.discard(driver_id)
-            for k in to_remove:
-                self.model.rideservice.offers.pop(k, None)
-        print(f"Drivers accepted {accepted} rides")
-        print(f"Removed {removed} duplicated drivers")
+
+            # Remove all other offers for the same driver
+            for res_id, _ in offers:
+                if res_id != best_res_id:
+                    self.model.rideservice.remove_offer((res_id, driver_id))
+
+
+    def get_idle_drivers(self) -> set:
+        """
+        Gets the set of idle drivers.
+
+        Returns:
+        -------
+        set
+            A set containing all the available drivers.
+        """
+        return self.idle_drivers
+    
+
+    def get_driver_timeout(self) -> int:
+        """
+        Gets the timeout for drivers.
+
+        Returns:
+        -------
+        int
+            An int containing the max waiting time for drivers.
+        """
+        return self.timeout
