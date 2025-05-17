@@ -36,7 +36,6 @@ import numpy as np
 import subprocess
 from pathlib import Path
 import ast
-import math
 import random
 import traci
 import xml.etree.ElementTree as ET
@@ -44,7 +43,6 @@ import random
 from collections import defaultdict
 import ast
 from typing import Optional
-
 from libraries.data_utils import read_sf_traffic_data
 from constants.sumoenv_constants import SUMO_BIN_PATH
 
@@ -61,7 +59,7 @@ def get_strongly_connected_edges(sf_map_file_path: str) -> set:
 
     Parameters:
     ----------
-    - sf_map_file_path : str
+    sf_map_file_path : str
         Path to the SUMO network XML file.
 
     Returns:
@@ -69,7 +67,7 @@ def get_strongly_connected_edges(sf_map_file_path: str) -> set:
     set
         A set of edge IDs (str) strongly connected.
     
-    Note:
+    Notes:
     Strongly connected edges are those that can be reached from each other in both directions.
     """
     # Load the SUMO network
@@ -174,7 +172,7 @@ def sf_traffic_map_matching(
         output_folder_path: str, 
         radius: float, 
         safe_edge_ids: set = None
-    ) -> str:
+    ) -> Path:
     """
     Performs map matching by assigning each GPS point to its nearest road network edge.
 
@@ -203,7 +201,7 @@ def sf_traffic_map_matching(
 
     Returns:
     -------
-    str
+    Path
         Path to the saved output CSV file with edge IDs.
     """
     # Load the SUMO network
@@ -232,7 +230,7 @@ def sf_traffic_map_matching(
     df.to_csv(output_csv_path, index=False, sep=";")
     print(f"✅ Mapped traffic coordinates to SUMO edges. Saved to: {output_csv_path}")
 
-    return str(output_csv_path)
+    return output_csv_path
 
 
 def sf_traffic_od_generation(
@@ -241,7 +239,7 @@ def sf_traffic_od_generation(
         date_str: str, 
         start_time_str: str, 
         end_time_str: str
-    ) -> str:
+    ) -> Path:
     """
     Generates an Origin-Destination (OD) file from map-matched traffic data.
 
@@ -267,7 +265,7 @@ def sf_traffic_od_generation(
 
     Returns:
     -------
-    str
+    Path
         Full path to the saved OD CSV file.
     """
     # Read the CSV file
@@ -341,21 +339,26 @@ def add_sf_traffic_taz_matching(
     Parameters:
     ----------
     - edge_file_path: str
-        CSV with columns latitude and longitude
+        CSV with columns latitude and longitude.
     - shapefile_path: str
-        Path to .shp fie
+        Path to .shp file.
     - lat_col: str
-        Name of latitude column
+        Name of latitude column.
     - lon_col: str
-        Name of longitude column
+        Name of longitude column.
     - zone_column: str
-        New column to assign TAZ ID
+        New column to assign TAZ ID.
     - zone_id_field: str
-        Field name in shapefile for TAZ ID
+        Field name in shapefile for TAZ ID.
 
     Returns:
     -------
     None
+
+    Raises:
+    ------
+    - ValueError: If lat_col or lon_col are missing in edge_file_path.
+    - ValueError: If zone_id_field is not found in shapefile_path.
     """
     df = pd.read_csv(edge_file_path, sep=';')
     if lat_col not in df or lon_col not in df:
@@ -397,7 +400,7 @@ def sf_traffic_routes_generation(
         date_str: str, 
         start_time_str: str, 
         end_time_str: str
-    ) -> str:
+    ) -> Path:
     """
     Generates a SUMO-compatible route file (XML) from an OD file.
 
@@ -429,7 +432,7 @@ def sf_traffic_routes_generation(
 
     Returns:
     -------
-    str
+    Path
         Full path to the saved XML file.
     """
     # Load OD data
@@ -499,23 +502,27 @@ def convert_shapefile_to_sumo_poly_with_polyconvert(
     Parameters:
     ----------
     - net_file: str
-        Path to the SUMO network file (.net.xml)
+        Path to the SUMO network file (.net.xml).
     - shapefile_path: str
-        Path to the .shp file (will strip .shp automatically)
+        Path to the .shp file (will strip .shp automatically).
     - output_dir: str
-        Output folder where the .poly.xml will be saved
+        Output folder where the .poly.xml will be saved.
     - type_field: str
-        Attribute column to use as the polygon type
+        Attribute column to use as the polygon type.
     - id_field: str
-        Attribute column to use as polygon ID
+        Attribute column to use as polygon ID.
     - output_filename: str
-        Name of the resulting .poly.xml file
+        Name of the resulting .poly.xml file.
 
     Returns:
     -------
-    str
-        Full path to the generated .poly.xml file
-     """
+    Path
+        Full path to the generated .poly.xml file.
+
+    Raises:
+    ------
+    RuntimeError: If polyconvert fails.
+    """
 
     polyconvert_bin = os.path.join(SUMO_BIN_PATH, "polyconvert.exe")
     net_file = os.path.abspath(net_file)
@@ -541,10 +548,10 @@ def convert_shapefile_to_sumo_poly_with_polyconvert(
         subprocess.run(command, check=True)
         print(f"Poly file generated at: {output_path}")
     except subprocess.CalledProcessError as e:
-        print("polyconvert failed!")
+        print("Polyconvert failed!")
         print(f"Command: {' '.join(command)}")
         print(f"Return code: {e.returncode}")
-        raise
+        raise RuntimeError(f"There was a problem with polyconvert.")
 
     return output_path
 
@@ -878,6 +885,7 @@ def get_valid_taxi_edges(
                 break  # No need to check other lanes once we find one good
 
     print(f"✅ Found {len(valid_edges)} valid taxi edges.")
+
     return valid_edges
 
 
@@ -886,8 +894,9 @@ def generate_drt_vehicle_instances_from_lanes(
         date_str: str,
         start_time_str: str,
         end_time_str: str,
-        sf_tnc_fleet_folder_path: str
-    ) -> str:
+        sf_tnc_fleet_folder_path: str,
+        idle_mechanism: str
+    ) -> Path:
     """
     Generates a DRT fleet file with <vType> and <vehicle> entries, and dummy routes.
 
@@ -909,11 +918,18 @@ def generate_drt_vehicle_instances_from_lanes(
         End time in 'HH:MM' format (e.g., '10:00').
     - sf_tnc_fleet_folder_path: str
         Path to save the resulting SUMO .rou.xml file with <vehicle> entries.
+    - idle_mechanism: str
+        Idling mechanism for taxis ("stop" or "randomCircling").
 
     Returns:
     -------
-    str
+    Path
         Full path to the saved XML file.
+
+    Raises:
+    ------
+    - ValueError: If the number of provided lane_ids are not sufficient for the taxi fleet.
+    - ValueError: If idle_mechanism is not "stop" or "randomCircling".
     """
     eco = int(len(lane_ids) // 3.5)
     diesel = int(len(lane_ids) // 3.5)
@@ -974,19 +990,30 @@ def generate_drt_vehicle_instances_from_lanes(
 
             edge_id = lane_id.split("_")[0]  # Take the edge ID part (remove "_0" lane suffix)
 
-            trip = ET.SubElement(root, "trip", {
-                "id": f"taxi_{vehicle_counter}",
-                "depart": "0.00",
-                "type": vt["id"],
-                "personCapacity": "4"
-            })
-
-            # ➔ Dummy initial route = just the edge where the vehicle is starting
-            trip = ET.SubElement(trip, "stop", {
-                "lane": lane_id,
-                "triggered": "person"
-            })
-            
+            if idle_mechanism == "randomCircling":
+                vehicle = ET.SubElement(root, "vehicle", {
+                    "id": f"taxi_{vehicle_counter}",
+                    "depart": "0.00",
+                    "type": vt["id"]
+                })
+                # ➔ Dummy initial route = just the edge where the vehicle is starting
+                vehicle = ET.SubElement(vehicle, "route", {
+                    "edges": edge_id,
+                })
+            elif idle_mechanism == "stop":
+                trip = ET.SubElement(root, "trip", {
+                    "id": f"taxi_{vehicle_counter}",
+                    "depart": "0.00",
+                    "type": vt["id"],
+                    "personCapacity": "4"
+                })
+                # ➔ Dummy initial route = just the edge where the vehicle is starting
+                trip = ET.SubElement(trip, "stop", {
+                    "lane": lane_id,
+                    "triggered": "person"
+                })
+            else:
+                raise ValueError("Invalid idle mechanism. Please provide either 'stop' or 'randomCircling'")
             vehicle_counter += 1
 
     date_part = datetime.strptime(date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -1021,7 +1048,7 @@ def generate_matched_drt_requests(
         end_time_str: str,
         sf_requests_folder_path: str,
         valid_edge_ids: set
-    ) -> str:
+    ) -> Path:
     """
     Generates DRT requests for SUMO from TNC data and TAZ-edge mapping,
     ensuring all persons depart from and arrive at valid, reachable edges.
@@ -1053,7 +1080,7 @@ def generate_matched_drt_requests(
 
     Returns:
     -------
-    str
+    Path
         Full path to the saved XML file.
     """
     person_elements = []

@@ -15,6 +15,8 @@ date = "2021-01-14"
 start_time = "9:00"
 end_time = "10:00"
 radius = 150
+dispatch_algorithm = "traci"
+idle_mechanism = "randomCircling"
 sumoSimulator = Simulator(
     net_file=SUMO_NET_PATH, 
     config_template_path=SUMO_CFGTEMPLATE_PATH, 
@@ -94,7 +96,7 @@ start_lanes = generate_vehicle_start_lanes_from_taz_polygons(
     net_file=SUMO_NET_PATH,
     points_per_taz=points_taz,
     safe_edge_ids=safe_edge_ids
-)
+    )
 
 # 8. Generate taxi trips
 number_vehicles_available = 2000
@@ -103,8 +105,9 @@ SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     date_str=date,
     start_time_str=start_time, 
     end_time_str=end_time,
-    sf_tnc_fleet_folder_path=SUMO_BASE_SCENARIO_FOLDER_PATH
-)
+    sf_tnc_fleet_folder_path=SUMO_BASE_SCENARIO_FOLDER_PATH,
+    idle_mechanism=idle_mechanism
+    )
 
 # 9. Get valid edges for taxi routes
 valid_edge_ids = get_valid_taxi_edges(
@@ -135,10 +138,13 @@ SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(
     )
 
 # 12. Generate SUMO configuration file
-sumoSimulator.generate_config()
+sumoSimulator.generate_config(
+    dispatch_algorithm=dispatch_algorithm,
+    idle_mechanism=idle_mechanism
+    )
 
 # 13. Run simulation
 sumoSimulator.run_simulation(
     activeGui=True,
-    agents_interval=30
+    agents_interval=10
     )

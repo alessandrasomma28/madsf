@@ -15,9 +15,8 @@ following operations:
 import pandas as pd
 from datetime import datetime
 import os
-from constants.data_constants import SF_TRAFFIC_SFMTA_FOLDER_PATH
 import csv
-from collections import defaultdict
+from pathlib import Path
 
 
 def read_sf_traffic_data(file_path: str) -> pd.DataFrame:
@@ -32,7 +31,7 @@ def read_sf_traffic_data(file_path: str) -> pd.DataFrame:
 
     Parameters:
     ----------
-    - file_path : str
+    file_path : str
         Path to the input CSV file.
 
     Returns:
@@ -56,6 +55,7 @@ def read_sf_traffic_data(file_path: str) -> pd.DataFrame:
 
     # Compute relative time
     df['relative_time'] = (df['timestamp'] - df['timestamp'].min()).dt.total_seconds()
+
     return df
 
 
@@ -106,7 +106,7 @@ def extract_sf_traffic_timeslot(
         start_time_str: str,
         end_time_str: str, 
         output_csv_folder: str
-    ) -> str:
+    ) -> Path:
     """
     Extracts a time slot of traffic data for a specific date and time range,
     and saves the filtered data in a structured folder format.
@@ -133,7 +133,7 @@ def extract_sf_traffic_timeslot(
 
     Returns:
     -------
-    str
+    Path
         Full path to the saved CSV file containing the filtered data.
     """
     # Read dataset

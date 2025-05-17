@@ -11,7 +11,6 @@ It supports the following operations:
 """
 
 
-import os
 from pathlib import Path
 from datetime import datetime
 import traci
@@ -64,7 +63,7 @@ class Simulator:
             date_str: str, 
             start_time_str: str, 
             end_time_str: str
-        ):
+        ) -> Path:
         """
         Builds output dir path and route file path based on date and time slot.
 
@@ -93,7 +92,7 @@ class Simulator:
 
         Returns:
         --------
-        str 
+        Path 
             Path to the generated directory
         """
         date_part = datetime.strptime(date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -123,7 +122,11 @@ class Simulator:
         return self.output_dir_path
 
 
-    def generate_config(self):
+    def generate_config(
+            self,
+            dispatch_algorithm: str = "traci",
+            idle_mechanism: str = "stop"
+        ) -> None:
         """
         Generates a SUMO configuration (.sumocfg) file from a template, using dynamic values
         for net file, route file, additional files, output directory, and simulation end time.
@@ -134,8 +137,17 @@ class Simulator:
             - {net_file}
             - {route_file}
             - {tazpoly_file}
+            - {dispatch_algorithm}
+            - {idle_mechanism}
             - {output_dir}
             - {end_time}
+
+        Parameters:
+        ----------
+        - dispatch_algorithm: str
+            Dispatch algorithm for taxis. Can be "greedy", "greedyClosest" or "traci".
+        - idle_mechanism: str
+            Idling mechanism for taxis ("stop" or "randomCircling").
 
         Returns:
         -------
@@ -143,7 +155,11 @@ class Simulator:
 
         Raises:
         -------
-        ValueError: If output_dir_path is not set before calling this method.
+        - ValueError: If output_dir_path is not set before calling this method.
+        - ValueError: If route_file_path is not set before calling this method.
+        - ValueError: If end_time is not set before calling this method.
+        - ValueError: If dispatch_algorithm is not "greedy", "greedyClosest" or "traci".
+        - ValueError: If idle_mechanism is not "stop" or "randomCircling".
         """
         if self.output_dir_path is None:
             raise ValueError("output_dir_path must be configured before generating the config file.")
@@ -151,7 +167,10 @@ class Simulator:
             raise ValueError("route_file_path must be set before generating the config file.")
         if not self.end_time:
             raise ValueError("end_time must be set before generating the config file.")
-
+        if dispatch_algorithm not in ["greedy", "greedyClosest", "traci"]:
+            raise ValueError("Invalid dispatch algorithm. Please provide either 'greedy', 'greedyClosest' or 'traci'")
+        if idle_mechanism not in ["stop", "randomCircling"]:
+            raise ValueError("Invalid idle mechanism. Please provide either 'stop' or 'randomCircling'")
 
         # Read the template
         with open(self.config_template_path, 'r') as f:
@@ -165,6 +184,8 @@ class Simulator:
             net_file=self.net_file_path.as_posix(),
             route_file=route_file_str,
             tazpoly_file=self.taz_file_path.as_posix(),
+            dispatch_algorithm = dispatch_algorithm,
+            idle_mechanism = idle_mechanism,
             output_dir=self.output_dir_path.as_posix(),
             end_time=self.end_time
         )
@@ -212,7 +233,7 @@ class Simulator:
         try:
             from sumolib import checkBinary
         except ImportError:
-            raise ImportError("SUMO Python tools not found. Install with: pip install eclipse-sumo")
+            raise ImportError("SUMO Python tools not found. Install with: 'pip install eclipse-sumo'.")
 
         # Choose GUI or headless mode
         sumo_binary = checkBinary("sumo-gui" if activeGui else "sumo")

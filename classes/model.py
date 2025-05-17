@@ -47,7 +47,7 @@ class Model:
 
         Parameters:
         ----------
-        - agents_interval: int
+        agents_interval: int
             Interval (timestamps) for agents execution.
 
         Returns:

@@ -48,6 +48,7 @@ class Passenger:
         # Iterate over grouped offers
         for res_id, offers in offers_by_passenger.items():
             best_offer = None
+            best_driver_id = None
             # Sort drivers by closest distance
             for driver_id, offer in sorted(offers, key=lambda x: x[1]["distance"]):
                 if driver_id not in assigned_drivers:
@@ -55,18 +56,17 @@ class Passenger:
                     best_driver_id = driver_id
                     assigned_drivers.add(driver_id)
                     self.model.rideservice.accept_offer((res_id, driver_id), "passenger")
+                    reservations_to_remove.add(res_id)
                     break
                 else:
-                    # No available driver, mark reservation for removal
-                    reservations_to_remove.add(res_id)
+                    continue
 
             # Remove all other offers for this reservation (except the best one)
             for driver_id, _ in offers:
                 if driver_id != best_driver_id:
                     self.model.rideservice.remove_offer((res_id, driver_id))
 
-            # Final cleanup
-            self.unassigned_requests = {r for r in self.unassigned_requests if r.id not in reservations_to_remove}
+        self.unassigned_requests = {r for r in self.unassigned_requests if r.id not in reservations_to_remove}
 
 
     def get_unassigned_requests(self) -> set:
