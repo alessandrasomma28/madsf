@@ -10,9 +10,13 @@ It supports the following operations:
 4. accept_offer: Registers an acceptance of an offer by either a driver or passenger.
 5. get_offers_for_drivers: Returns offers relevant to the given list of driver IDs.
 6. get_offers_for_passengers: Returns offers relevant to the given list of passenger reservation IDs.
-7. remove_offer: Removes an offer from the offers list.
+7. remove_offer: Removes an offer from the offers dict.
 8. is_passenger_accepted: Returns True if the passenger has accepted a specific offer.
 9. is_driver_accepted: Returns True if the driver has accepted a specific offer.
+10. remove_acceptance: Removes an acceptance from the acceptances dict.
+11. compute_offer: Computes travel time, distance, and price of a reservation.
+12. compute_surge_multiplier: Computes the price multiplication factor based on the ratio between
+    number of pending requests and number of available drivers.
 """
 
 
@@ -29,6 +33,13 @@ class RideService:
     model: "Model"
     offers: dict
     acceptances: dict
+    base_price: float
+    min_price: float
+    cost_per_min: float
+    cost_per_km: float
+    service_fee: float
+    surge_multiplier: float
+    max_surge: float
 
 
     def __init__(
@@ -38,6 +49,13 @@ class RideService:
         self.model = model
         self.offers = {}  # key: (res_id, driver_id), value: dict with time, distance, price
         self.acceptances = {}  # key: (res_id, driver_id), value: (set of agents, timestamp)
+        self.base_price = 2.17
+        self.min_price = 7.83
+        self.cost_per_min = 0.38
+        self.cost_per_km = 1.45
+        self.service_fee = 5.31
+        self.surge_multiplier = 1
+        self.max_surge = 8
 
 
     def step(self):
@@ -51,10 +69,11 @@ class RideService:
 
         This function:
         - Cleans up partial acceptances that have timed out for either passengers or drivers.
+        - Compute the surge multiplier according to unassigned requests and available drivers.
         - Iterates over all unassigned passenger ride requests.
         - For each request, skips if an offer already exists.
         - Attempts to retrieve the passenger's current position; skips the request if unsuccessful.
-        - Calculates the distance from each idle taxi to the passenger's position, skipping taxis w
+        - Calculates the distance from each idle taxi to the passenger's position, skipping taxis
           with unavailable positions and farther than 10km.
         - Selects up to 8 closest taxis.
         - Creates ride offers for each selected taxi, including time, distance, and price information.
@@ -70,7 +89,10 @@ class RideService:
         unassigned = self.model.passenger.get_unassigned_requests()
         timeout_p = self.model.passenger.get_passenger_timeout()
         timeout_d = self.model.driver.get_driver_timeout()
+        # Compute surge multiplier
         now = int(self.model.time)
+        if (now % 300 == 0):
+            self.surge_multiplier = self.compute_surge_multiplier(len(unassigned), len(idle_taxis))
 
         # Clean up partial acceptances if timeout
         expired_keys = [
@@ -121,10 +143,19 @@ class RideService:
             # Create offers
             for dist, taxi_id in closest_taxis:
                 offer_key = (res_id, taxi_id)
+                from_edge = reservation.fromEdge
+                to_edge = reservation.toEdge
+                try:
+                    travel_time, route_length, price = self.compute_offer(from_edge, to_edge, self.surge_multiplier)
+                except traci.TraCIException as e:
+                    print(f"⚠️ Failed to compute route for offer {offer_key}: {e}")
+                    continue
                 self.offers[offer_key] = {
-                    "time": 300,
                     "distance": dist,
-                    "price": 10
+                    "time": travel_time,
+                    "route_length": route_length,
+                    "surge": self.surge_multiplier,
+                    "price": price
                 }
 
 
@@ -320,3 +351,78 @@ class RideService:
         None or removed acceptance value (set, int)
         """
         self.acceptances.pop(key, None)
+
+
+    def compute_offer(
+            self,
+            from_edge: str,
+            to_edge: str,
+            surge_multiplier : float
+        ) -> tuple[int, float, float]:
+        """
+        Computes travel time, distance, and price for a specific offer.
+
+        Parameters:
+        ----------
+        - from_edge: str
+            Departure edge ID of the reservation.
+        - to_edge: str
+            Arrival edge ID of the reservation.
+        - surge_multiplier: float
+            Multiplication factor applied to the final price.
+
+        Returns:
+        -------
+        - travel_time: int
+            Estimated travel time in seconds.
+        - route_length: float
+            Estimated distance in meters.
+        - price: float
+            Computed price for the ride.
+        """
+        # Find route and get travel distance (miles) and travel time (seconds)
+        route = traci.simulation.findRoute(from_edge, to_edge)
+        travel_time = int(route.travelTime)
+        route_length = route.length
+        # Compute price
+        surge_multiplier = 1
+        price = (
+            self.base_price + 
+            (self.cost_per_min * (travel_time / 60)) +
+            (self.cost_per_km * (route_length / 1000))
+            ) * surge_multiplier + self.service_fee
+        price = max(self.min_price, price)
+
+        return travel_time, route_length, price
+    
+
+    def compute_surge_multiplier(
+            self,
+            unassigned_requests,
+            idle_drivers
+            ) -> float:
+        """
+        Computes the surge multiplier based on the ratio of unassigned ride requests
+        to available idle drivers. The multiplier ranges from 1.0 (normal conditions)
+        to 5.0 (high demand, low supply).
+
+        Parameters:
+        ----------
+        - unassigned_requests: int
+            Number of pending requests.
+        - idle_drivers: int
+            Number of available drivers.
+
+        Returns
+        -------
+        surge : float
+            Surge price multiplier (clipped between 1.0 and 5.0).
+        """
+
+        if idle_drivers == 0:
+            return self.max_surge  # Max surge if no drivers available
+        ratio = unassigned_requests / idle_drivers
+        # Linear mapping
+        surge = min(self.max_surge, max(1, ratio))
+
+        return round(surge, 2)
