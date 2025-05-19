@@ -50,7 +50,7 @@ class Passenger:
             best_offer = None
             best_driver_id = None
             # Sort drivers by closest distance
-            for driver_id, offer in sorted(offers, key=lambda x: x[1]["distance"]):
+            for driver_id, offer in sorted(offers, key=lambda x: x[1]["radius"]):
                 if driver_id not in assigned_drivers:
                     best_offer = offer
                     best_driver_id = driver_id

@@ -14,7 +14,7 @@ It supports the following operations:
 8. is_passenger_accepted: Returns True if the passenger has accepted a specific offer.
 9. is_driver_accepted: Returns True if the driver has accepted a specific offer.
 10. remove_acceptance: Removes an acceptance from the acceptances dict.
-11. compute_offer: Computes travel time, distance, and price of a reservation.
+11. compute_offer: Computes travel time, route length, and price of a reservation.
 12. compute_surge_multiplier: Computes the price multiplication factor based on the ratio between
     number of pending requests and number of available drivers.
 """
@@ -47,7 +47,7 @@ class RideService:
             model: "Model"
         ):
         self.model = model
-        self.offers = {}  # key: (res_id, driver_id), value: dict with time, distance, price
+        self.offers = {}  # key: (res_id, driver_id), value: dict with travel time, route length, price
         self.acceptances = {}  # key: (res_id, driver_id), value: (set of agents, timestamp)
         self.base_price = 2.17
         self.min_price = 7.83
@@ -73,10 +73,10 @@ class RideService:
         - Iterates over all unassigned passenger ride requests.
         - For each request, skips if an offer already exists.
         - Attempts to retrieve the passenger's current position; skips the request if unsuccessful.
-        - Calculates the distance from each idle taxi to the passenger's position, skipping taxis
+        - Calculates the radius from each idle taxi to the passenger's position, skipping taxis
           with unavailable positions and farther than 10km.
         - Selects up to 8 closest taxis.
-        - Creates ride offers for each selected taxi, including time, distance, and price information.
+        - Creates ride offers for each selected taxi, including radius, travel time, route length, and price information.
         - Logs and skips requests if no taxis are available.
         
         Returns:
@@ -121,27 +121,27 @@ class RideService:
                 print(f"⚠️ Failed to get position for reservation {res_id}: {reservation}")
                 continue
 
-            # Compute distance of each driver from the passenger
-            taxis_with_dist = []
+            # Compute radius of each driver from the passenger
+            taxis_radius = []
             for taxi_id in idle_taxis:
                 try:
                     taxi_pos = traci.vehicle.getPosition(taxi_id)
                     # Euclidean distance
-                    dist = math.hypot(taxi_pos[0] - pax_pos[0], taxi_pos[1] - pax_pos[1])
-                    if dist <= 10000:  # Only include taxis within 10km
-                        taxis_with_dist.append((dist, taxi_id))
+                    radius = math.hypot(taxi_pos[0] - pax_pos[0], taxi_pos[1] - pax_pos[1])
+                    if radius <= 10000:  # Only include taxis within 10km
+                        taxis_radius.append((radius, taxi_id))
                 except traci.TraCIException:
                     print(f"⚠️ Failed to get position for taxi {taxi_id}")
                     continue
 
             # Get top 8 closest taxis
-            closest_taxis = heapq.nsmallest(8, taxis_with_dist)
+            closest_taxis = heapq.nsmallest(8, taxis_radius)
             if not closest_taxis:
                 print(f"⚠️ No taxis available for reservation {res_id} — skipping")
                 continue
 
             # Create offers
-            for dist, taxi_id in closest_taxis:
+            for radius, taxi_id in closest_taxis:
                 offer_key = (res_id, taxi_id)
                 from_edge = reservation.fromEdge
                 to_edge = reservation.toEdge
@@ -151,7 +151,7 @@ class RideService:
                     print(f"⚠️ Failed to compute route for offer {offer_key}: {e}")
                     continue
                 self.offers[offer_key] = {
-                    "distance": dist,
+                    "radius": radius,
                     "time": travel_time,
                     "route_length": route_length,
                     "surge": self.surge_multiplier,

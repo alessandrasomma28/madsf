@@ -48,7 +48,7 @@ class Driver:
         # Iterate over grouped offers
         for driver_id, offers in offers_by_driver.items():
             # Choose the closest passenger (min distance) and accept the offer
-            best_res_id, _ = min(offers, key=lambda x: x[1]["distance"])
+            best_res_id, _ = min(offers, key=lambda x: x[1]["radius"])
             key = (best_res_id, driver_id)
             self.model.rideservice.accept_offer(key, "driver")
             self.idle_drivers.discard(driver_id)
