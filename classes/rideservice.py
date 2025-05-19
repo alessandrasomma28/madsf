@@ -336,6 +336,10 @@ class RideService:
             Unique ID of the passenger reservation
         - driver_id: str
             Unique ID of the driver
+
+        Returns:
+        -------
+        bool
         """
         key = (res_id, driver_id)
         return (
@@ -357,6 +361,10 @@ class RideService:
             Unique ID of the passenger reservation
         - driver_id: str
             Unique ID of the driver
+
+        Returns:
+        -------
+        bool
         """
         key = (res_id, driver_id)
         return (

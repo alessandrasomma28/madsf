@@ -1001,7 +1001,7 @@ def generate_drt_vehicle_instances_from_lanes(
                     "edges": edge_id,
                 })
                 end_of_shift = generate_work_duration()
-                ET.SubElement(vehicle, "param", key="has.taxi.end", value=str(end_of_shift))
+                ET.SubElement(vehicle, "param", key="device.taxi.end", value=str(end_of_shift))
             elif idle_mechanism == "stop":
                 trip = ET.SubElement(root, "trip", {
                     "id": f"taxi_{vehicle_counter}",
@@ -1015,7 +1015,7 @@ def generate_drt_vehicle_instances_from_lanes(
                     "triggered": "person"
                 })
                 end_of_shift = generate_work_duration()
-                ET.SubElement(trip, "param", key="has.taxi.end", value=str(end_of_shift))
+                ET.SubElement(trip, "param", key="device.taxi.end", value=str(end_of_shift))
             else:
                 raise ValueError("Invalid idle mechanism. Please provide either 'stop' or 'randomCircling'")
             vehicle_counter += 1

@@ -25,24 +25,24 @@ import time
 
 class Simulator:
     net_file_path: Path
+    taz_file_path: Path
+    sumocfg_file_path: Path
     route_file_path: Path
     output_dir_path: Path
     end_time: int
-    sumocfg_file_path: Path
-    taz_file_path: Path
 
 
     def __init__(
             self,
-            net_file: str, 
+            net_file_path: str, 
             config_template_path: str,
             taz_file_path: Optional[str]
         ):
-        self.net_file_path = Path(net_file).resolve()
+        self.net_file_path = Path(net_file_path).resolve()
         self.config_template_path = Path(config_template_path).resolve()
         if taz_file_path is None:
             self.taz_file_path = convert_shapefile_to_sumo_poly_with_polyconvert(
-                net_file=net_file,
+                net_file=net_file_path,
                 shapefile_path=SF_TAZ_SHAPEFILE_PATH,
                 output_dir=SUMOENV_PATH
             )
@@ -125,8 +125,7 @@ class Simulator:
     def generate_config(
             self,
             dispatch_algorithm: str = "traci",
-            idle_mechanism: str = "stop",
-            dispatch_period: int = 60
+            idle_mechanism: str = "stop"
         ) -> None:
         """
         Generates a SUMO configuration (.sumocfg) file from a template, using dynamic values
@@ -140,7 +139,6 @@ class Simulator:
             - {tazpoly_file}
             - {dispatch_algorithm}
             - {idle_mechanism}
-            - {dispatch_period}
             - {output_dir}
             - {end_time}
 
@@ -162,7 +160,6 @@ class Simulator:
         - ValueError: If end_time is not set before calling this method.
         - ValueError: If dispatch_algorithm is not "greedy", "greedyClosest" or "traci".
         - ValueError: If idle_mechanism is not "stop" or "randomCircling".
-        - ValueError: If dispatch_period is not between 1 and "end_time".
         """
         if self.output_dir_path is None:
             raise ValueError("output_dir_path must be configured before generating the config file.")
@@ -174,8 +171,6 @@ class Simulator:
             raise ValueError("Invalid dispatch algorithm. Please provide either 'greedy', 'greedyClosest' or 'traci'")
         if idle_mechanism not in ["stop", "randomCircling"]:
             raise ValueError("Invalid idle mechanism. Please provide either 'stop' or 'randomCircling'")
-        if dispatch_period < 1 or dispatch_period > self.end_time:
-            raise ValueError("Invalid dispatch perdios mechanism. Please provide a period between 1 and end_time")
 
         # Read the template
         with open(self.config_template_path, 'r') as f:
@@ -191,7 +186,6 @@ class Simulator:
             tazpoly_file=self.taz_file_path.as_posix(),
             dispatch_algorithm = dispatch_algorithm,
             idle_mechanism = idle_mechanism,
-            dispatch_period = dispatch_period,
             output_dir=self.output_dir_path.as_posix(),
             end_time=self.end_time
         )
@@ -210,7 +204,8 @@ class Simulator:
 
     def run_simulation(
             self,
-            activeGui: bool = False
+            activeGui: bool = False,
+            agents_interval: int = 60
         ):
         """
         Runs the SUMO simulation using the generated configuration file,
@@ -218,8 +213,10 @@ class Simulator:
 
         Parameters:
         -----------
-        activeGui (bool): 
+        - activeGui (bool): 
             If True, runs with SUMO-GUI. If False, runs headless.
+        - agents_interval: int
+            Interval (timestamps) for agents execution.
 
         Returns:
         -------
@@ -251,7 +248,7 @@ class Simulator:
             # Initialize multi-agent model
             drt_model = Model(str(self.sumocfg_file_path), self.end_time)
             # Delegates control to custom multi-agent logic
-            drt_model.run()
+            drt_model.run(agents_interval)
         finally:
             traci.close()
             end_time = time.time()
