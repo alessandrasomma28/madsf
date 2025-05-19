@@ -8,7 +8,8 @@ It supports the following operations:
 1. step: Advances the passenger logic by: (i) updating the set of idle drivers, (ii) processing pending ride offers where
 the passenger has already accepted, (iii) assigning the best offer to each idle driver, and (iv) cleaning up redundant offers.
 2. get_idle_drivers: Returns the set of idle drivers.
-3. get_driver_timeout: Returns the timeout value for the driver.
+3. get_idle_drivers_by_provider: Returns a dictionary containing the two sets of Uber and Lyft available drivers.
+4. get_driver_timeout: Returns the timeout value for the driver.
 """
 
 
@@ -23,6 +24,7 @@ class Driver:
     model: "Model"
     idle_drivers: set
     timeout: int
+    driver_provider: dict
 
 
     def __init__(
@@ -33,11 +35,17 @@ class Driver:
         self.model = model
         self.idle_drivers = set()
         self.timeout = timeout
+        self.driver_provider = {}  # maps driver_id → "Uber" or "Lyft"
 
 
     def step(self) -> None:
         # Get the set of idle drivers from TraCI
         self.idle_drivers = set(traci.vehicle.getTaxiFleet(0))
+
+        # Persist provider assignments
+        for driver_id in self.idle_drivers:
+            if driver_id not in self.driver_provider:
+                self.driver_provider[driver_id] = "Uber" if len(self.driver_provider) % 4 != 3 else "Lyft"
 
         # Collect pending offers where passenger has already accepted
         offers_by_driver = defaultdict(list)
@@ -69,6 +77,23 @@ class Driver:
             A set containing all the available drivers.
         """
         return self.idle_drivers
+    
+
+    def get_idle_drivers_by_provider(self) -> dict:
+        """
+        Gets idle drivers according to their provider.
+
+        Returns:
+        -------
+        dict
+            A dict containing the two sets of Uber and Lyft drivers.
+        """
+        result = {"Uber": set(), "Lyft": set()}
+        for driver_id in self.idle_drivers:
+            provider = self.driver_provider.get(driver_id)
+            if provider:
+                result[provider].add(driver_id)
+        return result
     
 
     def get_driver_timeout(self) -> int:

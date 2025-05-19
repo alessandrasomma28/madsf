@@ -33,22 +33,13 @@ class Model:
         self.time = 0
 
 
-    def run(
-            self,
-            agents_interval: int = 60
-        ):
+    def run(self):
         """
         Runs the simulation with the sumocfg previously generated.
 
         This function:
-        - Perform simulation steps.
-        - Handles ride hailing agents every {agents_interval} timestamps.
+        - Perform simulation steps handling ride hailing agents.
         - Stops when there are no active persons and vehicles available.
-
-        Parameters:
-        ----------
-        agents_interval: int
-            Interval (timestamps) for agents execution.
 
         Returns:
         -------
@@ -57,7 +48,7 @@ class Model:
         
         while traci.simulation.getMinExpectedNumber() > 0:
             traci.simulationStep()
-            if int(traci.simulation.getTime()) % agents_interval == 0:
+            if int(traci.simulation.getTime()) % 100 == 0:
                 print(f"Simulation time: {traci.simulation.getTime()} seconds")
                 self.time = traci.simulation.getTime()
                 self.passenger.step()

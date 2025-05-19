@@ -14,11 +14,11 @@ date = "2021-01-14"
 start_time = "9:00"
 end_time = "10:00"
 radius = 150
-start_lanes = 3
+start_lanes = 3 # Number of possible start lanes for taxis in each TAZ
 number_vehicles_available = 2000
 dispatch_algorithm = "traci"
 idle_mechanism = "randomCircling"
-agents_interval = 30
+dispatch_period = 30
 sumoSimulator = Simulator(
     net_file=SUMO_NET_PATH, 
     config_template_path=SUMO_CFGTEMPLATE_PATH, 
@@ -92,7 +92,7 @@ data = read_tnc_stats_data(
     )
 
 # 7. Map TAZ polygons to lanes
-points_taz = start_lanes   # 3 start lanes per TAZ → ~2800 total
+points_taz = start_lanes
 start_lanes = generate_vehicle_start_lanes_from_taz_polygons(
     shapefile_path=SF_TAZ_SHAPEFILE_PATH,
     net_file=SUMO_NET_PATH,
@@ -141,11 +141,9 @@ SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(
 # 12. Generate SUMO configuration file
 sumoSimulator.generate_config(
     dispatch_algorithm=dispatch_algorithm,
-    idle_mechanism=idle_mechanism
+    idle_mechanism=idle_mechanism,
+    dispatch_period=dispatch_period
     )
 
 # 13. Run simulation
-sumoSimulator.run_simulation(
-    activeGui=True,
-    agents_interval=agents_interval
-    )
+sumoSimulator.run_simulation(activeGui=True)

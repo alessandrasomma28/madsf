@@ -976,9 +976,9 @@ def generate_drt_vehicle_instances_from_lanes(
             "id": vt["id"],
             "vClass": vt["vClass"],
             "color": vt["color"],
-            "emissionClass": vt["emissionClass"]
+            "emissionClass": vt["emissionClass"],
         })
-        ET.SubElement(vtype, "param",key="has.taxi.device", value="true")
+        ET.SubElement(vtype, "param", key="has.taxi.device", value="true")
 
     # Create vehicles
     for vt in vehicle_types:
@@ -1000,6 +1000,8 @@ def generate_drt_vehicle_instances_from_lanes(
                 vehicle = ET.SubElement(vehicle, "route", {
                     "edges": edge_id,
                 })
+                end_of_shift = generate_work_duration()
+                ET.SubElement(vehicle, "param", key="has.taxi.end", value=str(end_of_shift))
             elif idle_mechanism == "stop":
                 trip = ET.SubElement(root, "trip", {
                     "id": f"taxi_{vehicle_counter}",
@@ -1012,6 +1014,8 @@ def generate_drt_vehicle_instances_from_lanes(
                     "lane": lane_id,
                     "triggered": "person"
                 })
+                end_of_shift = generate_work_duration()
+                ET.SubElement(trip, "param", key="has.taxi.end", value=str(end_of_shift))
             else:
                 raise ValueError("Invalid idle mechanism. Please provide either 'stop' or 'randomCircling'")
             vehicle_counter += 1
@@ -1185,14 +1189,39 @@ def filter_polygon_edges(
         polygon_edge_str: str,
         safe_edge_ids: set
         ) -> list:
-    """Filter edge list string, keeping only strongly connected edges."""
+    """Filters edge list string, keeping only strongly connected edges."""
     edge_list = ast.literal_eval(polygon_edge_str)
     return [e for e in edge_list if e in safe_edge_ids]
+
 
 def filter_polygon_lanes(
         polygon_lane_str: str,
         safe_edge_ids: set
         ) -> list:
-    """Filter lane list string, keeping only lanes whose parent edge is in the strongly connected set."""
+    """Filters lane list string, keeping only lanes whose parent edge is in the strongly connected set."""
     lane_list = ast.literal_eval(polygon_lane_str)
     return [l for l in lane_list if l.split('_')[0] in safe_edge_ids]
+
+
+def generate_work_duration():
+    """
+    Generates a taxi work duration (in hours) based on the following distribution:
+    - 51% work ≈ 2 hours
+    - 30% work between 2 and 5 hours
+    - 12% work between 5 and 7 hours
+    - 7% work between 7 and 8 hours
+
+    Returns:
+    ------ 
+    int
+        Duration in seconds.
+    """
+    r = random.random()
+    if r < 0.51:
+        return round(random.uniform(1800, 7200))
+    elif r < 0.81:
+        return round(random.uniform(7201, 18000))
+    elif r < 0.93:
+        return round(random.uniform(18001, 25200))
+    else:
+        return round(random.uniform(25201, 28800))

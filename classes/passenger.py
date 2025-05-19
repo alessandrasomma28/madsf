@@ -20,6 +20,11 @@ from collections import defaultdict
 
 
 class Passenger:
+    model: "Model"
+    unassigned_requests: set
+    timeout: int
+    
+
     def __init__(
             self,
             model: "Model",

@@ -6,6 +6,7 @@
       <additional-files value="{tazpoly_file}"/>
       <device.taxi.dispatch-algorithm value="{dispatch_algorithm}"/>
       <device.taxi.idle-algorithm value="{idle_mechanism}"/>
+      <device.taxi.dispatch-period value="{dispatch_period}"/>
    </input>
 
    <time>
@@ -15,13 +16,14 @@
    <output>
       <tripinfo-output value="{output_dir}/tripinfos.xml"/>
       <save-state.prefix value="{output_dir}/state"/>
-      <vehroute-output value="{output_dir}/vehroute.xml" />
-      <summary-output value="{output_dir}/summary.xml" />
-      <queue-output value="{output_dir}/queue.xml" />
+      <vehroute-output value="{output_dir}/vehroute.xml"/>
+      <summary-output value="{output_dir}/summary.xml"/>
+      <queue-output value="{output_dir}/queue.xml"/>
+      <device.taxi.dispatch-algorithm.output value="{output_dir}/dispatch.xml"/>
    </output>
 
    <processing>
-      <threads value="4" />
+      <threads value="4"/>
       <ignore-route-errors value="true"/>
       <time-to-teleport value="180"/>
       <ignore-junction-blocker value="1"/>
