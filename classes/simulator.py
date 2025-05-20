@@ -205,18 +205,21 @@ class Simulator:
     def run_simulation(
             self,
             activeGui: bool = False,
-            agents_interval: int = 60
+            agents_interval: int = 60,
+            dispatch_algorithm: str = "traci"
         ):
         """
         Runs the SUMO simulation using the generated configuration file,
-        and integrates the multi-agent system.
+        and integrates the multi-agent system if "traci" is specified.
 
         Parameters:
         -----------
-        - activeGui (bool): 
+        - activeGui: bool 
             If True, runs with SUMO-GUI. If False, runs headless.
         - agents_interval: int
             Interval (timestamps) for agents execution.
+        - dispatch_algorithm: str
+            Runs the simulation with the custom multi-agent logic if "traci" is specified
 
         Returns:
         -------
@@ -240,18 +243,31 @@ class Simulator:
 
         # Start SUMO with TraCI
         traci.start([sumo_binary, "-c", str(self.sumocfg_file_path)])
-
-        print("Simulation started with MAB logic...")
-
-        try:
-            start_time = time.time()
-            # Initialize multi-agent model
-            drt_model = Model(str(self.sumocfg_file_path), self.end_time)
-            # Delegates control to custom multi-agent logic
-            drt_model.run(agents_interval)
-        finally:
-            traci.close()
-            end_time = time.time()
-            elapsed = end_time - start_time
-            print("Simulation finished.")
-            print(f"⏱️ Total computation time: {elapsed:.2f} seconds")
+        if dispatch_algorithm == "traci":
+            print("Simulation started with MAB logic...")
+            try:
+                start_time = time.time()
+                # Initialize multi-agent model
+                drt_model = Model(str(self.sumocfg_file_path), self.end_time)
+                # Delegates control to custom multi-agent logic
+                drt_model.run(agents_interval)
+            finally:
+                traci.close()
+                end_time = time.time()
+                elapsed = end_time - start_time
+                print("Simulation finished.")
+                print(f"⏱️ Total computation time: {elapsed:.2f} seconds")
+        else:
+            print("Simulation started with standard logic...")
+            try:
+                start_time = time.time()
+                while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time+10800:
+                    if traci.simulation.getTime() % 1000 == 0:
+                        print("Simulation time:", traci.simulation.getTime())
+                        traci.simulationStep()
+            finally:
+                traci.close()
+                end_time = time.time()
+                elapsed = end_time - start_time
+                print("Simulation finished.")
+                print(f"⏱️ Total computation time: {elapsed:.2f} seconds")

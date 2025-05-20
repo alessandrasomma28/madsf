@@ -11,7 +11,7 @@ SUMO_BIN_PATH = "/opt/homebrew/opt/sumo/share/sumo/bin"
 
 SUMOENV_PATH = projectPath + "/sumoenv"
 
-SUMO_NET_PATH = SUMOENV_PATH + "/sf_new.net.xml"
+SUMO_NET_PATH = SUMOENV_PATH + "/sf.net.xml"
 SUMO_POLY_PATH = SUMOENV_PATH + "/taz_zones.poly.xml"
 SUMO_CFGTEMPLATE_PATH = SUMOENV_PATH + "/sumocfg_template.sumocfg"
 SUMO_TAZ_PATH = SUMOENV_PATH + "/sf.taz.xml"

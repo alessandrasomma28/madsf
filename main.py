@@ -19,7 +19,7 @@ start_lanes = 3 # Number of possible start lanes for taxis in each TAZ
 number_vehicles_available = 2000
 dispatch_algorithm = "traci"
 idle_mechanism = "randomCircling"
-agents_interval = 30
+agents_interval = 10 # Interval (seconds) for computing one step for agents
 sumoSimulator = Simulator(
     net_file_path=SUMO_NET_PATH, 
     config_template_path=SUMO_CFGTEMPLATE_PATH, 
@@ -147,5 +147,6 @@ sumoSimulator.generate_config(
 # 14. Run simulation
 sumoSimulator.run_simulation(
     activeGui=True,
-    agents_interval=agents_interval
+    agents_interval=agents_interval,
+    dispatch_algorithm=dispatch_algorithm
     )

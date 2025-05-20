@@ -5,8 +5,9 @@ This module defines the Driver class, which manages idle drivers and
 interacts with the ride service to accept offers from passengers.
 It supports the following operations:
 
-1. step: Advances the passenger logic by: (i) updating the set of idle drivers, (ii) processing pending ride offers where
-the passenger has already accepted, (iii) assigning the best offer to each idle driver, and (iv) cleaning up redundant offers.
+1. step: Advances the passenger logic by: (i) updating the set of idle drivers for both Uber and Lyft,
+(ii) processing pending ride offers where the passenger has already accepted,
+(iii) assigning the best offer to each idle driver, and (iv) cleaning up redundant offers.
 2. get_idle_drivers: Returns the set of idle drivers.
 3. get_idle_drivers_by_provider: Returns a dictionary containing the two sets of Uber and Lyft available drivers.
 4. get_driver_timeout: Returns the timeout value for the driver.
@@ -35,7 +36,7 @@ class Driver:
         self.model = model
         self.idle_drivers = set()
         self.timeout = timeout
-        self.driver_provider = {}  # maps driver_id → "Uber" or "Lyft"
+        self.driver_provider = {}  # Maps driver_id → "Uber" or "Lyft"
 
 
     def step(self) -> None:
