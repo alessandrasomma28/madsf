@@ -29,7 +29,6 @@ class Drivers:
     model: "Model"
     idle_drivers: set
     timeout: int
-    drivers_provider: dict
     personality_distribution: list
     acceptance_distribution: list
 
@@ -46,7 +45,7 @@ class Drivers:
         self.personality_distribution = personality_distribution
         self.acceptance_distribution = acceptance_distribution
         self.idle_drivers = set()
-        self.drivers_provider = {}  # Maps driver_id → "Uber" or "Lyft"
+        self.drivers_with_provider = {}  # Maps driver_id → "Uber" or "Lyft"
         self.drivers_with_personality = {}  # Maps driver_id → "normal", "budget" or "greedy"
 
 
@@ -55,10 +54,12 @@ class Drivers:
         self.idle_drivers = set(traci.vehicle.getTaxiFleet(0))
         print(f"🚕 {len(self.idle_drivers)} idle drivers")
         # Persist provider assignments and personalities
+        new_drivers = 0
         for driver_id in self.idle_drivers:
-            if driver_id not in self.drivers_provider:
-                self.drivers_provider[driver_id] = "Uber" if len(self.drivers_provider) % 4 != 3 else "Lyft"
+            if driver_id not in self.drivers_with_provider:
+                self.drivers_with_provider[driver_id] = "Uber" if len(self.drivers_with_provider) % 4 != 3 else "Lyft"
             if driver_id not in self.drivers_with_personality:
+                new_drivers+=1
                 probability = random.random()
                 if probability <= self.personality_distribution[0]:
                     self.drivers_with_personality[driver_id] = "budget"
@@ -66,7 +67,7 @@ class Drivers:
                     self.drivers_with_personality[driver_id] = "normal"
                 elif probability > self.personality_distribution[1]:
                     self.drivers_with_personality[driver_id] = "greedy"
-        print(f"🚕 {len(self.drivers_with_personality)} new idle drivers")
+        print(f"🚕 {new_drivers} new idle drivers")
 
         # Collect pending offers where passenger has already accepted
         offers_by_driver = defaultdict(list)
@@ -135,7 +136,7 @@ class Drivers:
         """
         result = {"Uber": set(), "Lyft": set()}
         for driver_id in self.idle_drivers:
-            provider = self.drivers_provider.get(driver_id)
+            provider = self.drivers_with_provider.get(driver_id)
             if provider:
                 result[provider].add(driver_id)
         return result

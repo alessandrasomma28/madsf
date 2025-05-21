@@ -31,23 +31,7 @@ import heapq
 
 class RideServices:
     model: "Model"
-    offers: dict
-    acceptances: dict
-    uber_base_price: float
-    uber_min_price: float
-    uber_cost_per_min: float
-    uber_cost_per_min: float
-    uber_service_fee: float
-    uber_surge_multiplier: float
-    uber_max_surge: float
-    lyft_base_price: float
-    lyft_min_price: float
-    lyft_cost_per_min: float
-    lyft_cost_per_min: float
-    lyft_service_fee: float
-    lyft_surge_multiplier: float
-    lyft_max_surge: float
-
+    
 
     def __init__(
             self,

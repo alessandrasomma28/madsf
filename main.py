@@ -11,15 +11,15 @@ import random
 
 
 # 0. Set initial variables and initialize Simulator class
-date = "2021-01-14"
+date = "2021-01-14"   # TODO Generalize also for multiple hours and days
 start_time = "9:00"
 end_time = "10:00"
 radius = 150
-start_lanes = 3 # Number of possible start lanes for taxis in each TAZ
-number_vehicles_available = 2000
+start_lanes = 3   # Number of possible start lanes for taxis in each TAZ
+number_vehicles_available = 2000   # TODO Change with something realistic based on requests
 dispatch_algorithm = "traci"
 idle_mechanism = "randomCircling"
-agents_interval = 10 # Interval (seconds) for computing one step for agents
+agents_interval = 60   # Interval (seconds) for computing one step for agents
 sumoSimulator = Simulator(
     net_file_path=SUMO_NET_PATH, 
     config_template_path=SUMO_CFGTEMPLATE_PATH, 

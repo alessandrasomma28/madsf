@@ -56,8 +56,8 @@ class Model:
         self.drivers = Drivers(
             self,
             timeout=60,
-            personality_distribution=self.passenger_personality_distribution,
-            acceptance_distribution=self.passenger_acceptance_distribution)
+            personality_distribution=self.driver_personality_distribution,
+            acceptance_distribution=self.driver_acceptance_distribution)
         self.rideservices = RideServices(self)
         self.time = 0
 
@@ -87,17 +87,17 @@ class Model:
         while traci.simulation.getMinExpectedNumber() > 0:
             traci.simulationStep()
             if int(traci.simulation.getTime()) % agents_interval == 0:
-                print(f"Simulation time: {traci.simulation.getTime()} seconds")
+                print(f"Simulation time: {traci.simulation.getTime()} seconds\n")
                 self.time = traci.simulation.getTime()
                 start = time.time()
                 self.passengers.step()
                 end = time.time()
-                print(f"⏱️ Passengers step computed in {round((end - start), 2)} seconds")
+                print(f"⏱️ Passengers step computed in {round((end - start), 2)} seconds\n")
                 start = time.time()
                 self.drivers.step()
                 end = time.time()
-                print(f"⏱️ Drivers step computed in {round((end - start), 2)} seconds")
+                print(f"⏱️ Drivers step computed in {round((end - start), 2)} seconds\n")
                 start = time.time()
                 self.rideservices.step()
                 end = time.time()
-                print(f"⏱️ RideServices step computed in {round((end - start), 2)} seconds")
+                print(f"⏱️ RideServices step computed in {round((end - start), 2)} seconds\n")

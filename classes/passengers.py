@@ -60,8 +60,10 @@ class Passengers:
         unassigned_requests_ids = {res.id for res in self.unassigned_requests}
         print(f"☝🏻 {len(unassigned_requests_ids)} unassigned requests")
         # Persist personalities
+        new_requests = 0
         for res_id in unassigned_requests_ids:
             if res_id not in self.passengers_with_personality:
+                new_requests+=1
                 probability = random.random()
                 if probability <= self.personality_distribution[0]:
                     self.passengers_with_personality[res_id] = "budget"
@@ -69,7 +71,7 @@ class Passengers:
                     self.passengers_with_personality[res_id] = "normal"
                 elif probability > self.personality_distribution[1]:
                     self.passengers_with_personality[res_id] = "greedy"
-        print(f"☝🏻 {len(self.passengers_with_personality)} new requests")
+        print(f"☝🏻 {new_requests} new requests")
 
         # Group offers by reservation ID
         offers_by_passenger = defaultdict(list)
