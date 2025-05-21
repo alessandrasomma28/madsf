@@ -25,24 +25,27 @@ class Driver:
     model: "Model"
     idle_drivers: set
     timeout: int
+    min_surge: float
     driver_provider: dict
 
 
     def __init__(
             self,
             model: "Model",
-            timeout: int
+            timeout: int,
+            min_surge: float
         ):
         self.model = model
         self.idle_drivers = set()
         self.timeout = timeout
+        self.min_surge = min_surge
         self.driver_provider = {}  # Maps driver_id → "Uber" or "Lyft"
 
 
     def step(self) -> None:
         # Get the set of idle drivers from TraCI
         self.idle_drivers = set(traci.vehicle.getTaxiFleet(0))
-
+        rej = 0
         # Persist provider assignments
         for driver_id in self.idle_drivers:
             if driver_id not in self.driver_provider:
@@ -56,6 +59,12 @@ class Driver:
 
         # Iterate over grouped offers
         for driver_id, offers in offers_by_driver.items():
+            # Reject the offer if surge is too low
+            surge = offers[0][1]["surge"]
+            if surge < self.min_surge:
+                rej+=1
+                self.model.rideservice.reject_offer((res_id, driver_id))
+                continue
             # Choose the closest passenger (min distance) and accept the offer
             best_res_id, _ = min(offers, key=lambda x: x[1]["radius"])
             key = (best_res_id, driver_id)
@@ -66,6 +75,7 @@ class Driver:
             for res_id, _ in offers:
                 if res_id != best_res_id:
                     self.model.rideservice.remove_offer((res_id, driver_id))
+        print(f"Drivers rejected {rej} offers")
 
 
     def get_idle_drivers(self) -> set:

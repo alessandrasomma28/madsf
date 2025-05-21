@@ -27,8 +27,8 @@ class Model:
         ):
         self.sumocfg_path = sumocfg_path
         self.end_time = end_time
-        self.passenger = Passenger(self, timeout=900)
-        self.driver = Driver(self, timeout=60)
+        self.passenger = Passenger(self, timeout=900, max_surge=2)
+        self.driver = Driver(self, timeout=60, min_surge=1.2)
         self.rideservice = RideService(self)
         self.time = 0
 

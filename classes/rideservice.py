@@ -8,14 +8,15 @@ It supports the following operations:
 2. _generate_offers: Internal method to create offers for unassigned reservations and nearby idle taxis.
 3. _check_matches: Internal method to dispatch taxis when both driver and passenger have accepted an offer.
 4. accept_offer: Registers an acceptance of an offer by either a driver or passenger.
-5. get_offers_for_drivers: Returns offers relevant to the given list of driver IDs.
-6. get_offers_for_passengers: Returns offers relevant to the given list of passenger reservation IDs.
-7. remove_offer: Removes an offer from the offers dict.
-8. is_passenger_accepted: Returns True if the passenger has accepted a specific offer.
-9. is_driver_accepted: Returns True if the driver has accepted a specific offer.
-10. remove_acceptance: Removes an acceptance from the acceptances dict.
-11. compute_offer: Computes travel time, route length, and price of a reservation.
-12. compute_surge_multiplier: Computes the price multiplication factor based on the ratio between
+5. reject_offer: Registers a reject of an offer by either a driver or passenger and removes the related offer (and acceptance).
+6. get_offers_for_drivers: Returns offers relevant to the given list of driver IDs.
+7. get_offers_for_passengers: Returns offers relevant to the given list of passenger reservation IDs.
+8. remove_offer: Removes an offer from the offers dict.
+9. is_passenger_accepted: Returns True if the passenger has accepted a specific offer.
+10. is_driver_accepted: Returns True if the driver has accepted a specific offer.
+11. remove_acceptance: Removes an acceptance from the acceptances dict.
+12. compute_offer: Computes travel time, route length, and price of a reservation.
+13. compute_surge_multiplier: Computes the price multiplication factor based on the ratio between
     number of pending requests and number of available drivers.
 """
 
@@ -116,18 +117,21 @@ class RideService:
         if (now % 300 == 0):
             self.uber_surge_multiplier = self.compute_surge_multiplier(int(len(unassigned)*0.75), len(uber_drivers), "Uber")
             self.lyft_surge_multiplier = self.compute_surge_multiplier(int(len(unassigned)*0.25), len(lyft_drivers), "Lyft")
+        print(self.uber_surge_multiplier)
 
         # Clean up partial acceptances if timeout
-        expired_keys = [
+        expired_rides = [
             key for key, (agents, timestamp) in self.acceptances.items()
             if len(agents) == 1 and (
                 ("passenger" in agents and now - timestamp > timeout_p) or
                 ("driver" in agents and now - timestamp > timeout_d)
             )
         ]
-        for key in expired_keys:
+        print(f"Timeout: {len(expired_rides)}")
+        for key in expired_rides:
             self.remove_offer(key)
             self.remove_acceptance(key)
+        print(f"Timeout: {len(expired_rides)}")
 
         # Iterates over all passenger requests
         existing_res_ids = {r_id for (r_id, _) in self.offers}
@@ -258,6 +262,26 @@ class RideService:
             self.remove_offer(key)
 
 
+    def reject_offer(
+            self,
+            key
+        ) -> None:
+        """
+        Rejects an offer for a ride by removing it from offers.
+
+        Parameters:
+        ----------
+        key: tuple 
+            Key (res_id, driver_id) of the offer to remove.
+
+        Returns:
+        -------
+        None
+        """
+        self.remove_offer(key)
+        self.remove_acceptance(key)
+
+
     def get_offers_for_drivers(
             self,
             drivers: set
@@ -307,18 +331,18 @@ class RideService:
     def remove_offer(
             self,
             key: tuple
-        ) -> Optional[dict]:
+        ) -> None:
         """
         Removes a specified offer from offers dictionary.
 
         Parameters:
         ----------
         key: tuple
-            Key (res_id, offer) of the offer to remove
+            Key (res_id, offer) of the offer to remove.
 
         Returns:
         -------
-        None or removed offer value (dict)
+        None
         """
         self.offers.pop(key, None)
 
@@ -376,18 +400,18 @@ class RideService:
     def remove_acceptance(
             self,
             key: tuple
-        ) -> Optional[tuple]:
+        ) -> None:
         """
         Removes a specified acceptance from acceptance dictionary.
 
         Parameters:
         ----------
         key: tuple
-            Key (res_id, driver_id) of the acceptance to remove
+            Key (res_id, driver_id) of the acceptance to remove.
 
         Returns:
         -------
-        None or removed acceptance value (set, int)
+        None
         """
         self.acceptances.pop(key, None)
 

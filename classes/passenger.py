@@ -15,6 +15,7 @@ It supports the following operations:
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
+from numpy import float64
 import traci
 from collections import defaultdict
 
@@ -23,16 +24,19 @@ class Passenger:
     model: "Model"
     unassigned_requests: set
     timeout: int
+    max_surge: float
     
 
     def __init__(
             self,
             model: "Model",
-            timeout: int
+            timeout: int,
+            max_surge: float
         ):
         self.model = model
         self.unassigned_requests = set()
         self.timeout = timeout
+        self.max_surge = max_surge
 
 
     def step(self) -> None:
@@ -40,7 +44,7 @@ class Passenger:
         self.unassigned_requests = set(traci.person.getTaxiReservations(3))
         # Get ID from each reservation object
         unassigned_requests_ids = {res.id for res in self.unassigned_requests}
-
+        rej = 0
         # Group offers by reservation ID
         offers_by_passenger = defaultdict(list)
         for (res_id, driver_id), offer in self.model.rideservice.get_offers_for_passengers(unassigned_requests_ids).items():
@@ -57,6 +61,12 @@ class Passenger:
             # Sort drivers by closest distance
             for driver_id, offer in sorted(offers, key=lambda x: x[1]["radius"]):
                 if driver_id not in assigned_drivers:
+                    # Reject the offer if surge is too high
+                    surge = offer["surge"]
+                    if surge > self.max_surge:
+                        rej+=1
+                        self.model.rideservice.reject_offer((res_id, driver_id))
+                        continue
                     best_offer = offer
                     best_driver_id = driver_id
                     assigned_drivers.add(driver_id)
@@ -72,6 +82,7 @@ class Passenger:
                     self.model.rideservice.remove_offer((res_id, driver_id))
 
         self.unassigned_requests = {r for r in self.unassigned_requests if r.id not in reservations_to_remove}
+        print(f"Passengers rejected {rej} offers")
 
 
     def get_unassigned_requests(self) -> set:
