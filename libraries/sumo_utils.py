@@ -979,6 +979,9 @@ def generate_drt_vehicle_instances_from_lanes(
             "emissionClass": vt["emissionClass"],
         })
         ET.SubElement(vtype, "param", key="has.taxi.device", value="true")
+        ET.SubElement(vtype, "param", key="device.taxi.pickUpDuration", value="60")
+        ET.SubElement(vtype, "param", key="device.taxi.dropOffDuration", value="30")
+
 
     # Create vehicles
     for vt in vehicle_types:
