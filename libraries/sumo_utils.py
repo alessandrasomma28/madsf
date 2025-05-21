@@ -1209,7 +1209,7 @@ def filter_polygon_lanes(
 def generate_work_duration():
     """
     Generates a taxi work duration (in hours) based on the following distribution:
-    - 51% work ≈ 2 hours
+    - 51% work between 30 minutes and 2 hours
     - 30% work between 2 and 5 hours
     - 12% work between 5 and 7 hours
     - 7% work between 7 and 8 hours

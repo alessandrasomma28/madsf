@@ -2,13 +2,23 @@
 
 This is a work-in-progress project, feel free to report any inconsistency or bug.
 
+## Why 3 branches?
+
+This repo has 3 branches because they refer to 3 different implementation:
+
+1. `main`. Implementation of standard taxi service with just SUMO logic.
+2. `multi-agent`. Implementation of multi-agent based ride-hailing service.
+3. `multi-agent-social-groups`. Implementation of multi-agent based ride-hailing service with social groups and consequent handling of accept/reject requests.
+
+So, `multi-agent-social-groups` branch is actually the most recent one, used to complete all the functionalities of the digital mirror. We can consider the other 2 branches `main` and `multi-agent` as completed, and they will serve for comparison purposes. 
+
 ## Description
 
 This repo is composed of 5 folders, a *main.py* and a requirements file.
 
 - `classes/`: contains simulation and multi-agent logic.
 - `constants/`: contains paths for better readability.
-- `data/`: contains all input data for the simulator. Be sure to have your local copy since git does not allow push of files > 100MB.
+- `data/`: contains all input data for the simulator. **Be sure to have your local copy since git does not allow push of files > 100MB**.
 - `libraries/`: contains all the utility functions to generate the input for the simulation.
 - `sumoenv/`: contains output folder, the SF net files, and the sumocfg file, which is automatically generated in *main.py*.
 

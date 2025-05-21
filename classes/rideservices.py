@@ -1,7 +1,7 @@
 """
-rideservice.py
+rideservices.py
 
-This module defines the RideService class, which manages ride offers and acceptances between passengers and drivers.
+This module defines the RideServices class, which manages ride offers and acceptances between passengers and drivers.
 It supports the following operations:
 
 1. step: Advances the ride service logic by generating new offers and checking for matches.
@@ -24,13 +24,12 @@ It supports the following operations:
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
-from typing import Optional
 import traci
 import math
 import heapq
 
 
-class RideService:
+class RideServices:
     model: "Model"
     offers: dict
     acceptances: dict
@@ -103,12 +102,12 @@ class RideService:
         None
         """
 
-        # Load information from driver and passenger agents
-        idle_taxis = self.model.driver.get_idle_drivers()
-        unassigned = self.model.passenger.get_unassigned_requests()
-        timeout_p = self.model.passenger.get_passenger_timeout()
-        timeout_d = self.model.driver.get_driver_timeout()
-        idle_by_provider = self.model.driver.get_idle_drivers_by_provider()
+        # Load information from drivers and passengers agents
+        idle_taxis = self.model.drivers.get_idle_drivers()
+        unassigned = self.model.passengers.get_unassigned_requests()
+        timeout_p = self.model.passengers.get_passengers_timeout()
+        timeout_d = self.model.drivers.get_drivers_timeout()
+        idle_by_provider = self.model.drivers.get_idle_drivers_by_provider()
         uber_drivers = idle_by_provider["Uber"]
         lyft_drivers = idle_by_provider["Lyft"]
 
@@ -117,21 +116,21 @@ class RideService:
         if (now % 300 == 0):
             self.uber_surge_multiplier = self.compute_surge_multiplier(int(len(unassigned)*0.75), len(uber_drivers), "Uber")
             self.lyft_surge_multiplier = self.compute_surge_multiplier(int(len(unassigned)*0.25), len(lyft_drivers), "Lyft")
-        print(self.uber_surge_multiplier)
+        print(f"💵 Surge multiplier value for Uber: {self.uber_surge_multiplier}")
+        print(f"💵 Surge multiplier value for Lyft: {self.lyft_surge_multiplier}")
 
         # Clean up partial acceptances if timeout
         expired_rides = [
             key for key, (agents, timestamp) in self.acceptances.items()
             if len(agents) == 1 and (
-                ("passenger" in agents and now - timestamp > timeout_p) or
-                ("driver" in agents and now - timestamp > timeout_d)
+                ("passenger" in agents and now - timestamp >= timeout_p) or
+                ("driver" in agents and now - timestamp >= timeout_d)
             )
         ]
-        print(f"Timeout: {len(expired_rides)}")
         for key in expired_rides:
             self.remove_offer(key)
             self.remove_acceptance(key)
-        print(f"Timeout: {len(expired_rides)}")
+        print(f"⌛️ Timeout for {len(expired_rides)} rides")
 
         # Iterates over all passenger requests
         existing_res_ids = {r_id for (r_id, _) in self.offers}
@@ -192,6 +191,7 @@ class RideService:
                     "price": price,
                     "provider": provider
                 }
+        print(f"✅ Generated {len(self.offers)} offers")
 
 
     def _check_matches(self) -> None:
@@ -215,6 +215,7 @@ class RideService:
             for (res_id, driver_id), (agents, _) in self.acceptances.items()
             if "driver" in agents and "passenger" in agents
         ]
+        print(f"🚕 Dispatching {len(matched_keys)} taxis")
 
         # For each match try to dispatch the taxi
         for res_id, driver_id in matched_keys:
