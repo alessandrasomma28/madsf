@@ -55,23 +55,26 @@ class Drivers:
         # Get the set of idle drivers from TraCI
         self.idle_drivers = set(traci.vehicle.getTaxiFleet(0))
         print(f"🚕 {len(self.idle_drivers)} idle drivers")
-        # Persist provider assignments and personalities
-        new_drivers = 0
+        # Persist provider and personality assignments
+        provider_counts = {provider: 0 for provider in self.providers}
         for driver_id in self.idle_drivers:
             if driver_id not in self.drivers_with_provider:
                 probability = random.random()
                 for provider, config in self.providers.items():
                     if probability < config["share"]:
                         self.drivers_with_provider[driver_id] = provider
+                        provider_counts[provider] += 1
                         break
             if driver_id not in self.drivers_with_personality:
-                new_drivers+=1
                 probability = random.random()
                 for personality, threshold in self.personality_distribution.items():
                     if probability < threshold:
                         self.drivers_with_personality[driver_id] = personality
                         break
-        print(f"🚕 {new_drivers} new idle drivers")
+        
+        # Print number of newly added drivers per provider
+        for provider, count in provider_counts.items():
+            print(f"🚕 {count} drivers assigned to provider '{provider}'")
 
         # Collect pending offers where passenger has already accepted
         offers_by_driver = defaultdict(list)

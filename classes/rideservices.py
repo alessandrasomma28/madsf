@@ -21,6 +21,7 @@ It supports the following operations:
 """
 
 
+import re
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
@@ -81,8 +82,16 @@ class RideServices:
         # Compute surge multiplier for all providers
         now = int(self.model.time)
         if (now % 300 == 0):
+            # Convert cumulative shares to probabilities
+            provider_names = list(self.providers.keys())
+            provider_probs = [self.providers[provider_names[0]]["share"]] + [
+                self.providers[provider_names[i]]["share"] - self.providers[provider_names[i - 1]]["share"]
+                for i in range(1, len(provider_names))
+            ]
+            # Map provider -> share probability
+            shares = dict(zip(provider_names, provider_probs))
             for provider in self.providers:
-                requests_share = int(len(unassigned) * self.providers[provider]["share"])
+                requests_share = int(len(unassigned) * shares[provider])
                 idle_count = len(idle_by_provider.get(provider, set()))
                 self.providers[provider]["surge_multiplier"] = self.compute_surge_multiplier(
                     requests_share, idle_count, provider
@@ -157,6 +166,7 @@ class RideServices:
                     "price": price,
                     "provider": provider
                 }
+                
         print(f"✅ Generated {len(self.offers)} offers")
 
 
