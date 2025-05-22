@@ -29,24 +29,23 @@ class Drivers:
     model: "Model"
     idle_drivers: set
     timeout: int
-    personality_distribution: list
-    acceptance_distribution: list
-    provider_distribution: list
-
+    personality_distribution: dict
+    acceptance_distribution: dict
+    providers: dict
 
     def __init__(
             self,
             model: "Model",
             timeout: int,
-            personality_distribution: list,
-            acceptance_distribution: list,
-            provider_distribution: list
+            personality_distribution: dict,
+            acceptance_distribution: dict,
+            providers: dict
         ):
         self.model = model
         self.timeout = timeout
         self.personality_distribution = personality_distribution
         self.acceptance_distribution = acceptance_distribution
-        self.provider_distribution = provider_distribution
+        self.providers = providers
         self.idle_drivers = set()
         self.drivers_with_provider = {}  # Maps drivers to providers
         self.drivers_with_personality = {}  # Maps drivers to personalities
@@ -61,8 +60,8 @@ class Drivers:
         for driver_id in self.idle_drivers:
             if driver_id not in self.drivers_with_provider:
                 probability = random.random()
-                for provider, threshold in self.provider_distribution.items():
-                    if probability < threshold:
+                for provider, config in self.providers.items():
+                    if probability < config["share"]:
                         self.drivers_with_provider[driver_id] = provider
                         break
             if driver_id not in self.drivers_with_personality:
@@ -139,7 +138,7 @@ class Drivers:
         dict
             A dict mapping each provider to a set of their idle drivers.
         """
-        result = {provider: set() for provider in self.provider_distribution}
+        result = {provider: set() for provider in self.providers}
         for driver_id in self.idle_drivers:
             provider = self.drivers_with_provider.get(driver_id)
             if provider:

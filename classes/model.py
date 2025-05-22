@@ -2,7 +2,7 @@
 model.py
 
 This module defines the Model class, which serves as the core simulation orchestration.
-It initializes and manages the agents: Driver, Passenger, and RideService.
+It initializes and computes steps for the agents: Drivers, Passengers, and RideServices.
 """
 
 
@@ -11,18 +11,23 @@ from classes.rideservices import RideServices
 from classes.passengers import Passengers
 from classes.drivers import Drivers
 import time
+import json
+from pathlib import Path
+from constants.config_constants import (DRIVERS_PERSONALITY, DRIVERS_ACCEPTANCE, PASSENGERS_PERSONALITY,
+                                        PASSENGERS_ACCEPTANCE, PROVIDERS_CONFIG, TIMEOUT_CONFIG)
 
 class Model:
     sumocfg_path: str
+    config_path: str
     end_time: int
     passengers: Passengers
     drivers: Drivers
     rideservices: RideServices
     time: int
-    driver_personality_distribution: list
-    driver_acceptance_distribution: list
-    passenger_personality_distribution: list
-    passenger_acceptance_distribution: list
+    drivers_personality_distribution: list
+    drivers_acceptance_distribution: list
+    passengers_personality_distribution: list
+    passengers_acceptance_distribution: list
 
 
     def __init__(
@@ -30,61 +35,38 @@ class Model:
             sumocfg_path: str,
             end_time: int
         ):
-        self.passenger_personality_distribution = {"budget": 0.37, "normal": 0.82, "greedy": 1.0}
-        self.passenger_acceptance_distribution = {"budget":
-                                                  [[-1000,1.5,1], [1.5,1.8,0.9], [1.8,2,0.8], [2,1000,0.7]],
-                                                  "normal":
-                                                  [[-1000,1.4,1],[1.4,1.6,0.9],[1.6,1.8,0.8],[1.8,2,0.7],[2,2.2,0.6],[2.2,1000,0.5]],
-                                                  "greedy":
-                                                  [[-1000,1.2,1],[1.2,1.4,0.8],[1.4,1.6,0.6],[1.6,1.8,0.3],[1.8,2,0.2],[2,1000,0.1]]
-                                                  }
-        self.driver_personality_distribution = {"budget": 0.21, "normal": 0.76, "greedy": 1.0}
-        self.driver_acceptance_distribution = {"budget":
-                                               [[-1000,1,0.8], [1,1.2,0.9], [1.2,1.4,0.95], [1.4,1000,1]],
-                                               "normal":
-                                               [[-1000,1,0.7],[1,1.2,0.8],[1.2,1.4,0.9],[1.4,1.6,0.95],[1.6,1000,1]],
-                                               "greedy":
-                                               [[-1000,1,0.05],[1,1.2,0.3],[1.2,1.4,0.4],[1.4,1.6,0.5],[1.6,1.8,0.7],[1.8,2,0.8], [2,1000,1]]
-                                               }
-        self.provider_distribution = {"Uber": 0.75, "Lyft": 1.0}
-        self.providers = {
-            "Uber": {
-                "base_price": 2.17,
-                "min_price": 7.83,
-                "cost_per_min": 0.38,
-                "cost_per_km": 1.45,
-                "service_fee": 5.31,
-                "surge_multiplier": 1.0,
-                "max_surge": 8.0
-            },
-            "Lyft": {
-                "base_price": 2.24,
-                "min_price": 5.00,
-                "cost_per_min": 0.40,
-                "cost_per_km": 1.50,
-                "service_fee": 3.60,
-                "surge_multiplier": 1.0,
-                "max_surge": 5.0
-            }
-        }
+        with open(Path(DRIVERS_PERSONALITY), "r") as f:
+            self.drivers_personality_distribution = json.load(f)
+        with open(Path(DRIVERS_ACCEPTANCE), "r") as f:
+            self.drivers_acceptance_distribution = json.load(f)
+        with open(Path(PASSENGERS_PERSONALITY), "r") as f:
+            self.passengers_personality_distribution = json.load(f)
+        with open(Path(PASSENGERS_ACCEPTANCE), "r") as f:
+            self.passengers_acceptance_distribution = json.load(f)
+        with open(Path(PROVIDERS_CONFIG), "r") as f:
+            self.providers = json.load(f)
+        with open(Path(TIMEOUT_CONFIG), "r") as f:
+            timeouts = json.load(f)
+            timeout_p = timeouts["passenger"]
+            timeout_d = timeouts["driver"]
         self.sumocfg_path = sumocfg_path
         self.end_time = end_time
         self.passengers = Passengers(
             self,
-            timeout=900,
-            personality_distribution=self.passenger_personality_distribution,
-            acceptance_distribution=self.passenger_acceptance_distribution
+            timeout=timeout_p,
+            personality_distribution=self.passengers_personality_distribution,
+            acceptance_distribution=self.passengers_acceptance_distribution
             )
         self.drivers = Drivers(
             self,
-            timeout=60,
-            personality_distribution=self.driver_personality_distribution,
-            acceptance_distribution=self.driver_acceptance_distribution,
-            provider_distribution=self.provider_distribution
+            timeout=timeout_d,
+            personality_distribution=self.drivers_personality_distribution,
+            acceptance_distribution=self.drivers_acceptance_distribution,
+            providers=self.providers
             )
         self.rideservices = RideServices(
             self,
-            self.providers
+            providers=self.providers
             )
         self.time = 0
 

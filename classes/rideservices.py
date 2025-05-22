@@ -37,30 +37,12 @@ class RideServices:
     def __init__(
             self,
             model: "Model",
-            providers: dict
+            providers: dict,
         ):
         self.model = model
         self.providers = providers
         self.offers = {}  # key: (res_id, driver_id), value: dict with travel time, route length, price
         self.acceptances = {}  # key: (res_id, driver_id), value: (set of agents, timestamp)
-
-        # Uber fares
-        self.uber_base_price = 2.17
-        self.uber_min_price = 7.83
-        self.uber_cost_per_min = 0.38
-        self.uber_cost_per_km = 1.45
-        self.uber_service_fee = 5.31
-        self.uber_surge_multiplier = 1.0
-        self.uber_max_surge = 8.0
-
-        # Lyft fares
-        self.lyft_base_price = 2.24
-        self.lyft_min_price = 5.00
-        self.lyft_cost_per_min = 0.40
-        self.lyft_cost_per_km = 1.50
-        self.lyft_service_fee = 3.60
-        self.lyft_surge_multiplier = 1.0
-        self.lyft_max_surge = 5.0
 
 
     def step(self):
@@ -74,7 +56,7 @@ class RideServices:
 
         This function:
         - Cleans up partial acceptances that have timed out for either passengers or drivers.
-        - Compute the surge multiplier according to unassigned requests and available drivers for both Uber and Lyft.
+        - Compute the surge multiplier according to unassigned requests and available drivers for all providers.
         - Iterates over all unassigned passenger ride requests.
         - For each request, skips if an offer already exists.
         - Attempts to retrieve the passenger's current position; skips the request if unsuccessful.
@@ -95,16 +77,18 @@ class RideServices:
         timeout_p = self.model.passengers.get_passengers_timeout()
         timeout_d = self.model.drivers.get_drivers_timeout()
         idle_by_provider = self.model.drivers.get_idle_drivers_by_provider()
-        uber_drivers = idle_by_provider["Uber"]
-        lyft_drivers = idle_by_provider["Lyft"]
 
-        # Compute surge multiplier for both Uber and Lyft
+        # Compute surge multiplier for all providers
         now = int(self.model.time)
         if (now % 300 == 0):
-            self.uber_surge_multiplier = self.compute_surge_multiplier(int(len(unassigned)*0.75), len(uber_drivers), "Uber")
-            self.lyft_surge_multiplier = self.compute_surge_multiplier(int(len(unassigned)*0.25), len(lyft_drivers), "Lyft")
-        print(f"💵 Surge multiplier value for Uber: {self.uber_surge_multiplier}")
-        print(f"💵 Surge multiplier value for Lyft: {self.lyft_surge_multiplier}")
+            for provider in self.providers:
+                requests_share = int(len(unassigned) * self.providers[provider]["share"])
+                idle_count = len(idle_by_provider.get(provider, set()))
+                self.providers[provider]["surge_multiplier"] = self.compute_surge_multiplier(
+                    requests_share, idle_count, provider
+                )
+        for provider, conf in self.providers.items():
+            print(f"💵 Surge multiplier value for {provider}: {conf['surge_multiplier']}")
 
         # Clean up partial acceptances if timeout
         expired_rides = [
@@ -158,8 +142,8 @@ class RideServices:
             to_edge = reservation.toEdge
             for radius, taxi_id in closest_taxis:
                 offer_key = (res_id, taxi_id)
-                provider = "Uber" if taxi_id in uber_drivers else "Lyft"
-                surge_multiplier = self.uber_surge_multiplier if provider == "Uber" else self.lyft_surge_multiplier
+                provider = self.model.drivers.drivers_with_provider.get(taxi_id)
+                surge_multiplier = self.providers[provider]["surge_multiplier"]
                 try:
                     travel_time, route_length, price = self.compute_offer(from_edge, to_edge, surge_multiplier, provider)
                 except traci.TraCIException as e:
@@ -436,20 +420,14 @@ class RideServices:
         travel_minutes = travel_time / 60
         route_km = round(route_length / 1000, 3)
         # Provider-specific pricing table
-        if provider == "Uber":
-            base = self.uber_base_price
-            per_min = self.uber_cost_per_min
-            per_km = self.uber_cost_per_km
-            fee = self.uber_service_fee
-            min_price = self.uber_min_price
-        elif provider == "Lyft": 
-            base = self.lyft_base_price
-            per_min = self.lyft_cost_per_min
-            per_km = self.lyft_cost_per_km
-            fee = self.lyft_service_fee
-            min_price = self.lyft_min_price
+        config = self.providers[provider]
+        base = config["base_price"]
+        cost_per_min = config["cost_per_min"]
+        cost_per_km = config["cost_per_km"]
+        fee = config["service_fee"]
+        min_price = config["min_price"]
         # Compute price
-        price = (base + per_min * travel_minutes + per_km * route_km) * surge_multiplier + fee
+        price = (base + cost_per_min * travel_minutes + cost_per_km * route_km) * surge_multiplier + fee
         price = round(max(min_price, price), 3)
 
         return travel_time, route_length, price
@@ -464,7 +442,7 @@ class RideServices:
         """
         Computes the surge multiplier based on the ratio of unassigned ride requests
         to available idle drivers. The multiplier ranges from 1.0 (normal conditions)
-        to 8.0 for Uber and 5.0 for Lyft (high demand, low supply).
+        to max_surge for each provider.
 
         Parameters:
         ----------
@@ -476,19 +454,12 @@ class RideServices:
         Returns
         -------
         surge : float
-            Surge price multiplier (clipped between 1.0 and 5.0).
+            Surge price multiplier.
         """
-        if provider == "Uber":
-            if idle_drivers == 0:
-                return self.uber_max_surge  # Max surge if no drivers available
-            ratio = unassigned_requests / idle_drivers
-            # Linear mapping
-            surge = min(self.uber_max_surge, max(1, ratio))
-        elif provider == "Lyft":
-            if idle_drivers == 0:
-                return self.lyft_max_surge  # Max surge if no drivers available
-            ratio = unassigned_requests / idle_drivers
-            # Linear mapping
-            surge = min(self.lyft_max_surge, max(1, ratio))
-
+        config = self.providers[provider]
+        if idle_drivers == 0:
+            # Max surge if no drivers available
+            return config["max_surge"]
+        ratio = unassigned_requests / idle_drivers
+        surge = min(config["max_surge"], max(1, ratio))
         return round(surge, 2)
