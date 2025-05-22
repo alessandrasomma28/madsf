@@ -55,7 +55,7 @@ The simulation is then run with a real-time interaction between *SUMO* and the m
 ![](doc/General_architecture.png)
 
 ### Multi-agent model
-The multi-agent model is composed of three main components: `Passengers`, `Drivers` and `RideServices`. The logic of the multi-agent model is run every 60 seconds by default, but it can be changed in the `main.py` file. 
+The multi-agent model is composed of three main components: `Passengers`, `Drivers` and `RideServices`. The logic of the multi-agent model is run every 60 timestamps by default, but it can be changed in the `main.py` file. 
 
 ![](doc/Multi-agent_architecture.png)
 
