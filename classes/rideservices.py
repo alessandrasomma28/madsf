@@ -100,17 +100,24 @@ class RideServices:
             print(f"💵 Surge multiplier value for {provider}: {conf['surge_multiplier']}")
 
         # Clean up partial acceptances if timeout
-        expired_rides = [
+        expired_acceptances = [
             key for key, (agents, timestamp) in self.acceptances.items()
             if len(agents) == 1 and (
                 ("passenger" in agents and now - timestamp >= timeout_p) or
                 ("driver" in agents and now - timestamp >= timeout_d)
             )
         ]
-        for key in expired_rides:
+        for key in expired_acceptances:
             self.remove_offer(key)
             self.remove_acceptance(key)
-        print(f"⌛️ Timeout for {len(expired_rides)} rides")
+        # Clean up expired offers if timeout
+        expired_offers = [
+            key for key, offer in self.offers.items()
+            if now - offer["timestamp"] >= timeout_p
+        ]
+        for key in expired_offers:
+            self.remove_offer(key)
+        print(f"⌛️ Timeout for {len(expired_acceptances)+len(expired_offers)} offers and rides")
 
         # Iterates over all passenger requests
         existing_res_ids = {r_id for (r_id, _) in self.offers}
@@ -159,6 +166,7 @@ class RideServices:
                     print(f"⚠️ Failed to compute route for offer {offer_key}: {e}")
                     continue
                 self.offers[offer_key] = {
+                    "timestamp": now,
                     "radius": radius,
                     "time": travel_time,
                     "route_length": route_length,
@@ -166,8 +174,8 @@ class RideServices:
                     "price": price,
                     "provider": provider
                 }
-                
-        print(f"✅ Generated {len(self.offers)} offers")
+
+        print(f"📋 {len(self.offers)} pending offers")
 
 
     def _check_matches(self) -> None:

@@ -17,7 +17,6 @@ It supports the following operations:
 """
 
 
-from os import remove
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
