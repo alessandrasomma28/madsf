@@ -2,7 +2,7 @@
 drivers.py
 
 This module defines the Drivers class, which manages idle drivers and
-interacts with the ride service to accept offers from passengers.
+interacts with the ride service to accept/reject offers from passengers.
 It supports the following operations:
 
 1. step: Advances the drivers logic by:

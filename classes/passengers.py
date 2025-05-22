@@ -1,8 +1,8 @@
 """
-passenger.py
+passengers.py
 
 This module defines the Passenger class, which manages unassigned ride requests and
-interacts with the ride service to accept offers from drivers.
+interacts with the ride service to accept/reject offers from drivers.
 It supports the following operations:
 
 1. step: Advances the passengers logic by:
