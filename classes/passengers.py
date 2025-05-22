@@ -17,6 +17,7 @@ It supports the following operations:
 """
 
 
+from os import remove
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
@@ -65,12 +66,10 @@ class Passengers:
             if res_id not in self.passengers_with_personality:
                 new_requests+=1
                 probability = random.random()
-                if probability <= self.personality_distribution[0]:
-                    self.passengers_with_personality[res_id] = "budget"
-                elif self.personality_distribution[0] < probability <= self.personality_distribution[1]:
-                    self.passengers_with_personality[res_id] = "normal"
-                elif probability > self.personality_distribution[1]:
-                    self.passengers_with_personality[res_id] = "greedy"
+                for personality, threshold in self.personality_distribution.items():
+                    if probability < threshold:
+                        self.passengers_with_personality[res_id] = personality
+                        break
         print(f"☝🏻 {new_requests} new requests")
 
         # Group offers by reservation ID
@@ -85,6 +84,7 @@ class Passengers:
         # Iterate over grouped offers
         accept = 0
         reject = 0
+        removed = 0
         for res_id, offers in offers_by_passenger.items():
             best_driver_id = None
             # Sort by closest drivers (min radius)
@@ -107,17 +107,20 @@ class Passengers:
                     reservations_to_remove.add(res_id)
                     break
                 else:
+                    self.model.rideservices.remove_offer((res_id, driver_id))
+                    removed+=1
                     continue
 
             # Remove all other offers for this reservation (except the best one)
             for driver_id, _ in offers:
                 if driver_id != best_driver_id:
                     self.model.rideservices.remove_offer((res_id, driver_id))
+                    removed+=1
 
         print(f"✅ {accept} offers accepted by passengers")
         print(f"📵 {reject} offers rejected by passengers")
         self.unassigned_requests = {r for r in self.unassigned_requests if r.id not in reservations_to_remove}
-        print(f"🧹 {len(reservations_to_remove)} duplicated passengers offers removed")
+        print(f"🧹 {removed} duplicated passengers offers removed")
 
 
     def get_unassigned_requests(self) -> set:

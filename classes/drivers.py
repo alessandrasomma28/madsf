@@ -6,13 +6,13 @@ interacts with the ride service to accept offers from passengers.
 It supports the following operations:
 
 1. step: Advances the drivers logic by:
-    (i) updating the set of idle drivers for both Uber and Lyft,
+    (i) updating the set of idle drivers for the providers,
     (ii) distributing the personalities of new idle drivers,
     (iii) processing pending ride offers where the passenger has already accepted,
     (iv) assigning the best offer to each idle driver (who either accepts or rejects), and
     (v) cleaning up redundant offers.
 2. get_idle_drivers: Returns the set of idle drivers.
-3. get_idle_drivers_by_provider: Returns a dictionary containing the two sets of Uber and Lyft available drivers.
+3. get_idle_drivers_by_provider: Returns a dictionary containing the sets of available drivers by provider.
 4. get_driver_timeout: Returns the timeout value for the driver.
 """
 
@@ -31,6 +31,7 @@ class Drivers:
     timeout: int
     personality_distribution: list
     acceptance_distribution: list
+    provider_distribution: list
 
 
     def __init__(
@@ -38,15 +39,17 @@ class Drivers:
             model: "Model",
             timeout: int,
             personality_distribution: list,
-            acceptance_distribution: list
+            acceptance_distribution: list,
+            provider_distribution: list
         ):
         self.model = model
         self.timeout = timeout
         self.personality_distribution = personality_distribution
         self.acceptance_distribution = acceptance_distribution
+        self.provider_distribution = provider_distribution
         self.idle_drivers = set()
-        self.drivers_with_provider = {}  # Maps driver_id → "Uber" or "Lyft"
-        self.drivers_with_personality = {}  # Maps driver_id → "normal", "budget" or "greedy"
+        self.drivers_with_provider = {}  # Maps drivers to providers
+        self.drivers_with_personality = {}  # Maps drivers to personalities
 
 
     def step(self) -> None:
@@ -57,16 +60,18 @@ class Drivers:
         new_drivers = 0
         for driver_id in self.idle_drivers:
             if driver_id not in self.drivers_with_provider:
-                self.drivers_with_provider[driver_id] = "Uber" if len(self.drivers_with_provider) % 4 != 3 else "Lyft"
+                probability = random.random()
+                for provider, threshold in self.provider_distribution.items():
+                    if probability < threshold:
+                        self.drivers_with_provider[driver_id] = provider
+                        break
             if driver_id not in self.drivers_with_personality:
                 new_drivers+=1
                 probability = random.random()
-                if probability <= self.personality_distribution[0]:
-                    self.drivers_with_personality[driver_id] = "budget"
-                elif self.personality_distribution[0] < probability <= self.personality_distribution[1]:
-                    self.drivers_with_personality[driver_id] = "normal"
-                elif probability > self.personality_distribution[1]:
-                    self.drivers_with_personality[driver_id] = "greedy"
+                for personality, threshold in self.personality_distribution.items():
+                    if probability < threshold:
+                        self.drivers_with_personality[driver_id] = personality
+                        break
         print(f"🚕 {new_drivers} new idle drivers")
 
         # Collect pending offers where passenger has already accepted
@@ -132,9 +137,9 @@ class Drivers:
         Returns:
         -------
         dict
-            A dict containing the two sets of Uber and Lyft drivers.
+            A dict mapping each provider to a set of their idle drivers.
         """
-        result = {"Uber": set(), "Lyft": set()}
+        result = {provider: set() for provider in self.provider_distribution}
         for driver_id in self.idle_drivers:
             provider = self.drivers_with_provider.get(driver_id)
             if provider:

@@ -31,13 +31,16 @@ import heapq
 
 class RideServices:
     model: "Model"
-    
+    providers: dict
+
 
     def __init__(
             self,
-            model: "Model"
+            model: "Model",
+            providers: dict
         ):
         self.model = model
+        self.providers = providers
         self.offers = {}  # key: (res_id, driver_id), value: dict with travel time, route length, price
         self.acceptances = {}  # key: (res_id, driver_id), value: (set of agents, timestamp)
 
@@ -123,10 +126,10 @@ class RideServices:
             if res_id in existing_res_ids:
                 print(f"⚠️ Reservation {res_id} already has an offer — skipping")
                 continue
-            
+            person_id = reservation.persons[0]
             # Get passenger position
             try:
-                pax_pos = traci.person.getPosition(reservation.persons[0])
+                pax_pos = traci.person.getPosition(person_id)
             except traci.TraCIException:
                 print(f"⚠️ Failed to get position for reservation {res_id}: {reservation}")
                 continue
@@ -151,19 +154,14 @@ class RideServices:
                 continue
 
             # Create offers
+            from_edge = reservation.fromEdge
+            to_edge = reservation.toEdge
             for radius, taxi_id in closest_taxis:
                 offer_key = (res_id, taxi_id)
-                from_edge = reservation.fromEdge
-                to_edge = reservation.toEdge
+                provider = "Uber" if taxi_id in uber_drivers else "Lyft"
+                surge_multiplier = self.uber_surge_multiplier if provider == "Uber" else self.lyft_surge_multiplier
                 try:
-                    if taxi_id in uber_drivers:
-                        provider = "Uber"
-                        surge_multiplier = self.uber_surge_multiplier
-                        travel_time, route_length, price = self.compute_offer(from_edge, to_edge, surge_multiplier, provider)
-                    elif taxi_id in lyft_drivers:
-                        provider = "Lyft"
-                        surge_multiplier = self.lyft_surge_multiplier
-                        travel_time, route_length, price = self.compute_offer(from_edge, to_edge, surge_multiplier, provider)
+                    travel_time, route_length, price = self.compute_offer(from_edge, to_edge, surge_multiplier, provider)
                 except traci.TraCIException as e:
                     print(f"⚠️ Failed to compute route for offer {offer_key}: {e}")
                     continue
@@ -210,12 +208,13 @@ class RideServices:
             except Exception as e:
                 print(f"❌ Unknown error during dispatch: {e}")
             finally:
-                # Remove all acceptances involving the same reservation or driver
+                # Remove all offers and acceptances involving the same reservation or driver
                 to_remove = [
                     key for key in self.acceptances
                     if key[0] == res_id or key[1] == driver_id
                 ]
                 for key in to_remove:
+                    self.remove_offer(key)
                     self.remove_acceptance(key)
 
 
@@ -433,21 +432,25 @@ class RideServices:
         route = traci.simulation.findRoute(from_edge, to_edge)
         travel_time = int(route.travelTime)
         route_length = route.length
-        # Compute price depending on provider
+        # Convert units
+        travel_minutes = travel_time / 60
+        route_km = round(route_length / 1000, 3)
+        # Provider-specific pricing table
         if provider == "Uber":
-            price = (
-                self.uber_base_price + 
-                (self.uber_cost_per_min * (travel_time / 60)) +
-                (self.uber_cost_per_km * (route_length / 1000))
-                ) * surge_multiplier + self.uber_service_fee
-            price = max(self.uber_min_price, price)
-        elif provider == "Lyft":
-            price = (
-                self.lyft_base_price + 
-                (self.lyft_cost_per_min * (travel_time / 60)) +
-                (self.lyft_cost_per_km * (route_length / 1000))
-                ) * surge_multiplier + self.lyft_service_fee
-            price = max(self.lyft_min_price, price)
+            base = self.uber_base_price
+            per_min = self.uber_cost_per_min
+            per_km = self.uber_cost_per_km
+            fee = self.uber_service_fee
+            min_price = self.uber_min_price
+        elif provider == "Lyft": 
+            base = self.lyft_base_price
+            per_min = self.lyft_cost_per_min
+            per_km = self.lyft_cost_per_km
+            fee = self.lyft_service_fee
+            min_price = self.lyft_min_price
+        # Compute price
+        price = (base + per_min * travel_minutes + per_km * route_km) * surge_multiplier + fee
+        price = round(max(min_price, price), 3)
 
         return travel_time, route_length, price
     

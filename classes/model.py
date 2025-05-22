@@ -30,7 +30,7 @@ class Model:
             sumocfg_path: str,
             end_time: int
         ):
-        self.passenger_personality_distribution = [0.37, 0.45, 0.18]
+        self.passenger_personality_distribution = {"budget": 0.37, "normal": 0.82, "greedy": 1.0}
         self.passenger_acceptance_distribution = {"budget":
                                                   [[-1000,1.5,1], [1.5,1.8,0.9], [1.8,2,0.8], [2,1000,0.7]],
                                                   "normal":
@@ -38,7 +38,7 @@ class Model:
                                                   "greedy":
                                                   [[-1000,1.2,1],[1.2,1.4,0.8],[1.4,1.6,0.6],[1.6,1.8,0.3],[1.8,2,0.2],[2,1000,0.1]]
                                                   }
-        self.driver_personality_distribution = [0.21, 0.55, 0.24]
+        self.driver_personality_distribution = {"budget": 0.21, "normal": 0.76, "greedy": 1.0}
         self.driver_acceptance_distribution = {"budget":
                                                [[-1000,1,0.8], [1,1.2,0.9], [1.2,1.4,0.95], [1.4,1000,1]],
                                                "normal":
@@ -46,19 +46,46 @@ class Model:
                                                "greedy":
                                                [[-1000,1,0.05],[1,1.2,0.3],[1.2,1.4,0.4],[1.4,1.6,0.5],[1.6,1.8,0.7],[1.8,2,0.8], [2,1000,1]]
                                                }
+        self.provider_distribution = {"Uber": 0.75, "Lyft": 1.0}
+        self.providers = {
+            "Uber": {
+                "base_price": 2.17,
+                "min_price": 7.83,
+                "cost_per_min": 0.38,
+                "cost_per_km": 1.45,
+                "service_fee": 5.31,
+                "surge_multiplier": 1.0,
+                "max_surge": 8.0
+            },
+            "Lyft": {
+                "base_price": 2.24,
+                "min_price": 5.00,
+                "cost_per_min": 0.40,
+                "cost_per_km": 1.50,
+                "service_fee": 3.60,
+                "surge_multiplier": 1.0,
+                "max_surge": 5.0
+            }
+        }
         self.sumocfg_path = sumocfg_path
         self.end_time = end_time
         self.passengers = Passengers(
             self,
             timeout=900,
             personality_distribution=self.passenger_personality_distribution,
-            acceptance_distribution=self.passenger_acceptance_distribution)
+            acceptance_distribution=self.passenger_acceptance_distribution
+            )
         self.drivers = Drivers(
             self,
             timeout=60,
             personality_distribution=self.driver_personality_distribution,
-            acceptance_distribution=self.driver_acceptance_distribution)
-        self.rideservices = RideServices(self)
+            acceptance_distribution=self.driver_acceptance_distribution,
+            provider_distribution=self.provider_distribution
+            )
+        self.rideservices = RideServices(
+            self,
+            self.providers
+            )
         self.time = 0
 
 
