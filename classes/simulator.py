@@ -31,7 +31,6 @@ class Simulator:
     output_dir_path: Path
     end_time: int
 
-
     def __init__(
             self,
             net_file_path: str, 
@@ -76,7 +75,7 @@ class Simulator:
         Parameters:
         -----------
         - sf_routes_folder_path: str 
-            Base scenario root folder.
+            Scenario root folder.
         - sf_traffic_route_file_path: str
             Path to the route file.
         - sf_tnc_fleet_file_path: str
@@ -248,7 +247,11 @@ class Simulator:
             try:
                 start_time = time.time()
                 # Initialize multi-agent model
-                drt_model = Model(str(self.sumocfg_file_path), self.end_time)
+                drt_model = Model(
+                    sumocfg_path=str(self.sumocfg_file_path),
+                    end_time=self.end_time,
+                    output_dir_path=str(self.output_dir_path)
+                )
                 # Delegates control to custom multi-agent logic
                 drt_model.run(agents_interval)
             finally:
@@ -261,7 +264,7 @@ class Simulator:
             print("Simulation started with standard logic...")
             try:
                 start_time = time.time()
-                while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time+10800:
+                while traci.simulation.getMinExpectedNumber() > 0:
                     if traci.simulation.getTime() % 1000 == 0:
                         print("Simulation time:", traci.simulation.getTime())
                         traci.simulationStep()
@@ -270,4 +273,4 @@ class Simulator:
                 end_time = time.time()
                 elapsed = end_time - start_time
                 print("Simulation finished.")
-                print(f"⏱️ Total computation time: {elapsed:.2f} seconds")
+                print(f"⏱️ Total computation time: {elapsed:.2f} seconds\n")

@@ -20,6 +20,8 @@ It supports the following operations:
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
+if TYPE_CHECKING:
+    from classes.logger import Logger
 import traci
 from collections import defaultdict
 import random
@@ -31,24 +33,29 @@ class Passengers:
     timeout: int
     personality_distribution: list
     acceptance_distribution: list
-    
+    logger: "Logger"
 
     def __init__(
             self,
             model: "Model",
             timeout: int,
             personality_distribution: list,
-            acceptance_distribution: list
+            acceptance_distribution: list,
+            logger: "Logger"
         ):
         self.model = model
         self.timeout = timeout
         self.personality_distribution = personality_distribution
         self.acceptance_distribution = acceptance_distribution
+        self.logger = logger
         self.unassigned_requests = set()
         self.passengers_with_personality = {}  # Maps res_id → "normal", "budget" or "greedy"
 
 
     def step(self) -> None:
+        logged_unassigned = len(set(traci.person.getTaxiReservations(3)))
+        logged_assigned = len(set(traci.person.getTaxiReservations(4)))
+        logged_pickup = len(set(traci.person.getTaxiReservations(8)))
         # Remove requests if timeout
         now = int(self.model.time)
         for res in traci.person.getTaxiReservations(3):
@@ -106,20 +113,32 @@ class Passengers:
                     reservations_to_remove.add(res_id)
                     break
                 else:
-                    self.model.rideservices.remove_offer((res_id, driver_id))
-                    removed+=1
+                    if (res_id, driver_id) in self.model.rideservices.get_offers():
+                        self.model.rideservices.remove_offer((res_id, driver_id))
+                        removed+=1
                     continue
 
             # Remove all other offers for this reservation (except the best one)
             for driver_id, _ in offers:
                 if driver_id != best_driver_id:
-                    self.model.rideservices.remove_offer((res_id, driver_id))
-                    removed+=1
+                    if (res_id, driver_id) in self.model.rideservices.get_offers():
+                        self.model.rideservices.remove_offer((res_id, driver_id))
+                        removed+=1
 
         print(f"✅ {accept} offers accepted by passengers")
         print(f"📵 {reject} offers rejected by passengers")
         self.unassigned_requests = {r for r in self.unassigned_requests if r.id not in reservations_to_remove}
         print(f"🧹 {removed} duplicated passengers offers removed")
+
+        # Update the logger
+        self.logger.update_passengers(
+            timestamp = self.model.time,
+            unassigned_requests = logged_unassigned,
+            assigned_requests = logged_assigned,
+            pickup_requests = logged_pickup,
+            accepted_requests = accept,
+            rejected_requests = reject
+        )
 
 
     def get_unassigned_requests(self) -> set:

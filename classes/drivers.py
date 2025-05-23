@@ -21,6 +21,8 @@ import random
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
+if TYPE_CHECKING:
+    from classes.logger import Logger
 import traci
 from collections import defaultdict
 
@@ -32,6 +34,7 @@ class Drivers:
     personality_distribution: dict
     acceptance_distribution: dict
     providers: dict
+    logger: "Logger"
 
     def __init__(
             self,
@@ -39,19 +42,24 @@ class Drivers:
             timeout: int,
             personality_distribution: dict,
             acceptance_distribution: dict,
-            providers: dict
+            providers: dict,
+            logger: "Logger"
         ):
         self.model = model
         self.timeout = timeout
         self.personality_distribution = personality_distribution
         self.acceptance_distribution = acceptance_distribution
         self.providers = providers
+        self.logger = logger
         self.idle_drivers = set()
         self.drivers_with_provider = {}  # Maps drivers to providers
         self.drivers_with_personality = {}  # Maps drivers to personalities
 
 
     def step(self) -> None:
+        logged_idle = len(set(traci.vehicle.getTaxiFleet(0)))
+        logged_pickup = len(set(traci.vehicle.getTaxiFleet(1)))
+        logged_busy = len(set(traci.vehicle.getTaxiFleet(2)))
         # Get the set of idle drivers from TraCI
         self.idle_drivers = set(traci.vehicle.getTaxiFleet(0))
         print(f"🚕 {len(self.idle_drivers)} idle drivers")
@@ -101,8 +109,9 @@ class Drivers:
                 # Remove all other offers for the same driver
                 for res_id, _ in offers:
                     if res_id != best_res_id:
-                        self.model.rideservices.remove_offer((res_id, driver_id))
-                        removed+=1
+                        if (res_id, driver_id) in self.model.rideservices.get_offers():
+                            self.model.rideservices.remove_offer((res_id, driver_id))
+                            removed+=1
                 continue
             # Accept the offer
             self.model.rideservices.accept_offer(key, "driver")
@@ -112,12 +121,23 @@ class Drivers:
             # Remove all other offers for the same driver
             for res_id, _ in offers:
                 if res_id != best_res_id:
-                    self.model.rideservices.remove_offer((res_id, driver_id))
-                    removed+=1
+                    if (res_id, driver_id) in self.model.rideservices.get_offers():
+                        self.model.rideservices.remove_offer((res_id, driver_id))
+                        removed+=1
 
         print(f"✅ {accept} offers accepted by drivers")
         print(f"📵 {reject} offers rejected by drivers")
         print(f"🧹 {removed} duplicated drivers offers removed")
+
+        # Update the logger
+        self.logger.update_drivers(
+            timestamp = self.model.time,
+            idle_drivers = logged_idle,
+            pickup_drivers = logged_pickup,
+            busy_drivers = logged_busy,
+            accepted_requests = accept,
+            rejected_requests = reject
+        )
 
 
     def get_idle_drivers(self) -> set:

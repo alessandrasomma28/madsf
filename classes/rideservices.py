@@ -9,14 +9,15 @@ It supports the following operations:
 3. _check_matches: Internal method to dispatch taxis when both driver and passenger have accepted an offer.
 4. accept_offer: Registers an acceptance of an offer by either a driver or passenger.
 5. reject_offer: Registers a reject of an offer by either a driver or passenger and removes the related offer (and acceptance).
-6. get_offers_for_drivers: Returns offers relevant to the given list of driver IDs.
-7. get_offers_for_passengers: Returns offers relevant to the given list of passenger reservation IDs.
-8. remove_offer: Removes an offer from the offers dict.
-9. is_passenger_accepted: Returns True if the passenger has accepted a specific offer.
-10. is_driver_accepted: Returns True if the driver has accepted a specific offer.
-11. remove_acceptance: Removes an acceptance from the acceptances dict.
-12. compute_offer: Computes travel time, route length, and price of a reservation.
-13. compute_surge_multiplier: Computes the price multiplication factor based on the ratio between
+6. get_offers: Returns the dictionary of all offers.
+7. get_offers_for_drivers: Returns offers relevant to the given list of driver IDs.
+8. get_offers_for_passengers: Returns offers relevant to the given list of passenger reservation IDs.
+9. remove_offer: Removes an offer from the offers dict.
+10. is_passenger_accepted: Returns True if the passenger has accepted a specific offer.
+11. is_driver_accepted: Returns True if the driver has accepted a specific offer.
+12. remove_acceptance: Removes an acceptance from the acceptances dict.
+13. compute_offer: Computes travel time, route length, and price of a reservation.
+14. compute_surge_multiplier: Computes the price multiplication factor based on the ratio between
     number of pending requests and number of available drivers.
 """
 
@@ -24,6 +25,8 @@ It supports the following operations:
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
+if TYPE_CHECKING:
+    from classes.logger import Logger
 import traci
 import math
 import heapq
@@ -32,15 +35,21 @@ import heapq
 class RideServices:
     model: "Model"
     providers: dict
-
+    logger: "Logger"
 
     def __init__(
             self,
             model: "Model",
             providers: dict,
+            logger: "Logger"
         ):
         self.model = model
         self.providers = providers
+        self.logger = logger
+        self.expired_offers = []
+        self.expired_acceptances_p = 0
+        self.expired_acceptances_d = 0
+        self.rides_not_served = 0
         self.offers = {}  # key: (res_id, driver_id), value: dict with travel time, route length, price
         self.acceptances = {}  # key: (res_id, driver_id), value: (set of agents, timestamp)
 
@@ -60,8 +69,7 @@ class RideServices:
         - Iterates over all unassigned passenger ride requests.
         - For each request, skips if an offer already exists.
         - Attempts to retrieve the passenger's current position; skips the request if unsuccessful.
-        - Calculates the radius from each idle taxi to the passenger's position, skipping taxis
-          with unavailable positions and farther than 10km.
+        - Calculates the radius from each idle taxi to the passenger's position, skipping taxis with unavailable positions or farther than 10km.
         - Selects up to 8 closest taxis.
         - Creates ride offers for each selected taxi, including radius, travel time, route length, price information, and provider.
         - Logs and skips requests if no taxis are available.
@@ -77,6 +85,9 @@ class RideServices:
         timeout_p = self.model.passengers.get_passengers_timeout()
         timeout_d = self.model.drivers.get_drivers_timeout()
         idle_by_provider = self.model.drivers.get_idle_drivers_by_provider()
+        self.expired_acceptances_p = 0
+        self.expired_acceptances_d = 0
+        self.rides_not_served = 0
 
         # Compute surge multiplier for all providers
         now = int(self.model.time)
@@ -84,7 +95,7 @@ class RideServices:
             # Convert cumulative shares to probabilities
             provider_names = list(self.providers.keys())
             provider_probs = [self.providers[provider_names[0]]["share"]] + [
-                self.providers[provider_names[i]]["share"] - self.providers[provider_names[i - 1]]["share"]
+                self.providers[provider_names[i]]["share"] - self.providers[provider_names[i-1]]["share"]
                 for i in range(1, len(provider_names))
             ]
             # Map provider -> share probability
@@ -99,26 +110,26 @@ class RideServices:
             print(f"💵 Surge multiplier value for {provider}: {conf['surge_multiplier']}")
 
         # Clean up partial acceptances if timeout
-        expired_acceptances = [
-            key for key, (agents, timestamp) in self.acceptances.items()
-            if len(agents) == 1 and (
-                ("passenger" in agents and now - timestamp >= timeout_p) or
-                ("driver" in agents and now - timestamp >= timeout_d)
-            )
-        ]
-        for key in expired_acceptances:
-            self.remove_offer(key)
-            self.remove_acceptance(key)
-        print(f"⌛️ Timeout for {len(expired_acceptances)} acceptances")
+        for key, (agents, timestamp) in self.acceptances.items():
+            if len(agents) == 1:
+                if "passenger" in agents and now - timestamp >= timeout_p:
+                    self.expired_acceptances_p += 1
+                    self.remove_offer(key)
+                    self.remove_acceptance(key)
+                elif "driver" in agents and now - timestamp >= timeout_d:
+                    self.expired_acceptances_d += 1
+                    self.remove_offer(key)
+                    self.remove_acceptance(key)
+        print(f"⌛️ Timeout: {self.expired_acceptances_p} passengers, {self.expired_acceptances_d} drivers")
 
-        # Clean up expired offers if timeout
-        expired_offers = [
+        # Clean up expired offers
+        self.expired_offers = [
             key for key, offer in self.offers.items()
-            if now - offer["timestamp"] >= timeout_p
+            if now - offer["timestamp"] >= self.model.agents_interval
         ]
-        for key in expired_offers:
+        for key in self.expired_offers:
             self.remove_offer(key)
-        print(f"⌛️ Timeout for {len(expired_offers)} offers")
+        print(f"⌛️ Timeout for {len(self.expired_offers)} offers")
 
         # Pre-compute and cache positions of all idle taxis
         taxi_positions = {}
@@ -156,6 +167,7 @@ class RideServices:
             # Get top 8 closest taxis
             closest_taxis = heapq.nsmallest(8, taxis_radius)
             if not closest_taxis:
+                self.rides_not_served += 1
                 print(f"⚠️ No taxis available for reservation {res_id} — skipping")
                 continue
 
@@ -224,6 +236,15 @@ class RideServices:
                 for key in to_remove:
                     self.remove_offer(key)
                     self.remove_acceptance(key)
+        
+        # Update the logger
+        self.logger.update_rideservices(
+            timestamp = self.model.time,
+            dispatched_taxis = len(matched_keys),
+            timeout_offers = len(self.expired_offers),
+            requests_canceled = self.expired_acceptances_p,
+            requests_not_served = self.rides_not_served
+        )
 
 
     def accept_offer(
@@ -272,6 +293,20 @@ class RideServices:
         """
         self.remove_offer(key)
         self.remove_acceptance(key)
+
+
+    def get_offers(
+            self
+        ) -> dict:
+        """
+        Gets the dictionary of offers.
+
+        Returns:
+        -------
+        dict
+            A dictionary containing all offers.
+        """
+        return self.offers
 
 
     def get_offers_for_drivers(

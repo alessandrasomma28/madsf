@@ -156,3 +156,5 @@ sumoSimulator.run_simulation(
     agents_interval=agents_interval,
     dispatch_algorithm=dispatch_algorithm
     )
+
+import generate_output_csv
