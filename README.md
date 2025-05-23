@@ -2,6 +2,7 @@
 
 This is a work-in-progress project, feel free to report any inconsistency or bug.
 
+
 ## Why 3 branches?
 
 This repo has 3 branches because they refer to 3 different implementation:
@@ -12,6 +13,7 @@ This repo has 3 branches because they refer to 3 different implementation:
 
 So, `multi-agent-social-groups` branch is actually the most recent one, used to complete all the functionalities of the digital mirror. We can consider the other 2 branches `main` and `multi-agent` as completed, and they will serve for comparison purposes. 
 
+
 ## Description
 
 This repo is composed of 6 folders, a *main.py* and a requirements file.
@@ -21,16 +23,18 @@ This repo is composed of 6 folders, a *main.py* and a requirements file.
 - `data/`: contains all input data for the simulator. **Be sure to have your local copy since git does not allow push of files > 100MB**.
 - `libraries/`: contains all the utility functions to generate the input for the simulation.
 - `sumoenv/`: contains output folder, the SF net files, and the sumocfg file, which is automatically generated in *main.py*.
-- `config/`: contains json files to configurate providers, personalities and acceptances.
+- `config/`: contains `.json` files to configurate providers, personalities and acceptances.
+
 
 ## How-to-run instructions
 
-1. Install [**SUMO**](https://sumo.dlr.de/docs/Downloads.php) and set [**SUMO_HOME**](https://sumo.dlr.de/docs/Basics/Basic_Computer_Skills.html#sumo_home) environment variable. For MacOS users, prefer installation via **Homebrew**.
+1. Install [**SUMO**](https://sumo.dlr.de/docs/Downloads.php) and set [**SUMO_HOME**](https://sumo.dlr.de/docs/Basics/Basic_Computer_Skills.html#sumo_home) environment variable. For MacOS users, prefer installation via **Homebrew**. To run the simulation with the GUI, install *SUMO* follow the instructions [here](https://github.com/DLR-TS/homebrew-sumo), then run [*XQuartz*](https://www.xquartz.org/) in background (MacOS users).
 2. Open project and create a virtual environment with Python >=3.10.
-3. Change paths indicated in `constants/sumoenv_constants.py`.
+3. If needed, change paths indicated in `constants/sumoenv_constants.py`.
 4. Install requirements from *requirements.txt* file.
 5. Run simulation by simply executing *main.py*. If you don't want to use the GUI, simply set `activeGui=False` in *main.py*.
 6. Inspect output folder `sumoenv/scenario/normal`.
+
 
 ## Classes
 
@@ -39,6 +43,7 @@ This repo is composed of 6 folders, a *main.py* and a requirements file.
 - `Passengers`: Manages unassigned ride requests and interacts with the ride service to accept/reject offers from drivers.
 - `Drivers`: Manages idle drivers and interacts with the ride service to accept/reject offers from passengers.
 - `RideServices`: Manages ride offers and acceptances between passengers and drivers. When both passenger and driver accept the offer, the ride is dispatched.
+
 
 ## Architecture
 
@@ -71,6 +76,7 @@ For each step of the multi-agent logic, *SUMO* logic stops. `Passengers` and `Dr
     - If the driver accepts the offer, `Drivers` notifies `RideServices`, which finally dispatches the ride using the *TraCI* method `dispatchTaxi(request_id, driver_id)`.
 
 When all the requests are processed, the *SUMO* logic is resumed, until the next step of the multi-agent logic.
+
 
 ## Evolvability
 

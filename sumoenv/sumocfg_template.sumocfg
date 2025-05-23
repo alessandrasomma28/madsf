@@ -33,8 +33,6 @@
     <taxi_device>
       <device.taxi.dispatch-algorithm value="{dispatch_algorithm}"/>
       <device.taxi.idle-algorithm value="{idle_mechanism}"/>
-      <device.taxi.dispatch-algorithm.output value="{output_dir}/dispatch.xml"/>
-      <device.taxi.idle-algorithm.output value="{output_dir}/idle.xml"/>
     </taxi_device>
 </configuration>
 

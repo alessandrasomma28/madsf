@@ -249,35 +249,40 @@ def read_tnc_stats_data(
     return zone_data
 
 
-def check_import_map(map_name: str, map_url: str) -> bool:
+def check_import_traffic(
+        traffic_name: str,
+        traffic_url: str
+    ) -> bool:
     """
-    Check if the map (.csv) is imported correctly in map_path by checking the existence of the map files. If the files exist, it returns True, otherwise it download it from a url.
+    Check if the traffic is imported correctly in traffic_path by checking the existence of the traffic file (.csv).
+    If the file exists, it returns True, otherwise it downloads it from traffic_url.
 
-    Parameters
+    Parameters:
     ----------
-    map_name : str
+    - traffic_name : str
         Name of the map file to check.
-    map_url : str
+    - map_url : str
         URL to download the map file if it does not exist.
-    Returns
+
+    Returns:
     -------
     bool
         True if the map file exists or was downloaded successfully, False otherwise.
     """
-    map_path = Path("data/sf_traffic/sfmta_dataset/" + map_name)
+    map_path = Path("data/sf_traffic/sfmta_dataset/" + traffic_name)
     if map_path.exists():
-        print(f"✅ Map {map_name} is ready to be loaded.\n")
+        print(f"✅ Map {traffic_name} is ready to be loaded.\n")
         return True
     else:
-        print(f"Map {map_name} does not exist. Downloading from {map_url}.")
+        print(f"Map {traffic_name} does not exist. Downloading from {traffic_url}.")
         try:
             os.makedirs(map_path.parent, exist_ok=True)
             cmd = [
                 "wget",
-                "--tries", str(3),    # retry up to `retries` times
+                "--tries", str(3),      # retry up to `retries` times
                 "--timeout", str(300),  # seconds per attempt
-                "--continue",              # resume partial downloads
-                map_url,
+                "--continue",           # resume partial downloads
+                traffic_url,
                 "-O", str(map_path)
             ]
             result = subprocess.run(cmd, check=False)
