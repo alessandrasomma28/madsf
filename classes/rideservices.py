@@ -21,7 +21,6 @@ It supports the following operations:
 """
 
 
-import re
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
@@ -110,6 +109,8 @@ class RideServices:
         for key in expired_acceptances:
             self.remove_offer(key)
             self.remove_acceptance(key)
+        print(f"⌛️ Timeout for {len(expired_acceptances)} acceptances")
+
         # Clean up expired offers if timeout
         expired_offers = [
             key for key, offer in self.offers.items()
@@ -117,7 +118,15 @@ class RideServices:
         ]
         for key in expired_offers:
             self.remove_offer(key)
-        print(f"⌛️ Timeout for {len(expired_acceptances)+len(expired_offers)} offers and rides")
+        print(f"⌛️ Timeout for {len(expired_offers)} offers")
+
+        # Pre-compute and cache positions of all idle taxis
+        taxi_positions = {}
+        for taxi_id in idle_taxis:
+            try:
+                taxi_positions[taxi_id] = traci.vehicle.getPosition(taxi_id)
+            except traci.TraCIException:
+                print(f"⚠️ Failed to get position for taxi {taxi_id}")
 
         # Iterates over all passenger requests
         existing_res_ids = {r_id for (r_id, _) in self.offers}
@@ -136,16 +145,13 @@ class RideServices:
 
             # Compute radius of each driver from the passenger
             taxis_radius = []
-            for taxi_id in idle_taxis:
-                try:
-                    taxi_pos = traci.vehicle.getPosition(taxi_id)
-                    # Euclidean distance
-                    radius = math.hypot(taxi_pos[0] - pax_pos[0], taxi_pos[1] - pax_pos[1])
-                    if radius <= 10000:  # Only include taxis within 10km
-                        taxis_radius.append((radius, taxi_id))
-                except traci.TraCIException:
-                    print(f"⚠️ Failed to get position for taxi {taxi_id}")
+            for taxi_id, taxi_pos in taxi_positions.items():
+                # Bounding box filter (within 10km square)
+                if abs(taxi_pos[0] - pax_pos[0]) > 10000 or abs(taxi_pos[1] - pax_pos[1]) > 10000:
                     continue
+                radius = math.hypot(taxi_pos[0] - pax_pos[0], taxi_pos[1] - pax_pos[1])
+                if radius <= 10000:
+                    taxis_radius.append((radius, taxi_id))
 
             # Get top 8 closest taxis
             closest_taxis = heapq.nsmallest(8, taxis_radius)
