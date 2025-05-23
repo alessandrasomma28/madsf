@@ -16,6 +16,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import csv
+import subprocess
 from pathlib import Path
 
 
@@ -246,3 +247,46 @@ def read_tnc_stats_data(
     print(f"Total dropoffs: {total_dropoffs}")
 
     return zone_data
+
+
+def check_import_map(map_name: str, map_url: str) -> bool:
+    """
+    Check if the map (.csv) is imported correctly in map_path by checking the existence of the map files. If the files exist, it returns True, otherwise it download it from a url.
+
+    Parameters
+    ----------
+    map_name : str
+        Name of the map file to check.
+    map_url : str
+        URL to download the map file if it does not exist.
+    Returns
+    -------
+    bool
+        True if the map file exists or was downloaded successfully, False otherwise.
+    """
+    map_path = Path("data/sf_traffic/sfmta_dataset/" + map_name)
+    if map_path.exists():
+        print(f"✅ Map {map_name} is ready to be loaded.\n")
+        return True
+    else:
+        print(f"Map {map_name} does not exist. Downloading from {map_url}.")
+        try:
+            os.makedirs(map_path.parent, exist_ok=True)
+            cmd = [
+                "wget",
+                "--tries", str(3),    # retry up to `retries` times
+                "--timeout", str(300),  # seconds per attempt
+                "--continue",              # resume partial downloads
+                map_url,
+                "-O", str(map_path)
+            ]
+            result = subprocess.run(cmd, check=False)
+            if result.returncode == 0:
+                print(f"✅ Map downloaded successfully to {map_path}")
+                return True
+            else:
+                print(f"❌ wget exited with code {result.returncode}")
+                return False
+        except Exception as e:
+            print(f"Error downloading map: {e}")
+            return False

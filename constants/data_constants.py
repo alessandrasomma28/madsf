@@ -24,5 +24,6 @@ SF_RIDE_FOLDER_PATH = DATA_FOLDER_PATH + "/ridehailing_stats"
 SF_RIDE_STATS_PATH = SF_RIDE_FOLDER_PATH + "/trip_stats_taz.csv"
 SF_TAZ_COORDINATES_PATH = SF_RIDE_FOLDER_PATH + "/taz_coordinates_centroids.csv"
 
-
+SF_MAP_NAME = "sf_vehicle_210110_210116.csv"
+SF_MAP_URL = "https://drive.switch.ch/index.php/s/ZVeQ0a6Bhnc0vtW/download"
 
