@@ -29,7 +29,7 @@ sumoSimulator = Simulator(
 
 # 0. Check availability of traffic data
 if not check_import_traffic(traffic_name=SF_TRAFFIC_FILE, traffic_url=SF_TRAFFIC_URL):
-    print("❌ Downloading traffic failure. Please check the URL.")
+    print("❌ Downloading traffic failed. Please check your internet connection and the URL.")
     exit(1)
 
 # 1. Get safe edges (i.e., edges that are strongly connected)
