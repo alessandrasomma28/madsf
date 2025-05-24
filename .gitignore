@@ -1,5 +1,4 @@
-data/sf_traffic/sfmta_dataset/sf_vehicle_210110_210116.csv
-data/sf_traffic/sfmta_dataset/sf_vehicle_010121_0001.csv
+data/sf_traffic/sfmta_dataset/
 sumoenv/scenarios/
 *.pyc
 .vscode

@@ -3,8 +3,7 @@ from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generati
     add_sf_traffic_taz_matching, generate_vehicle_start_lanes_from_taz_polygons, generate_drt_vehicle_instances_from_lanes, \
     get_valid_taxi_edges, map_taz_to_edges
 from constants.data_constants import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_RIDE_STATS_PATH,
-                                      SF_TRAFFIC_VEHICLE_ONEWEEK_PATH, SF_TAZ_SHAPEFILE_PATH, 
-                                      SF_TAZ_COORDINATES_PATH, SF_TRAFFIC_FILE, SF_TRAFFIC_URL)
+                                      SF_TRAFFIC_VEHICLE_ONEWEEK_PATH, SF_TAZ_SHAPEFILE_PATH, SF_TAZ_COORDINATES_PATH)
 from constants.sumoenv_constants import (SUMO_NET_PATH, SUMO_BASE_SCENARIO_FOLDER_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH)
 from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_data, check_import_traffic
 from classes.simulator import Simulator
@@ -27,9 +26,12 @@ sumoSimulator = Simulator(
     taz_file_path=SUMO_POLY_PATH
     )
 
-# 0. Check availability of traffic data
-if not check_import_traffic(traffic_name=SF_TRAFFIC_FILE, traffic_url=SF_TRAFFIC_URL):
-    raise FileNotFoundError(f"❌ Downloading traffic failed, please check your internet connection and the URL")
+# 0. Import traffic data
+check_import_traffic(
+    date_str=date,
+    start_time_str=start_time,
+    end_time_str=end_time
+    )
 
 # 1. Get safe edges (i.e., edges that are strongly connected)
 safe_edge_ids = get_strongly_connected_edges(sf_map_file_path=SUMO_NET_PATH)

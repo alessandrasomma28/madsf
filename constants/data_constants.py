@@ -24,5 +24,4 @@ SF_RIDE_FOLDER_PATH = DATA_FOLDER_PATH + "/ridehailing_stats"
 SF_RIDE_STATS_PATH = SF_RIDE_FOLDER_PATH + "/trip_stats_taz.csv"
 SF_TAZ_COORDINATES_PATH = SF_RIDE_FOLDER_PATH + "/taz_coordinates_centroids.csv"
 
-SF_TRAFFIC_FILE = "sf_vehicle_210110_210116.csv"
-SF_TRAFFIC_URL = "https://drive.switch.ch/index.php/s/ZVeQ0a6Bhnc0vtW/download"
+SF_TRAFFIC_BASE_URL = "https://data.sfgov.org/resource/9722-grnf.csv"

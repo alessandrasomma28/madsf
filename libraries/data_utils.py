@@ -1,23 +1,113 @@
-"""
-data_utils.py
-
-This module provides utility functions to handle and process traffic data collected
-from the San Francisco Municipal Transportation Agency (SFMTA). It supports the
-following operations:
-
-1. read_sf_traffic_data: Reading and cleaning raw traffic CSV data files.
-2. convert_sf_traffic_csv_format: Converting traffic CSV files from one format to another with specific formatting.
-3. extract_sf_traffic_timeslot: Extracting a time-based subset of vehicle data into a new CSV file.
-4. read_tnc_stats_data: Reading TNC pickup/dropoff data and filtering it based on a specified time window.
-"""
-
-
+import requests
 import pandas as pd
-from datetime import datetime
+from urllib.parse import quote
+import certifi
+import threading
+import itertools
+import sys
+import time
 import os
 import csv
-import subprocess
+from datetime import datetime
 from pathlib import Path
+from constants.data_constants import (SF_TRAFFIC_FOLDER_PATH, SF_TRAFFIC_BASE_URL)
+
+
+def _spinner(msg="Downloading traffic file from SFMTA..."):
+    for char in itertools.cycle("|/-\\"):
+        if _spinner_done:
+            break
+        sys.stdout.write(f"\r{msg} {char}")
+        sys.stdout.flush()
+        time.sleep(0.1)
+
+def check_import_traffic(
+        date_str: str,
+        start_time_str: str,
+        end_time_str: str,
+        limit: int = 100000000
+    ) -> None:
+    """
+    Downloads San Francisco traffic data from the SFMTA API and saves it as a CSV file.
+    This function:
+    - Constructs a query to fetch vehicle position data within a specified time range.
+    - Saves the data to a CSV file in a designated folder.
+
+    Parameters:
+    ----------
+    - date_str: str
+        Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
+    - start_time_str: str
+        Start time in 'HH:MM' format (e.g., '08:00').
+    - end_time_str: str
+        End time in 'HH:MM' format (e.g., '10:00').
+    - limit: int
+        Maximum number of records to fetch (default is 100 million).
+
+    Returns:
+    -------
+    None
+
+    Raises:
+    ------
+    Exception
+        If the request to the SFMTA API fails or if the response status code is not 200.
+    """
+    global _spinner_done
+    _spinner_done = False
+
+    # Build query and URL
+    start_datetime = f"{date_str}T{start_time_str}:00"
+    end_datetime = f"{date_str}T{end_time_str}:00"
+    query = f"""
+        SELECT
+          vehicle_position_date_time,
+          vehicle_id,
+          loc_x,
+          loc_y,
+          heading,
+          average_speed
+        WHERE
+          vehicle_position_date_time BETWEEN '{start_datetime}' AND '{end_datetime}'
+        LIMIT {limit}
+    """
+    url = f"{SF_TRAFFIC_BASE_URL}?$query={quote(query)}"
+
+    # Create the folder if it doesn't exist
+    sf_traffic_folder = os.path.join(SF_TRAFFIC_FOLDER_PATH, "sfmta_dataset")
+    if not os.path.exists(sf_traffic_folder):
+        os.makedirs(sf_traffic_folder)
+
+    # Check if the file already exists
+    date_part = datetime.strptime(date_str, "%Y-%m-%d").strftime("%y%m%d")
+    start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
+    end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
+    timeslot_part = f"{start_hour}{end_hour}"
+    sf_traffic_file_path = os.path.join(
+        sf_traffic_folder,
+        f"sf_traffic_data_{date_part}_{timeslot_part}.csv"
+    )
+    if os.path.exists(sf_traffic_file_path):
+        return
+    
+    # Loading spinner
+    spinner_thread = threading.Thread(target=_spinner)
+    spinner_thread.start()
+
+    # Fetch traffic data
+    try:
+        response = requests.get(url, verify=certifi.where())
+    finally:
+        _spinner_done = True
+        spinner_thread.join()
+        sys.stdout.write("\rDownload complete                                  \n")
+    if response.status_code != 200:
+        raise Exception(f"Failed to fetch data: {response.status_code} - {response.text}")
+
+    # Write response to CSV file
+    with open(sf_traffic_file_path, "w", encoding="utf-8") as f:
+        f.write(response.text)
+    print(f"✅ CSV saved to: {sf_traffic_file_path}")
 
 
 def read_sf_traffic_data(file_path: str) -> pd.DataFrame:
@@ -247,51 +337,3 @@ def read_tnc_stats_data(
     print(f"Total dropoffs: {total_dropoffs}")
 
     return zone_data
-
-
-def check_import_traffic(
-        traffic_name: str,
-        traffic_url: str
-    ) -> bool:
-    """
-    Check if the traffic is imported correctly in traffic_path by checking the existence of the traffic file (.csv).
-    If the file exists, it returns True, otherwise it downloads it from traffic_url.
-
-    Parameters:
-    ----------
-    - traffic_name : str
-        Name of the map file to check.
-    - map_url : str
-        URL to download the map file if it does not exist.
-
-    Returns:
-    -------
-    bool
-        True if the map file exists or was downloaded successfully, False otherwise.
-    """
-    map_path = Path("data/sf_traffic/sfmta_dataset/" + traffic_name)
-    if map_path.exists():
-        print(f"✅ Map {traffic_name} is ready to be loaded")
-        return True
-    else:
-        print(f"Map {traffic_name} does not exist, downloading from {traffic_url}")
-        try:
-            os.makedirs(map_path.parent, exist_ok=True)
-            cmd = [
-                "wget",
-                "--tries", str(3),      # retry up to `retries` times
-                "--timeout", str(300),  # seconds per attempt
-                "--continue",           # resume partial downloads
-                traffic_url,
-                "-O", str(map_path)
-            ]
-            result = subprocess.run(cmd, check=False)
-            if result.returncode == 0:
-                print(f"✅ Map downloaded successfully to {map_path}")
-                return True
-            else:
-                print(f"❌ wget exited with code {result.returncode}")
-                return False
-        except Exception as e:
-            print(f"Error downloading map: {e}")
-            return False
