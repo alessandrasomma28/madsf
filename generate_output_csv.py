@@ -6,12 +6,12 @@ passengers, drivers, and traffic vehicles. It also creates an interactive line p
 The script performs the following steps:
 1. Load XML data from the simulation output files: tripinfos.xml, queue.xml, summary.xml and multi_agent_infos.xml.
 2. Parse the XML data to extract relevant metrics such as:
-   - Passenger requests, departures, arrivals, and served by drivers.
+   - Passenger requests, departures and arrivals.
    - Durations and route lengths.
    - Driver shift durations, total route lengths, and occupied distances/durations.
+   - Average price and surge multiplier.
    - Traffic vehicle durations and route lengths.
    - Average speed and queuing metrics.
-   - Average price and surge multiplier.
 3. Store the extracted metrics in a dictionary, indexed by timestamps.
 4. Convert the dictionary into a Pandas DataFrame.
 5. Save the DataFrame to a CSV file.
@@ -25,6 +25,8 @@ from collections import defaultdict
 import pandas as pd
 import os
 import plotly.express as px
+
+print("📊 Generating output CSV and visualization...")
 
 # Set up scenarios, date, timeslot, and output path
 scenario = "normal"
@@ -240,9 +242,9 @@ for t, stats in sorted(timestamps.items()):
         "drivers_vehicles": stats["drivers_vehicles"],
         "drivers_shift_duration_avg": sum(stats["drivers_shift_durations"]) / len(stats["drivers_shift_durations"]) if stats["drivers_shift_durations"] else 0,
         "drivers_total_length_avg": sum(stats["drivers_total_lengths"]) / len(stats["drivers_total_lengths"]) if stats["drivers_total_lengths"] else 0,
-        "drivers_total_durations_avg": sum(stats["drivers_total_durations"]) / len(stats["drivers_total_durations"]) if stats["drivers_total_durations"] else 0,
+        "drivers_total_duration_avg": sum(stats["drivers_total_durations"]) / len(stats["drivers_total_durations"]) if stats["drivers_total_durations"] else 0,
         "drivers_occupied_distance_avg": sum(stats["drivers_occupied_distance"]) / len(stats["drivers_occupied_distance"]) if stats["drivers_occupied_distance"] else 0,
-        "drivers_occupied_durations_avg": sum(stats["drivers_occupied_durations"]) / len(stats["drivers_occupied_durations"]) if stats["drivers_occupied_durations"] else 0,
+        "drivers_occupied_duratios_avg": sum(stats["drivers_occupied_durations"]) / len(stats["drivers_occupied_durations"]) if stats["drivers_occupied_durations"] else 0,
         "drivers_passengers_served": stats["drivers_passengers_served"],
         "drivers_idle": stats["drivers_idle"],
         "drivers_pickup": stats["drivers_pickup"],
@@ -250,7 +252,7 @@ for t, stats in sorted(timestamps.items()):
         "drivers_accept": stats["drivers_accept"],
         "drivers_reject": stats["drivers_reject"],
         "rides_in_progress": stats["rides_in_progress"],
-        "rides_waiting_durations_avg": sum(stats["rides_waiting_durations"]) / len(stats["rides_waiting_durations"]) if stats["rides_waiting_durations"] else 0,
+        "rides_waiting_duration_avg": sum(stats["rides_waiting_durations"]) / len(stats["rides_waiting_durations"]) if stats["rides_waiting_durations"] else 0,
         "rides_duration_avg": sum(stats["rides_durations"]) / len(stats["rides_durations"]) if stats["rides_durations"] else 0,
         "rides_length_avg": sum(stats["rides_lengths"]) / len(stats["rides_lengths"]) if stats["rides_lengths"] else 0,
         "rides_duration_expected_avg": stats["expected_rides_durations"],
@@ -268,8 +270,8 @@ for t, stats in sorted(timestamps.items()):
         "traffic_duration_avg": sum(stats["traffic_durations"]) / len(stats["traffic_durations"]) if stats["traffic_durations"] else 0,
         "traffic_length_avg": sum(stats["traffic_lengths"]) / len(stats["traffic_lengths"]) if stats["traffic_lengths"] else 0,
         "speed_avg": stats["avg_speed"],
-        "relative_speed_avg": stats["avg_relative_speed"],
-        "queuing_durations_avg": stats["avg_queuing_durations"],
+        "speed_relative_avg": stats["avg_relative_speed"],
+        "queuing_duration_avg": stats["avg_queuing_durations"],
         "queuing_length_avg": stats["avg_queuing_length"]
     })
 
@@ -282,7 +284,7 @@ print(f"✅ Computed {len(df.columns)-1} metrics, CSV file saved in {output_csv_
 # Create interactive line plot of the metrics
 df.set_index("timestamp", inplace=True)
 title = f"Simulation indicators time series: interactive line plot <br><sup>City: San Francisco, Scenario: {scenario}, Date: {date_part}, Timeslot: {timeslot_part}</sup>"
-output_html_path = os.path.join(output_path, "sf_metrics_visualization.html")
+output_html_path = os.path.join(output_path, "sf_final_metrics_visualization.html")
 fig = px.line(df, x=df.index, y=df.columns, title=title)
 fig.update_layout(legend_title_text="Simulation metrics")
 fig.write_html(output_html_path)

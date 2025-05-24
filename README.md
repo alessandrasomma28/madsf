@@ -20,20 +20,25 @@ This repo is composed of 6 folders, a *main.py* and a requirements file.
 
 - `classes/`: contains simulation and multi-agent logic.
 - `constants/`: contains paths for better readability.
-- `data/`: contains all input data for the simulator. **Be sure to have your local copy since git does not allow push of files > 100MB**.
+- `data/`: contains all input data for the simulator.
 - `libraries/`: contains all the utility functions to generate the input for the simulation.
-- `sumoenv/`: contains output folder, the SF net files, and the sumocfg file, which is automatically generated in *main.py*.
+- `sumoenv/`: contains the output folder, the SF net files, and the `sumocfg` file, which is automatically generated in *main.py*.
 - `config/`: contains `.json` files to configurate providers, personalities and acceptances.
 
 
 ## How-to-run instructions
 
 1. Install [**SUMO**](https://sumo.dlr.de/docs/Downloads.php) and set [**SUMO_HOME**](https://sumo.dlr.de/docs/Basics/Basic_Computer_Skills.html#sumo_home) environment variable. For MacOS users, prefer installation via **Homebrew**. To run the simulation with the GUI, install *SUMO* follow the instructions [here](https://github.com/DLR-TS/homebrew-sumo), then run [*XQuartz*](https://www.xquartz.org/) in background (MacOS users).
-2. Open project and create a virtual environment with Python >=3.10.
+2. Open project (`cd/path/to/this/project`), create a virtual environment with Python >=3.10 (`python3.10 -m venv venv`) and activate it (`source venv/bin/activate`).
 3. If needed, change paths indicated in `constants/sumoenv_constants.py`.
-4. Install requirements from *requirements.txt* file.
+4. Install requirements from *requirements.txt* file (`pip install -r requirements.txt`).
 5. Run simulation by simply executing *main.py*. If you don't want to use the GUI, simply set `activeGui=False` in *main.py*.
-6. Inspect output folder `sumoenv/scenario/normal`.
+6. Inspect output folder `sumoenv/scenario/{scenario_name}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the HTML interactive line plot visualization `sf_final_metrics_visualization.html`.
+
+
+## Evolvability
+
+The project is designed to be easily extensible and adaptable to different scenarios. The multi-agent model can be easily modified to include new features, without acting directly on the agents. One can simply modify the `.json` files in the `config/` folder to change the parameters of the agents (such as different acceptance probability distribution) or add other components (such as other different ride-hailing providers).
 
 
 ## Classes
@@ -76,8 +81,3 @@ For each step of the multi-agent logic, *SUMO* logic stops. `Passengers` and `Dr
     - If the driver accepts the offer, `Drivers` notifies `RideServices`, which finally dispatches the ride using the *TraCI* method `dispatchTaxi(request_id, driver_id)`.
 
 When all the requests are processed, the *SUMO* logic is resumed, until the next step of the multi-agent logic.
-
-
-## Evolvability
-
-The project is designed to be easily extensible and adaptable to different scenarios. The multi-agent model can be easily modified to include new features, without acting directly on the agents. One can simply modify the `.json` files in the `config/` folder to change the parameters of the agents (such as different acceptance probability distribution) or add other components (such as other different ride-hailing providers).
