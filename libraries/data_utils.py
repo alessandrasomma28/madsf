@@ -271,10 +271,10 @@ def check_import_traffic(
     """
     map_path = Path("data/sf_traffic/sfmta_dataset/" + traffic_name)
     if map_path.exists():
-        print(f"✅ Map {traffic_name} is ready to be loaded.")
+        print(f"✅ Map {traffic_name} is ready to be loaded")
         return True
     else:
-        print(f"Map {traffic_name} does not exist. Downloading from {traffic_url}.")
+        print(f"Map {traffic_name} does not exist, downloading from {traffic_url}")
         try:
             os.makedirs(map_path.parent, exist_ok=True)
             cmd = [

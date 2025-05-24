@@ -259,7 +259,7 @@ class Simulator:
                 end_time = time.time()
                 elapsed = end_time - start_time
                 print("Simulation finished.")
-                print(f"⏱️ Total computation time: {elapsed:.2f} seconds")
+                print(f"⏱️ Total computation time: {elapsed:.2f} seconds\n")
         else:
             print("Simulation started with standard logic...")
             try:

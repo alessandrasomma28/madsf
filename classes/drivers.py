@@ -11,9 +11,11 @@ It supports the following operations:
     (iii) processing pending ride offers where the passenger has already accepted,
     (iv) assigning the best offer to each idle driver (who either accepts or rejects), and
     (v) cleaning up redundant offers.
+    (vi) updating the logger with the current state of drivers.
 2. get_idle_drivers: Returns the set of idle drivers.
 3. get_idle_drivers_by_provider: Returns a dictionary containing the sets of available drivers by provider.
-4. get_driver_timeout: Returns the timeout value for the driver.
+4. get_driver_provider: Returns the provider of a specific driver.
+5. get_driver_timeout: Returns the timeout value for the driver.
 """
 
 
@@ -46,14 +48,14 @@ class Drivers:
             logger: "Logger"
         ):
         self.model = model
-        self.timeout = timeout
-        self.personality_distribution = personality_distribution
-        self.acceptance_distribution = acceptance_distribution
-        self.providers = providers
+        self.__timeout = timeout
+        self.__personality_distribution = personality_distribution
+        self.__acceptance_distribution = acceptance_distribution
+        self.__providers = providers
         self.logger = logger
-        self.idle_drivers = set()
-        self.drivers_with_provider = {}  # Maps drivers to providers
-        self.drivers_with_personality = {}  # Maps drivers to personalities
+        self.__idle_drivers = set()
+        self.__drivers_with_provider = {}  # Maps drivers to providers
+        self.__drivers_with_personality = {}  # Maps drivers to personalities
 
 
     def step(self) -> None:
@@ -61,23 +63,23 @@ class Drivers:
         logged_pickup = len(set(traci.vehicle.getTaxiFleet(1)))
         logged_busy = len(set(traci.vehicle.getTaxiFleet(2)))
         # Get the set of idle drivers from TraCI
-        self.idle_drivers = set(traci.vehicle.getTaxiFleet(0))
-        print(f"🚕 {len(self.idle_drivers)} idle drivers")
+        self.__idle_drivers = set(traci.vehicle.getTaxiFleet(0))
+        print(f"🚕 {len(self.__idle_drivers)} idle drivers")
         # Persist provider and personality assignments
-        provider_counts = {provider: 0 for provider in self.providers}
-        for driver_id in self.idle_drivers:
-            if driver_id not in self.drivers_with_provider:
+        provider_counts = {provider: 0 for provider in self.__providers}
+        for driver_id in self.__idle_drivers:
+            if driver_id not in self.__drivers_with_provider:
                 probability = random.random()
-                for provider, config in self.providers.items():
+                for provider, config in self.__providers.items():
                     if probability < config["share"]:
-                        self.drivers_with_provider[driver_id] = provider
+                        self.__drivers_with_provider[driver_id] = provider
                         provider_counts[provider] += 1
                         break
-            if driver_id not in self.drivers_with_personality:
+            if driver_id not in self.__drivers_with_personality:
                 probability = random.random()
-                for personality, threshold in self.personality_distribution.items():
+                for personality, threshold in self.__personality_distribution.items():
                     if probability < threshold:
-                        self.drivers_with_personality[driver_id] = personality
+                        self.__drivers_with_personality[driver_id] = personality
                         break
         
         # Print number of newly added drivers per provider
@@ -86,7 +88,7 @@ class Drivers:
 
         # Collect pending offers where passenger has already accepted
         offers_by_driver = defaultdict(list)
-        for (res_id, driver_id), offer in self.model.rideservices.get_offers_for_drivers(self.idle_drivers).items():
+        for (res_id, driver_id), offer in self.model.rideservices.get_offers_for_drivers(self.__idle_drivers).items():
             if self.model.rideservices.is_passenger_accepted(res_id, driver_id):
                 offers_by_driver[driver_id].append((res_id, offer))
 
@@ -99,13 +101,13 @@ class Drivers:
             best_res_id, _ = min(offers, key=lambda x: x[1]["radius"])
             key = (best_res_id, driver_id)
             # Reject the offer if surge is too low and temporarily remove driver from available
-            personality = self.drivers_with_personality[driver_id]
+            personality = self.__drivers_with_personality[driver_id]
             surge = offers[0][1]["surge"]
-            acceptance = next((perc for low, up, perc in self.acceptance_distribution[personality] if low < surge <= up), None)
+            acceptance = next((perc for low, up, perc in self.__acceptance_distribution[personality] if low < surge <= up), None)
             if random.random() > acceptance:
                 self.model.rideservices.reject_offer(key)
                 reject+=1
-                self.idle_drivers.discard(driver_id)
+                self.__idle_drivers.discard(driver_id)
                 # Remove all other offers for the same driver
                 for res_id, _ in offers:
                     if res_id != best_res_id:
@@ -116,7 +118,7 @@ class Drivers:
             # Accept the offer
             self.model.rideservices.accept_offer(key, "driver")
             accept+=1
-            self.idle_drivers.discard(driver_id)
+            self.__idle_drivers.discard(driver_id)
 
             # Remove all other offers for the same driver
             for res_id, _ in offers:
@@ -149,7 +151,7 @@ class Drivers:
         set
             A set containing all the available drivers.
         """
-        return self.idle_drivers
+        return self.__idle_drivers
     
 
     def get_idle_drivers_by_provider(self) -> dict:
@@ -161,12 +163,27 @@ class Drivers:
         dict
             A dict mapping each provider to a set of their idle drivers.
         """
-        result = {provider: set() for provider in self.providers}
-        for driver_id in self.idle_drivers:
-            provider = self.drivers_with_provider.get(driver_id)
+        result = {provider: set() for provider in self.__providers}
+        for driver_id in self.__idle_drivers:
+            provider = self.__drivers_with_provider.get(driver_id)
             if provider:
                 result[provider].add(driver_id)
         return result
+    
+
+    def get_driver_provider(
+            self,
+            driver_id: str
+        ) -> str:
+        """
+        Gets provider of a specific driver.
+
+        Returns:
+        -------
+        str
+            A string containing the provider of the driver.
+        """
+        return self.__drivers_with_provider.get(driver_id)
     
 
     def get_drivers_timeout(self) -> int:
@@ -178,4 +195,4 @@ class Drivers:
         int
             An int containing the max waiting time for drivers.
         """
-        return self.timeout
+        return self.__timeout

@@ -29,7 +29,7 @@ class Logger:
             os.remove(self.output_path)
         self.root = ET.Element("MultiAgentLog")
         self.tree = ET.ElementTree(self.root)
-        self._write()
+        self.__write()
 
 
     def update_passengers(
@@ -48,7 +48,7 @@ class Logger:
         ET.SubElement(passengers_el, "pickup_requests").text = str(pickup_requests)
         ET.SubElement(passengers_el, "accepted_requests").text = str(accepted_requests)
         ET.SubElement(passengers_el, "rejected_requests").text = str(rejected_requests)
-        self._write()
+        self.__write()
 
 
     def update_drivers(
@@ -67,28 +67,51 @@ class Logger:
         ET.SubElement(drivers_el, "busy_drivers").text = str(busy_drivers)
         ET.SubElement(drivers_el, "accepted_requests").text = str(accepted_requests)
         ET.SubElement(drivers_el, "rejected_requests").text = str(rejected_requests)
-        self._write()
+        self.__write()
 
 
     def update_rideservices(
             self,
             timestamp: int,
             dispatched_taxis: int,
+            generated_offers: int,
             timeout_offers: int,
+            partial_acceptances: int,
             requests_canceled: int,
             requests_not_served: int
             ) -> None:
         entry = ET.SubElement(self.root, "step", timestamp=str(timestamp))
         rideservices_el = ET.SubElement(entry, "rideservices")
         ET.SubElement(rideservices_el, "dispatched_taxis").text = str(dispatched_taxis)
+        ET.SubElement(rideservices_el, "generated_offers").text = str(generated_offers)
         ET.SubElement(rideservices_el, "timeout_offers").text = str(timeout_offers)
+        ET.SubElement(rideservices_el, "partial_acceptances").text = str(partial_acceptances)
         ET.SubElement(rideservices_el, "requests_canceled").text = str(requests_canceled)
         ET.SubElement(rideservices_el, "requests_not_served").text = str(requests_not_served)
-        self._write()
+        self.__write()
 
 
-    def _write(self):
-        """Write XML tree to file."""
+    def update_offer_metrics(
+            self,
+            timestamp: int,
+            avg_expected_time: float,
+            avg_expected_length: float,
+            avg_radius: float,
+            avg_price: float,
+            avg_surge_multiplier: float
+        ) -> None:
+        entry = ET.SubElement(self.root, "step", timestamp=str(timestamp))
+        offers_el = ET.SubElement(entry, "offers")
+        ET.SubElement(offers_el, "avg_expected_time").text = str(avg_expected_time)
+        ET.SubElement(offers_el, "avg_expected_length").text = str(avg_expected_length)
+        ET.SubElement(offers_el, "avg_radius").text = str(avg_radius)
+        ET.SubElement(offers_el, "avg_price").text = str(avg_price)
+        ET.SubElement(offers_el, "avg_surge_multiplier").text = str(avg_surge_multiplier)
+        self.__write()
+
+
+    def __write(self):
+        # Writes XML to file
         rough_string = ET.tostring(self.root, encoding="utf-8")
         reparsed = minidom.parseString(rough_string)
         pretty_xml = reparsed.toprettyxml(indent="  ")
