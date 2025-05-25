@@ -20,20 +20,33 @@ def get_valid_date(prompt: str) -> str:
             print("⚠️  Invalid date format. Use MM-DD")
 
 
-def get_valid_hour(prompt: str) -> str:
+def get_valid_hour(
+        prompt: str,
+        start_hour_same_day_check: bool = False
+    ) -> str:
     while True:
         hour_str = input(prompt).strip()
         if hour_str.isdigit():
             hour = int(hour_str)
-            if 0 <= hour <= 23:
-                return f"{hour:02d}:00"
+            if start_hour_same_day_check:
+                if 0 <= hour <= 22:
+                    return f"{hour:02d}:00"
+                else:
+                    print("⚠️  Since you chose the same day, start hour must be between 0 and 22")
             else:
-                print("⚠️  Hour must be between 0 and 23")
+                if 0 <= hour <= 23:
+                    return f"{hour:02d}:00"
+                else:
+                    print("⚠️  Hour must be between 0 and 23")
         else:
             print("⚠️  Please enter a valid hour as an integer (e.g., 9 or 17)")
 
 
-def get_valid_int(prompt: str, min_val: int, max_val: int) -> int:
+def get_valid_int(
+        prompt: str,
+        min_val: int,
+        max_val: int
+    ) -> int:
     while True:
         try:
             val = int(input(prompt))

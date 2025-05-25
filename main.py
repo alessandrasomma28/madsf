@@ -20,13 +20,19 @@ while True:
     if datetime.strptime(end_date, "%Y-%m-%d") >= datetime.strptime(start_date, "%Y-%m-%d"):
         break
     print("⚠️  End date must be after or equal to start date.")
-start_time = get_valid_hour("Enter start hour (0-23): ")
-end_time = get_valid_hour("Enter end hour (0-23): ")
+if start_date == end_date:
+    start_time = get_valid_hour("Enter start hour (0-22): ", start_hour_same_day_check=True)
+else:
+    start_time = get_valid_hour("Enter start hour (0-23): ")
+if start_date == end_date:
+    end_time = get_valid_hour("Enter end hour ({start hour+1}-23): ")
+else:
+    end_time = get_valid_hour("Enter end hour (0-23): ")
 if start_date == end_date:
     if int(end_time.split(":")[0]) <= int(start_time.split(":")[0]):
         print("⚠️  End hour must be after start hour")
         while True:
-            end_time = get_valid_hour("Enter end hour (0-23): ")
+            end_time = get_valid_hour("Enter end hour ({start hour+1}-23): ")
             if int(end_time.split(":")[0]) > int(start_time.split(":")[0]):
                 break
             print("⚠️  End hour must be after start hour")
