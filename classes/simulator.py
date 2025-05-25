@@ -59,7 +59,8 @@ class Simulator:
             sf_traffic_route_file_path: str, 
             sf_tnc_fleet_file_path: str, 
             sf_tnc_requests_file_path: str, 
-            date_str: str, 
+            start_date_str: str, 
+            end_date_str: str, 
             start_time_str: str, 
             end_time_str: str
         ) -> Path:
@@ -82,26 +83,32 @@ class Simulator:
             Path to the taxi route file.
         - sf_tnc_requests_file_path: str
             Path to the passenger requests file.
-        - date_str: str
-            Date in 'YYYY-MM-DD' format.
+        - start_date_str: str
+            Start date in 'YYYY-MM-DD' format (e.g., '2021-03-25').
+        - end_date_str: str
+            End date in 'YYYY-MM-DD' format (e.g., '2021-03-26').
         - start_time_str: str
-            Start time in 'HH:MM' format.
+            Start time in 'HH:MM' format (e.g., '08:00').
         - end_time_str: str
-            End time in 'HH:MM' format.
+            End time in 'HH:MM' format (e.g., '10:00').
 
         Returns:
         --------
         Path 
             Path to the generated directory
         """
-        date_part = datetime.strptime(date_str, "%Y-%m-%d").strftime("%y%m%d")
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
         start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
         end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
-        timeslot_folder = f"{start_hour}-{end_hour}"
-        timeslot_part = f"{start_hour}{end_hour}"
+        timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
 
-        # Only calculate the path — don't create it
-        full_folder_path = Path(sf_routes_folder_path, date_str, timeslot_folder).absolute()
+        # Compute the absolute folder path
+        start_d = start_date.replace("-", "")
+        end_d = end_date.replace("-", "")
+        start_h = start_hour.replace(":", "")
+        end_h = end_hour.replace(":", "")
+        full_folder_path = Path(sf_routes_folder_path, f"{start_d}_{end_d}", f"{start_h}_{end_h}").absolute()
 
         # Set internal state
         self.output_dir_path = full_folder_path
@@ -110,13 +117,13 @@ class Simulator:
             Path(sf_tnc_fleet_file_path).absolute(),
             Path(sf_tnc_requests_file_path).absolute()
         ]
-        self.date_part = date_part
-        self.timeslot_part = timeslot_part
 
         # Calculate end time in seconds
-        sim_start = datetime.strptime(start_time_str, "%H:%M")
-        sim_end = datetime.strptime(end_time_str, "%H:%M")
-        self.end_time = int((sim_end - sim_start).total_seconds())
+        sim_start_dt = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
+        sim_end_dt = datetime.strptime(f"{end_date_str} {end_time_str}", "%Y-%m-%d %H:%M")
+
+        # Compute total simulation time in seconds
+        self.end_time = int((sim_end_dt - sim_start_dt).total_seconds())
 
         return self.output_dir_path
 

@@ -8,35 +8,30 @@ import sys
 import time
 import os
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from constants.data_constants import (SF_TRAFFIC_FOLDER_PATH, SF_TRAFFIC_BASE_URL)
 
 
-def _spinner(msg="Downloading traffic file from SFMTA..."):
-    for char in itertools.cycle("|/-\\"):
-        if _spinner_done:
-            break
-        sys.stdout.write(f"\r{msg} {char}")
-        sys.stdout.flush()
-        time.sleep(0.1)
-
 def check_import_traffic(
-        date_str: str,
+        start_date_str: str,
+        end_date_str: str,
         start_time_str: str,
         end_time_str: str,
         limit: int = 100000000
-    ) -> None:
+    ) -> Path:
     """
     Downloads San Francisco traffic data from the SFMTA API and saves it as a CSV file.
     This function:
     - Constructs a query to fetch vehicle position data within a specified time range.
-    - Saves the data to a CSV file in a designated folder.
+    - Saves the data to a CSV file in a designated folder, with the format: sf_traffic_data_{YYMMDDHH}_{YYMMDDHH}.csv.
 
     Parameters:
     ----------
-    - date_str: str
-        Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
+    - start_date_str: str
+        Start date in 'YYYY-MM-DD' format (e.g., '2021-03-25').
+    - end_date_str: str
+        End date in 'YYYY-MM-DD' format (e.g., '2021-03-26').
     - start_time_str: str
         Start time in 'HH:MM' format (e.g., '08:00').
     - end_time_str: str
@@ -46,19 +41,27 @@ def check_import_traffic(
 
     Returns:
     -------
-    None
+    Path
+        Full path to the saved CSV file containing the traffic data.
 
     Raises:
     ------
     Exception
         If the request to the SFMTA API fails or if the response status code is not 200.
     """
+    def _spinner(msg="Downloading traffic file from SFMTA..."):
+        for char in itertools.cycle("|/-\\"):
+            if _spinner_done:
+                break
+            sys.stdout.write(f"\r{msg} {char}")
+            sys.stdout.flush()
+            time.sleep(0.1)
     global _spinner_done
     _spinner_done = False
 
     # Build query and URL
-    start_datetime = f"{date_str}T{start_time_str}:00"
-    end_datetime = f"{date_str}T{end_time_str}:00"
+    start_datetime = f"{start_date_str}T{start_time_str}:00"
+    end_datetime = f"{end_date_str}T{end_time_str}:00"
     query = f"""
         SELECT
           vehicle_position_date_time,
@@ -78,17 +81,18 @@ def check_import_traffic(
     if not os.path.exists(sf_traffic_folder):
         os.makedirs(sf_traffic_folder)
 
-    # Check if the file already exists
-    date_part = datetime.strptime(date_str, "%Y-%m-%d").strftime("%y%m%d")
+    # Build path and check if the file already exists
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
     start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
-    timeslot_part = f"{start_hour}{end_hour}"
+    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
     sf_traffic_file_path = os.path.join(
         sf_traffic_folder,
-        f"sf_traffic_data_{date_part}_{timeslot_part}.csv"
+        f"sf_traffic_data_{timeslot}.csv"
     )
     if os.path.exists(sf_traffic_file_path):
-        return
+        return sf_traffic_file_path
     
     # Loading spinner
     spinner_thread = threading.Thread(target=_spinner)
@@ -108,6 +112,8 @@ def check_import_traffic(
     with open(sf_traffic_file_path, "w", encoding="utf-8") as f:
         f.write(response.text)
     print(f"✅ CSV saved to: {sf_traffic_file_path}")
+
+    return sf_traffic_file_path
 
 
 def read_sf_traffic_data(file_path: str) -> pd.DataFrame:
@@ -193,7 +199,8 @@ def convert_sf_traffic_csv_format(
 
 def extract_sf_traffic_timeslot(
         input_csv_path: str, 
-        date_str: str, 
+        start_date_str: str,
+        end_date_str: str,
         start_time_str: str,
         end_time_str: str, 
         output_csv_folder: str
@@ -206,15 +213,17 @@ def extract_sf_traffic_timeslot(
     - Filters the dataset to include only records within a given time window on a specific date.
     - Saves the filtered data to a CSV file with semicolon delimiter.
     - Organizes the output into a folder named after the date inside the specified output folder.
-    - The file is named using the format: sf_vehicle_{YYMMDD}_{HHHH}.csv.
+    - The file is named using the format: sf_vehicle_{YYMMDDYYMMDD}_{HHHH}.csv.
     - Overwrites the file if it already exists.
 
     Parameters:
     ----------
     - input_csv_path : str
         Path to the input CSV file with semicolon delimiter.
-    - date_str : str
-        Date in 'YYYY-MM-DD' format (e.g., '2025-03-25').
+    - start_date_str : str
+        Start date in 'YYYY-MM-DD' format (e.g., '2021-03-25').
+    - end_date_str : str
+        End date in 'YYYY-MM-DD' format (e.g., '2021-03-26').
     - start_time_str : str
         Start time in 'HH:MM' format (e.g., '08:00').
     - end_time_str : str
@@ -228,30 +237,40 @@ def extract_sf_traffic_timeslot(
         Full path to the saved CSV file containing the filtered data.
     """
     # Read dataset
-    df = pd.read_csv(input_csv_path, sep=";")
+    df = pd.read_csv(input_csv_path)
+    column_renames = {
+        "vehicle_position_date_time": "timestamp",
+        "vehicle_id": "vehicle_id",
+        "loc_x": "longitude",
+        "loc_y": "latitude",
+        "heading": "heading",
+        "average_speed": "speed"
+    }
+    df.rename(columns=column_renames, inplace=True)
 
     # Convert timestamp column to datetime
     df["timestamp"] = pd.to_datetime(df["timestamp"])
 
     # Build datetime range from input
-    start_dt = datetime.strptime(f"{date_str} {start_time_str}", "%Y-%m-%d %H:%M")
-    end_dt = datetime.strptime(f"{date_str} {end_time_str}", "%Y-%m-%d %H:%M")
+    start_dt = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
+    end_dt = datetime.strptime(f"{end_date_str} {end_time_str}", "%Y-%m-%d %H:%M")
 
     # Filter the DataFrame to the time slot
     filtered_df = df[(df["timestamp"] >= start_dt) & (df["timestamp"] < end_dt)]
 
-    # Format date and hour parts for filename
-    date_part = datetime.strptime(date_str, "%Y-%m-%d").strftime("%y%m%d")
+    # Format date and hour for filename
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
     start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
-    timeslot_part = f"{start_hour}{end_hour}"
+    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
 
     # Create folder path for the specific date
-    date_folder_path = os.path.join(output_csv_folder, date_str)
+    date_folder_path = os.path.join(output_csv_folder, f"{start_date}-{end_date}")
     os.makedirs(date_folder_path, exist_ok=True)  # Will not recreate if already exists
 
     # Final file path
-    filename = f"sf_vehicle_{date_part}_{timeslot_part}.csv"
+    filename = f"sf_vehicle_{timeslot}.csv"
     output_csv_path = os.path.join(date_folder_path, filename)
 
     # Save file, overwrite if exists
@@ -263,6 +282,8 @@ def extract_sf_traffic_timeslot(
 
 def read_tnc_stats_data(
         sf_rides_stats_path: str, 
+        start_date_str: str,
+        end_date_str: str,
         start_time_str: str, 
         end_time_str: str
     ) -> dict:
@@ -279,10 +300,14 @@ def read_tnc_stats_data(
     ----------
     - sf_rides_stats_path (str): 
         Path to the CSV file with columns: 'taz', 'day_of_week', 'hour', 'pickups', 'dropoffs'.
-    - start_time_str (str):
-        Start time (HH:MM format).
-    - end_time_str (str): 
-        End time (HH:MM format). Can wrap around midnight.
+    - start_date_str : str
+        Start date in 'YYYY-MM-DD' format (e.g., '2021-03-25').
+    - end_date_str : str
+        End date in 'YYYY-MM-DD' format (e.g., '2021-03-26').
+    - start_time_str : str
+        Start time in 'HH:MM' format (e.g., '08:00').
+    - end_time_str : str
+        End time in 'HH:MM' format (e.g., '10:00'). Can wrap around midnight.
 
     Returns:
     -------
@@ -292,8 +317,13 @@ def read_tnc_stats_data(
     def parse_hour(time_str):
         # Convert time string (HH:MM) to hour in standard 0-23 format
         return int(datetime.strptime(time_str, "%H:%M").hour)
-    
-    # Parse start and end times
+
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+    num_days = (end_date - start_date).days + 1
+    selected_days_of_week = {(start_date + timedelta(days=i)).weekday() for i in range(num_days)}
+
+    # Parse start and end hours
     start_hour = parse_hour(start_time_str)
     end_hour = parse_hour(end_time_str)
     if start_hour < end_hour:
@@ -301,7 +331,7 @@ def read_tnc_stats_data(
     else:
         selected_hours_std = list(range(start_hour, 24)) + list(range(0, end_hour))
 
-    # Create a mapping of dataset hours to standard hours
+    # Map dataset hours (3–26) to standard 0–23 format
     dataset_hour_map = {h: h % 24 for h in range(3, 27)}
     selected_dataset_hours = {h: std_hour for h, std_hour in dataset_hour_map.items() if std_hour in selected_hours_std}
 
@@ -312,9 +342,9 @@ def read_tnc_stats_data(
     with open(sf_rides_stats_path, mode='r') as file:
         reader = csv.DictReader(file, delimiter=',')
         for row in reader:
-            # Only process data for Monday (day_of_week == 0)
-            # TODO: Extend to other days
-            if int(row['day_of_week']) == 0:
+            # Process data for day of week
+            day_of_week = int(row['day_of_week'])
+            if day_of_week in selected_days_of_week:
                 taz = int(row['taz'])
                 dataset_hour = int(row['hour'])
                 if dataset_hour in selected_dataset_hours:
@@ -328,7 +358,8 @@ def read_tnc_stats_data(
                         'pickups': int(row['pickups']),
                         'dropoffs': int(row['dropoffs'])
                     }
-    print(f"✅ TNC stats data read from {sf_rides_stats_path} and filtered to time window {start_time_str} - {end_time_str}")
+
+    print(f"✅ TNC stats data read from {sf_rides_stats_path} and filtered to time window {start_date_str} {start_time_str} - {end_date_str} {end_time_str}")
 
     # Compute pickups and dropoffs across all zones and selected hours
     total_pickups = sum(hour_data['pickups'] for zone in zone_data.values() for hour_data in zone.values())

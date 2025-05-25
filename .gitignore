@@ -1,4 +1,4 @@
-data/sf_traffic/sfmta_dataset/
+data/sf_traffic/
 sumoenv/scenarios/
 *.pyc
 .vscode
