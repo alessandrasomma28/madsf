@@ -1,3 +1,5 @@
+from libraries.input_utils import get_valid_date, get_valid_hour, get_valid_int
+from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_data, check_import_traffic
 from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generation, sf_traffic_routes_generation, \
     export_taz_coords, map_coords_to_sumo_edges, get_strongly_connected_edges, generate_matched_drt_requests, \
     add_sf_traffic_taz_matching, generate_vehicle_start_lanes_from_taz_polygons, generate_drt_vehicle_instances_from_lanes, \
@@ -5,27 +7,34 @@ from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generati
 from constants.data_constants import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
                                       SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_TAZ_COORDINATES_PATH)
 from constants.sumoenv_constants import (SUMO_NET_PATH, SUMO_BASE_SCENARIO_FOLDER_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH)
-from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_data, check_import_traffic
 from classes.simulator import Simulator
 import random
+from datetime import datetime
 
 
 # 0. Set initial variables and initialize Simulator class
-start_date = "2021-01-14"
-end_date = "2021-01-14"
-start_time = "9:00"
-end_time = "11:00"
+print("🛫 Welcome to the SF Ride-Hailing Digital Mirror Setup! 🗓️")
+start_date = get_valid_date("Enter start date (YYYY-MM-DD, between 2021-01-01 and 2021-12-30): ")
+while True:
+    end_date = get_valid_date("Enter end date (YYYY-MM-DD, between 2021-01-01 and 2021-12-30): ")
+    if datetime.strptime(end_date, "%Y-%m-%d") >= datetime.strptime(start_date, "%Y-%m-%d"):
+        break
+    print("⚠️  End date must be after or equal to start date.")
+start_time = get_valid_hour("Enter start hour (0-23): ")
+end_time = get_valid_hour("Enter end hour (0-23): ")
+ # Interval (seconds) for computing one step for agents
+agents_interval = get_valid_int("Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
 radius = 150
 start_lanes = 3   # Number of possible start lanes for taxis in each TAZ
 number_vehicles_available = 2000   # TODO Change with something realistic based on number of requests
 dispatch_algorithm = "traci"
 idle_mechanism = "randomCircling"
-agents_interval = 60   # Interval (seconds) for computing one step for agents
 sumoSimulator = Simulator(
     net_file_path=SUMO_NET_PATH, 
     config_template_path=SUMO_CFGTEMPLATE_PATH, 
     taz_file_path=SUMO_POLY_PATH
     )
+print("\n🚀 Computing input for the SF Ride-Hailing Digital Mirror...\n")
 
 # 1. Import traffic data
 SF_TRAFFIC_FILE_PATH = check_import_traffic(
