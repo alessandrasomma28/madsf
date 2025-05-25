@@ -16,7 +16,7 @@ So, `multi-agent-social-groups` branch is actually the most recent one, used to 
 
 ## Description
 
-This repo is composed of 6 folders, a *main.py* and a requirements file.
+This repo is composed of 7 folders, a *main.py*, a *generate_output_csv.py* and a *requirements.txt* file.
 
 - `classes/`: contains simulation and multi-agent logic.
 - `constants/`: contains paths for better readability.
@@ -24,6 +24,7 @@ This repo is composed of 6 folders, a *main.py* and a requirements file.
 - `libraries/`: contains all the utility functions to generate the input for the simulation.
 - `sumoenv/`: contains the output folder, the SF net files, and the `sumocfg` file, which is automatically generated in *main.py*.
 - `config/`: contains `.json` files to configurate providers, personalities and acceptances.
+- `doc/`: contains additional documentation of the project.
 
 
 ## How-to-run instructions
