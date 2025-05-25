@@ -76,7 +76,9 @@ def check_import_traffic(
     """
     url = f"{SF_TRAFFIC_BASE_URL}?$query={quote(query)}"
 
-    # Create the folder if it doesn't exist
+    # Create the folders if they don't exist
+    if not os.path.exists(SF_TRAFFIC_FOLDER_PATH):
+        os.makedirs(SF_TRAFFIC_FOLDER_PATH)
     sf_traffic_folder = os.path.join(SF_TRAFFIC_FOLDER_PATH, "sfmta_dataset")
     if not os.path.exists(sf_traffic_folder):
         os.makedirs(sf_traffic_folder)
