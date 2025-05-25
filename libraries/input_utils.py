@@ -69,3 +69,12 @@ def get_valid_scenario(prompt: str) -> str:
                 print(f"⚠️  Invalid scenario name. Available scenarios: {', '.join(scenarios)}")
         else:
             print("⚠️  Scenario name must be alphanumeric")
+
+
+def get_valid_gui(prompt: str) -> bool:
+    while True:
+        gui_input = input(prompt).strip().lower()
+        if gui_input in ["yes", "no"]:
+            return gui_input == "yes"
+        else:
+            print("⚠️  Please enter 'yes' or 'no'")

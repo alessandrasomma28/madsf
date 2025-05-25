@@ -33,7 +33,8 @@ This repo is composed of 6 folders, a *main.py* and a requirements file.
 3. If needed, change paths indicated in `constants/sumoenv_constants.py`.
 4. Install requirements from *requirements.txt* file (`pip install -r requirements.txt`).
 5. Run simulation by simply executing *main.py*. If you don't want to use the GUI, simply set `activeGui=False` in *main.py*.
-6. Inspect output folder `sumoenv/scenario/{scenario_name}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the HTML interactive line plot visualization `sf_final_metrics_visualization.html`.
+6. Follow the instructions printed in the command line to initialize the simulation.
+7. Inspect output folder `sumoenv/scenario/{scenario_name}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the HTML interactive line plot visualization `sf_final_metrics_visualization.html`.
 
 
 ## Evolvability

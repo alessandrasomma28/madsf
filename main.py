@@ -1,4 +1,4 @@
-from libraries.input_utils import get_valid_date, get_valid_hour, get_valid_int, get_valid_scenario
+from libraries.input_utils import get_valid_date, get_valid_hour, get_valid_int, get_valid_scenario, get_valid_gui
 from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_data, check_import_traffic
 from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generation, sf_traffic_routes_generation, \
     export_taz_coords, map_coords_to_sumo_edges, get_strongly_connected_edges, generate_matched_drt_requests, \
@@ -40,6 +40,7 @@ scenario = get_valid_scenario("Enter scenario name (normal): ")
 SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}"
  # Interval (seconds) for computing one step for agents
 agents_interval = get_valid_int("Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
+activeGui = get_valid_gui("Do you want to run the simulation with GUI? (yes/no) ")
 radius = 150
 start_lanes = 3   # Number of possible start lanes for taxis in each TAZ
 number_vehicles_available = 2000   # TODO Change with something realistic based on number of requests
@@ -190,7 +191,7 @@ sumoSimulator.generate_config(
 
 # 15. Run simulation
 sumoSimulator.run_simulation(
-    activeGui=True,
+    activeGui=activeGui,
     agents_interval=agents_interval,
     dispatch_algorithm=dispatch_algorithm
     )
