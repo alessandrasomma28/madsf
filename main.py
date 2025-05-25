@@ -1,4 +1,4 @@
-from libraries.input_utils import get_valid_date, get_valid_hour, get_valid_int
+from libraries.input_utils import get_valid_date, get_valid_hour, get_valid_int, get_valid_scenario
 from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_data, check_import_traffic
 from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generation, sf_traffic_routes_generation, \
     export_taz_coords, map_coords_to_sumo_edges, get_strongly_connected_edges, generate_matched_drt_requests, \
@@ -6,22 +6,32 @@ from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generati
     get_valid_taxi_edges, map_taz_to_edges
 from constants.data_constants import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
                                       SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_TAZ_COORDINATES_PATH)
-from constants.sumoenv_constants import (SUMO_NET_PATH, SUMO_BASE_SCENARIO_FOLDER_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH)
+from constants.sumoenv_constants import (SUMO_NET_PATH, SUMO_SCENARIOS_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH)
 from classes.simulator import Simulator
 import random
 from datetime import datetime
 
 
 # 0. Set initial variables and initialize Simulator class
-print("🛫 Welcome to the SF Ride-Hailing Digital Mirror Setup! 🗓️")
-start_date = get_valid_date("Enter start date (YYYY-MM-DD, between 2021-01-01 and 2021-12-30): ")
+print("\n🛫 Welcome to the SF Ride-Hailing Digital Mirror Setup! 🗓️\n")
+start_date = get_valid_date("Enter start date (MM-DD, between 01-01 and 12-30): ")
 while True:
-    end_date = get_valid_date("Enter end date (YYYY-MM-DD, between 2021-01-01 and 2021-12-30): ")
+    end_date = get_valid_date("Enter end date (MM-DD, between start date and 12-30): ")
     if datetime.strptime(end_date, "%Y-%m-%d") >= datetime.strptime(start_date, "%Y-%m-%d"):
         break
     print("⚠️  End date must be after or equal to start date.")
 start_time = get_valid_hour("Enter start hour (0-23): ")
 end_time = get_valid_hour("Enter end hour (0-23): ")
+if start_date == end_date:
+    if int(end_time.split(":")[0]) <= int(start_time.split(":")[0]):
+        print("⚠️  End hour must be after start hour")
+        while True:
+            end_time = get_valid_hour("Enter end hour (0-23): ")
+            if int(end_time.split(":")[0]) > int(start_time.split(":")[0]):
+                break
+            print("⚠️  End hour must be after start hour")
+scenario = get_valid_scenario("Enter scenario name (normal): ")
+SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}"
  # Interval (seconds) for computing one step for agents
 agents_interval = get_valid_int("Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
 radius = 150
@@ -76,7 +86,7 @@ add_sf_traffic_taz_matching(
 # 5. Generate OD (origin-destination) file for each vehicle
 SF_TRAFFIC_0D_PATH = sf_traffic_od_generation(
     sf_real_traffic_edge_path=SF_TRAFFIC_EDGE_PATH,
-    sf_traffic_od_folder_path=SUMO_BASE_SCENARIO_FOLDER_PATH,
+    sf_traffic_od_folder_path=SCENARIO_PATH,
     start_date_str=start_date, 
     end_date_str=end_date, 
     start_time_str=start_time, 
@@ -86,7 +96,7 @@ SF_TRAFFIC_0D_PATH = sf_traffic_od_generation(
 # 6. Generate routes file for traffic
 SF_TRAFFIC_ROUTE_PATH = sf_traffic_routes_generation(
     sf_traffic_od_path=SF_TRAFFIC_0D_PATH,
-    sf_traffic_routes_folder_path=SUMO_BASE_SCENARIO_FOLDER_PATH,
+    sf_traffic_routes_folder_path=SCENARIO_PATH,
     start_date_str=start_date, 
     end_date_str=end_date, 
     start_time_str=start_time, 
@@ -132,7 +142,7 @@ SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     end_date_str=end_date,
     start_time_str=start_time, 
     end_time_str=end_time,
-    sf_tnc_fleet_folder_path=SUMO_BASE_SCENARIO_FOLDER_PATH,
+    sf_tnc_fleet_folder_path=SCENARIO_PATH,
     idle_mechanism=idle_mechanism
     )
 
@@ -151,12 +161,12 @@ SF_TNC_REQUESTS_PATH = generate_matched_drt_requests(
     start_time_str=start_time, 
     end_time_str=end_time,
     valid_edge_ids=valid_edge_ids,
-    sf_requests_folder_path=SUMO_BASE_SCENARIO_FOLDER_PATH
+    sf_requests_folder_path=SCENARIO_PATH
     )
 
 # 13. Configure output directory and run simulation
 SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(
-    sf_routes_folder_path=SUMO_BASE_SCENARIO_FOLDER_PATH,
+    sf_routes_folder_path=SCENARIO_PATH,
     sf_traffic_route_file_path=SF_TRAFFIC_ROUTE_PATH,
     sf_tnc_fleet_file_path=SF_TNC_FLEET_PATH,
     sf_tnc_requests_file_path=SF_TNC_REQUESTS_PATH,

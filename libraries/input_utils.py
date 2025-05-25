@@ -11,13 +11,13 @@ def get_valid_date(prompt: str) -> str:
     while True:
         date_str = input(prompt).strip()
         try:
-            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-            if datetime(2021, 1, 1) <= date_obj <= datetime(2021, 12, 30):
-                return date_str
+            date_obj = datetime.strptime(date_str, "%m-%d")
+            if datetime(2021, 1, 1) <= datetime(2021, date_obj.month, date_obj.day) <= datetime(2021, 12, 30):
+                return f"2021-{date_str}"
             else:
-                print("⚠️  Date must be between 2021-01-01 and 2021-12-30")
+                print("⚠️  Date must be between 01-01 and 12-30")
         except ValueError:
-            print("⚠️  Invalid date format. Use YYYY-MM-DD")
+            print("⚠️  Invalid date format. Use MM-DD")
 
 
 def get_valid_hour(prompt: str) -> str:
@@ -43,3 +43,16 @@ def get_valid_int(prompt: str, min_val: int, max_val: int) -> int:
                 print(f"⚠️  Value must be between {min_val} and {max_val}")
         except ValueError:
             print("⚠️  Please enter an integer")
+
+
+def get_valid_scenario(prompt: str) -> str:
+    scenarios = ["normal"]
+    while True:
+        scenario = input(prompt).strip().lower()
+        if scenario.isalnum():
+            if scenario in scenarios:
+                return scenario
+            else:
+                print(f"⚠️  Invalid scenario name. Available scenarios: {', '.join(scenarios)}")
+        else:
+            print("⚠️  Scenario name must be alphanumeric")

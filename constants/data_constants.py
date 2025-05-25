@@ -7,7 +7,7 @@ projectPath = str(path.parent.parent.absolute())
 
 DATA_FOLDER_PATH = projectPath + "/data"
 
-SF_TRAFFIC_FOLDER_PATH = DATA_FOLDER_PATH +"/sf_traffic"
+SF_TRAFFIC_FOLDER_PATH = DATA_FOLDER_PATH + "/sf_traffic"
 
 SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH = SF_TRAFFIC_FOLDER_PATH + "/daily_traffic"
 
