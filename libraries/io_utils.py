@@ -176,7 +176,6 @@ def generate_output_csv(
         "passengers_reject": 0,
 
         # Drivers metrics
-        "drivers_vehicles": 0,
         "drivers_shift_durations": [],
         "drivers_total_lengths": [],
         "drivers_total_durations": [],
@@ -254,7 +253,6 @@ def generate_output_csv(
                 occupied_durations = float(taxi_elem.attrib.get("occupiedTime"))
             for t in range(depart, arrival + 1):
                 ts = timestamps[t]
-                ts["drivers_vehicles"] += 1
                 ts["drivers_passengers_served"] += customers if t == arrival else 0
                 if t == arrival:
                     ts["drivers_shift_durations"].append(shift_durations)
@@ -353,12 +351,11 @@ def generate_output_csv(
             "passengers_pickup": stats["passengers_pickup"],
             "passengers_accept": stats["passengers_accept"],
             "passengers_reject": stats["passengers_reject"],
-            "drivers_vehicles": stats["drivers_vehicles"],
             "drivers_shift_duration_avg": sum(stats["drivers_shift_durations"]) / len(stats["drivers_shift_durations"]) if stats["drivers_shift_durations"] else 0,
             "drivers_total_length_avg": sum(stats["drivers_total_lengths"]) / len(stats["drivers_total_lengths"]) if stats["drivers_total_lengths"] else 0,
             "drivers_total_duration_avg": sum(stats["drivers_total_durations"]) / len(stats["drivers_total_durations"]) if stats["drivers_total_durations"] else 0,
             "drivers_occupied_distance_avg": sum(stats["drivers_occupied_distance"]) / len(stats["drivers_occupied_distance"]) if stats["drivers_occupied_distance"] else 0,
-            "drivers_occupied_duratios_avg": sum(stats["drivers_occupied_durations"]) / len(stats["drivers_occupied_durations"]) if stats["drivers_occupied_durations"] else 0,
+            "drivers_occupied_duration_avg": sum(stats["drivers_occupied_durations"]) / len(stats["drivers_occupied_durations"]) if stats["drivers_occupied_durations"] else 0,
             "drivers_passengers_served": stats["drivers_passengers_served"],
             "drivers_idle": stats["drivers_idle"],
             "drivers_pickup": stats["drivers_pickup"],
@@ -393,7 +390,7 @@ def generate_output_csv(
     df = pd.DataFrame(data)
     output_csv_path = os.path.join(output_path, "sf_final_metrics.csv")
     df.to_csv(output_csv_path, index=False)
-    print(f"✅ Computed {len(df.columns)-1} metrics, CSV file saved in {output_csv_path}")
+    print(f"✅ Computed {len(df.columns)-1} metrics, CSV file saved to {output_csv_path}")
 
     # Create interactive line plot of the metrics
     df.set_index("timestamp", inplace=True)
@@ -402,4 +399,4 @@ def generate_output_csv(
     fig = px.line(df, x=df.index, y=df.columns, title=title)
     fig.update_layout(legend_title_text="Simulation metrics")
     fig.write_html(output_html_path)
-    print(f"✅ Interactive line plot saved in {output_html_path}")
+    print(f"✅ Interactive line plot saved to {output_html_path}")

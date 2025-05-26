@@ -107,7 +107,7 @@ class Model:
         """
         
         self.agents_interval = agents_interval
-        while traci.simulation.getMinExpectedNumber() > 0:
+        while len(traci.person.getTaxiReservations(3)) > 0 or traci.simulation.getMinExpectedNumber() > 0:
             traci.simulationStep()
             if int(traci.simulation.getTime()) % agents_interval == 0:
                 print(f"Simulation time: {traci.simulation.getTime()} seconds\n")

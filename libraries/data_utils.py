@@ -108,7 +108,7 @@ def check_import_traffic(
     finally:
         _spinner_done = True
         spinner_thread.join()
-        sys.stdout.write("\rDownload complete                                  \n")
+        sys.stdout.write("\r✅ Download complete!                                  \n")
     if response.status_code != 200:
         raise Exception(f"Failed to fetch data: {response.status_code} - {response.text}")
 
