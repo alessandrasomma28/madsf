@@ -101,14 +101,15 @@ class Simulator:
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
         start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
         end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
-        timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
 
         # Compute the absolute folder path
         start_d = start_date.replace("-", "")
         end_d = end_date.replace("-", "")
         start_h = start_hour.replace(":", "")
         end_h = end_hour.replace(":", "")
-        full_folder_path = Path(sf_routes_folder_path, f"{start_d}_{end_d}", f"{start_h}_{end_h}").absolute()
+        timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
+
+        full_folder_path = Path(sf_routes_folder_path, timeslot).absolute()
 
         # Set internal state
         self.output_dir_path = full_folder_path

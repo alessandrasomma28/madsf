@@ -305,14 +305,14 @@ def sf_traffic_od_generation(
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
     start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
-    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
 
     # Prepare directory and filename
     start_d = start_date.replace("-", "")
     end_d = end_date.replace("-", "")
     start_h = start_hour.replace(":", "")
     end_h = end_hour.replace(":", "")
-    date_folder = os.path.join(sf_traffic_od_folder_path, f"{start_d}_{end_d}", f"{start_h}_{end_h}")
+    timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
+    date_folder = os.path.join(sf_traffic_od_folder_path, timeslot)
     os.makedirs(date_folder, exist_ok=True)
 
     filename = f"sf_traffic_od_{timeslot}.csv"
@@ -480,14 +480,14 @@ def sf_traffic_routes_generation(
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
     start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
-    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
 
-    # Create full folder path: root/date/timeslot/
+    # Create full folder path: root/timeslot/
     start_d = start_date.replace("-", "")
     end_d = end_date.replace("-", "")
     start_h = start_hour.replace(":", "")
     end_h = end_hour.replace(":", "")
-    full_folder_path = os.path.join(sf_traffic_routes_folder_path, f"{start_d}_{end_d}", f"{start_h}_{end_h}")
+    timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
+    full_folder_path = os.path.join(sf_traffic_routes_folder_path, timeslot)
     os.makedirs(full_folder_path, exist_ok=True)
 
     # Filename and full path
@@ -1043,14 +1043,14 @@ def generate_drt_vehicle_instances_from_lanes(
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
     start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
-    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
 
-    # Create full folder path: root/date/timeslot/
+    # Create full folder path: root/timeslot/
     start_d = start_date.replace("-", "")
     end_d = end_date.replace("-", "")
     start_h = start_hour.replace(":", "")
     end_h = end_hour.replace(":", "")
-    full_folder_path = os.path.join(sf_tnc_fleet_folder_path, f"{start_d}_{end_d}", f"{start_h}_{end_h}")
+    timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
+    full_folder_path = os.path.join(sf_tnc_fleet_folder_path, timeslot)
     os.makedirs(full_folder_path, exist_ok=True)
 
     # Filename and full path
@@ -1198,14 +1198,15 @@ def generate_matched_drt_requests(
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
     start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
-    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
 
-    # Create full folder path: root/date/timeslot/
+    # Create full folder path: root/timeslot/
     start_d = start_date.replace("-", "")
     end_d = end_date.replace("-", "")
     start_h = start_hour.replace(":", "")
     end_h = end_hour.replace(":", "")
-    full_folder_path = os.path.join(sf_requests_folder_path, f"{start_d}_{end_d}", f"{start_h}_{end_h}")
+    timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
+
+    full_folder_path = os.path.join(sf_requests_folder_path, timeslot)
     os.makedirs(full_folder_path, exist_ok=True)
 
     # Filename and full path

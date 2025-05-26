@@ -16,7 +16,7 @@ So, `multi-agent-social-groups` branch is actually the most recent one, used to 
 
 ## Description
 
-This repo is composed of 7 folders, a *main.py*, a *generate_output_csv.py* and a *requirements.txt* file.
+This repo is composed of 7 folders, a *main.py*, and a *requirements.txt* file.
 
 - `classes/`: contains simulation and multi-agent logic.
 - `constants/`: contains paths for better readability.
@@ -56,9 +56,9 @@ The project is designed to be easily extensible and adaptable to different scena
 
 All the input files for the simulation are automatically generated in `main.py`. Input files include:
 - `sf.net.xml`: *SUMO* network file (**map**) of San Francisco.
-- `sf_routes_{date_time}.rou.xml`: *SUMO* routes file for the **traffic** of San Francisco. It contains the trip information for each traffic vehicle.
-- `sf_tnc_fleet_{date_time}.rou.xml`: *SUMO* routes file for the **fleet** of TNC drivers of San Francisco. It contains the starting point, the time of departure and the end of the shift for each driver.
-- `sf_tnc_passengers_{date_time}.rou.xml`: *SUMO* routes file for the **passengers** ride requests of San Francisco. It contains the time of request, the starting point and the destination for each passenger.
+- `sf_routes_{starttime_endtime}.rou.xml`: *SUMO* routes file for the **traffic** of San Francisco. It contains the trip information for each traffic vehicle.
+- `sf_tnc_fleet_{starttime_endtime}.rou.xml`: *SUMO* routes file for the **fleet** of TNC drivers of San Francisco. It contains the starting point, the time of departure and the end of the shift for each driver.
+- `sf_tnc_passengers_{starttime_endtime}.rou.xml`: *SUMO* routes file for the **passengers** ride requests of San Francisco. It contains the time of request, the starting point and the destination for each passenger.
 
 Additionally, `main.py` generates the *SUMO* configuration file `sumo_config.sumocfg`, which contains the simulation parameters and the input files to be used.
 
@@ -67,6 +67,7 @@ The simulation is then run with a real-time interaction between *SUMO* and the m
 ![](doc/General_architecture.png)
 
 ### Multi-agent model
+
 The multi-agent model is composed of three main components: `Passengers`, `Drivers` and `RideServices`. The logic of the multi-agent model is run every 60 timestamps by default, but it can be changed in the `main.py` file. 
 
 ![](doc/Multi-agent_architecture.png)

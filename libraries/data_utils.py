@@ -10,6 +10,7 @@ import os
 import csv
 from datetime import datetime, timedelta
 from pathlib import Path
+from tqdm import tqdm
 from constants.data_constants import (SF_TRAFFIC_FOLDER_PATH, SF_TRAFFIC_BASE_URL)
 
 
@@ -18,7 +19,7 @@ def check_import_traffic(
         end_date_str: str,
         start_time_str: str,
         end_time_str: str,
-        limit: int = 100000000
+        limit: int = 10000000000
     ) -> Path:
     """
     Downloads San Francisco traffic data from the SFMTA API and saves it as a CSV file.
@@ -115,7 +116,7 @@ def check_import_traffic(
         f.write(response.text)
     print(f"✅ CSV saved to: {sf_traffic_file_path}")
 
-    return sf_traffic_file_path
+    return Path(sf_traffic_file_path)
 
 
 def read_sf_traffic_data(file_path: str) -> pd.DataFrame:
