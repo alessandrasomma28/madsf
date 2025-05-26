@@ -16,34 +16,36 @@ from datetime import datetime
 
 # 0. Set initial variables and initialize Simulator class
 print("\n🛫 Welcome to the SF Ride-Hailing Digital Mirror Setup! 🗓️\n")
-start_date = get_valid_date("Enter simulation start date (MM-DD, between 01-01 and 12-30): ")
+start_date = get_valid_date("⚙️  Enter simulation start date (MM-DD, between 01-01 and 12-30): ")
+start_date_prompt = start_date[5:]
 while True:
-    end_date = get_valid_date("Enter simulation end date (MM-DD, between start date and 12-30): ")
+    end_date = get_valid_date(f"⚙️  Enter simulation end date (MM-DD, between {start_date_prompt} and 12-30): ")
     if datetime.strptime(end_date, "%Y-%m-%d") >= datetime.strptime(start_date, "%Y-%m-%d"):
         break
-    print("⚠️  End date must be after or equal to start date.")
+    print("⚠️  End date must be after or equal to start date")
 if start_date == end_date:
-    start_time = get_valid_hour("Enter simulation start hour (0-22): ", start_hour_same_day_check=True)
+    start_time = get_valid_hour("⚙️  Enter simulation start hour (0-22): ", start_hour_same_day_check=True)
 else:
-    start_time = get_valid_hour("Enter simulation start hour (0-23): ")
+    start_time = get_valid_hour("⚙️  Enter simulation start hour (0-23): ")
+start_time_same_day_prompt = str(int(start_time[:-3])+1)
 if start_date == end_date:
-    end_time = get_valid_hour("Enter simulation hour ({start hour+1}-23): ")
+    end_time = get_valid_hour(f"⚙️  Enter simulation hour ({start_time_same_day_prompt}-23): ")
 else:
-    end_time = get_valid_hour("Enter simulation end hour (0-23): ")
+    end_time = get_valid_hour(f"⚙️  Enter simulation end hour (0-23): ")
 if start_date == end_date:
     if int(end_time.split(":")[0]) <= int(start_time.split(":")[0]):
         print("⚠️  End hour must be after start hour")
         while True:
-            end_time = get_valid_hour("Enter end hour ({start hour+1}-23): ")
+            end_time = get_valid_hour(f"⚙️  Enter end hour ({start_time_same_day_prompt}-23): ")
             if int(end_time.split(":")[0]) > int(start_time.split(":")[0]):
                 break
             print("⚠️  End hour must be after start hour")
-scenario = get_valid_scenario("Enter scenario name (normal): ")
+scenario = get_valid_scenario("⚙️  Enter scenario name (normal): ")
 SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}"
 os.makedirs(SCENARIO_PATH, exist_ok=True)
  # Interval (seconds) for computing one step for agents
-agents_interval = get_valid_int("Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
-activeGui = get_valid_gui("Do you want to run the simulation with GUI? (yes/no) ")
+agents_interval = get_valid_int("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
+activeGui = get_valid_gui("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")
 radius = 150
 start_lanes = 3   # Number of possible start lanes for taxis in each TAZ
 number_vehicles_available = 2000   # TODO Change with something realistic based on number of requests

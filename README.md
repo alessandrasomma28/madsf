@@ -24,12 +24,12 @@ This repo is composed of 7 folders, a *main.py*, and a *requirements.txt* file.
 - `libraries/`: contains all the utility functions to generate the input for the simulation.
 - `sumoenv/`: contains the output folder, the SF net files, and the `sumocfg` file, which is automatically generated in *main.py*.
 - `config/`: contains `.json` files to configurate providers, personalities and acceptances.
-- `doc/`: contains additional documentation of the project.
+- `doc/`: contains additional documentation of the project. It also contains the list of the days with no traffic data available from SFMTA.
 
 
 ## How-to-run instructions
 
-1. Install [**SUMO**](https://sumo.dlr.de/docs/Downloads.php) and set [**SUMO_HOME**](https://sumo.dlr.de/docs/Basics/Basic_Computer_Skills.html#sumo_home) environment variable. For MacOS users, prefer installation via **Homebrew**. To run the simulation with the GUI, install *SUMO* follow the instructions [here](https://github.com/DLR-TS/homebrew-sumo), then run [*XQuartz*](https://www.xquartz.org/) in background (MacOS users).
+1. Install [*SUMO*](https://sumo.dlr.de/docs/Downloads.php) and set [*SUMO_HOME*](https://sumo.dlr.de/docs/Basics/Basic_Computer_Skills.html#sumo_home) environment variable. For MacOS users, prefer installation via **Homebrew**. To run the simulation with the GUI, install *SUMO* following the instructions [here](https://github.com/DLR-TS/homebrew-sumo), then run [*XQuartz*](https://www.xquartz.org/) in background (MacOS users).
 2. Open project (`cd/path/to/this/project`), create a virtual environment with Python >=3.10 (`python3.10 -m venv venv`) and activate it (`source venv/bin/activate`).
 3. If needed, change paths indicated in `constants/sumoenv_constants.py`.
 4. Install requirements from *requirements.txt* file (`pip install -r requirements.txt`).
@@ -68,18 +68,18 @@ The simulation is then run with a real-time interaction between *SUMO* and the m
 
 ### Multi-agent model
 
-The multi-agent model is composed of three main components: `Passengers`, `Drivers` and `RideServices`. The logic of the multi-agent model is run every 60 timestamps by default, but it can be changed in the `main.py` file. 
+The multi-agent model is composed of three main components: `Passengers`, `Drivers` and `RideServices`. The logic of the multi-agent model is run every 60 timestamps by default, but it can be changed by setting the related option during the initial command line setup. 
 
 ![](doc/Multi-agent_architecture.png)
 
-For each step of the multi-agent logic, *SUMO* logic stops. `Passengers` and `Drivers` are then updated with the current state of the simulation by interacting with *SUMO*. This includes the time of the simulation, the unassigned ride requests, and the driver currently available. Then, for each request, the following actions are performed:
-1. `Passengers` ask for a ride to `RideServices`, which forwards the request to `Drivers`.
-2. `Drivers` receive the ride request and returns the list of available drivers to `RideServices`.
-3. `RideServices` receive the list of available drivers and selects the 8 closest drivers to the request. Then, it generates a ride offer for each driver, containing information about the ride (e.g., time, distance, price, etc.) and sends these 8 offers to `Passengers`.
-4. `Passengers` receive the ride offers and select the best one according to the acceptance probability distribution of the social group the passenger belongs to. 
+For each step of the multi-agent logic, *SUMO* logic stops. `Passengers` and `Drivers` are then updated with the current state of the simulation by interacting with *SUMO*. This includes the time of the simulation, the unassigned ride requests, and the drivers currently available. Then, for each request, the following actions are performed:
+1. `Passengers` asks for a ride to `RideServices`, which forwards the request to `Drivers`.
+2. `Drivers` receives the ride request and returns the list of available drivers to `RideServices`.
+3. `RideServices` receives the list of available drivers and selects the 8 closest drivers to the passenger. Then, it generates a ride offer for each driver, containing information about the ride (e.g., time, distance, price, etc.) and sends these 8 offers to `Passengers`.
+4. `Passengers` receives the ride offers and selects the best one according to the acceptance probability distribution of the social group the passenger belongs to. 
     - If the passenger rejects all the offers, the request is rejected. If the request has exceeded the maximum waiting time, the passenger is removed from the simulation, otherwise the request is kept in the list of unassigned requests. 
-    - If the passenger accepts an offer, `Passengers` notify `RideServices`, which forwards the acceptance to `Drivers`.
-5. `Drivers` receive the accepted offer and accept/reject it according to the acceptance probability distribution of the social group the driver belongs to. 
+    - If the passenger accepts an offer, `Passengers` notifies `RideServices`, which forwards the acceptance to `Drivers`.
+5. `Drivers` receives the accepted offer and accepts/rejects it according to the acceptance probability distribution of the social group the driver belongs to. 
     - If the driver rejects the offer, the request is rejected and the driver is marked as unavailable until the next step of the multi-agent logic. The request is kept in the list of unassigned requests.
     - If the driver accepts the offer, `Drivers` notifies `RideServices`, which finally dispatches the ride using the *TraCI* method `dispatchTaxi(request_id, driver_id)`.
 

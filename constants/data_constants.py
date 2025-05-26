@@ -6,6 +6,7 @@ path = Path(os.path.abspath(__file__))
 projectPath = str(path.parent.parent.absolute())
 
 DATA_FOLDER_PATH = projectPath + "/data"
+DOC_FOLDER_PATH = projectPath + "/doc"
 
 SF_TRAFFIC_FOLDER_PATH = DATA_FOLDER_PATH + "/sf_traffic"
 

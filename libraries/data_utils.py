@@ -10,7 +10,6 @@ import os
 import csv
 from datetime import datetime, timedelta
 from pathlib import Path
-from tqdm import tqdm
 from constants.data_constants import (SF_TRAFFIC_FOLDER_PATH, SF_TRAFFIC_BASE_URL)
 
 
@@ -38,7 +37,7 @@ def check_import_traffic(
     - end_time_str: str
         End time in 'HH:MM' format (e.g., '10:00').
     - limit: int
-        Maximum number of records to fetch (default is 100 million).
+        Maximum number of records to fetch.
 
     Returns:
     -------
@@ -47,10 +46,12 @@ def check_import_traffic(
 
     Raises:
     ------
-    Exception
+    - Exception
         If the request to the SFMTA API fails or if the response status code is not 200.
+    - ValueError
+        If no traffic data is found in the specified interval.
     """
-    def _spinner(msg="Downloading traffic file from SFMTA..."):
+    def _spinner(msg="⬇️ Downloading traffic file from SFMTA..."):
         for char in itertools.cycle("|/-\\"):
             if _spinner_done:
                 break
@@ -101,7 +102,7 @@ def check_import_traffic(
     spinner_thread = threading.Thread(target=_spinner)
     spinner_thread.start()
 
-    # Fetch traffic data
+   # Fetch traffic data
     try:
         response = requests.get(url, verify=certifi.where())
     finally:
@@ -110,6 +111,13 @@ def check_import_traffic(
         sys.stdout.write("\rDownload complete                                  \n")
     if response.status_code != 200:
         raise Exception(f"Failed to fetch data: {response.status_code} - {response.text}")
+
+    # Check number of rows in the response
+    lines = response.text.strip().splitlines()
+    num_rows = len(lines) - 1  # Exclude header
+    if num_rows == 0:
+        raise ValueError("❌ No traffic data found in the specified interval (this is an issue of SFMTA data), please try again with a different time slot\n"
+        "You can find a list of days with no traffic detection in the SFMTA data in the 'doc/' directory")
 
     # Write response to CSV file
     with open(sf_traffic_file_path, "w", encoding="utf-8") as f:

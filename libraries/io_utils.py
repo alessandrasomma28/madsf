@@ -37,7 +37,7 @@ def get_valid_hour(
                 if 0 <= hour <= 22:
                     return f"{hour:02d}:00"
                 else:
-                    print("⚠️  Since you chose the same day, start hour must be between 0 and 22")
+                    print("⚠️  Since you chose to simulate the same day, start hour must be between 0 and 22")
             else:
                 if 0 <= hour <= 23:
                     return f"{hour:02d}:00"
