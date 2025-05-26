@@ -5,10 +5,10 @@ This class defines a Logger that writes multi-agent simulation data to an XML fi
 """
 
 
-import xml.etree.ElementTree as ET
-import xml.dom.minidom as minidom
 from pathlib import Path
 import os
+import xml.etree.ElementTree as ET
+import xml.dom.minidom as minidom
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model

@@ -13,14 +13,14 @@ It supports the following operations:
 
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
+import time
 import traci
 import sumolib
-from libraries.sumo_utils import convert_shapefile_to_sumo_poly_with_polyconvert
 from constants.sumoenv_constants import SUMOENV_PATH
 from constants.data_constants import SF_TAZ_SHAPEFILE_PATH
-from typing import Optional
+from libraries.sumo_utils import convert_shapefile_to_sumo_poly_with_polyconvert
 from classes.model import Model  # Import multi-agent model
-import time
 
 
 class Simulator:

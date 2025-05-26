@@ -6,14 +6,14 @@ It initializes and computes steps for the agents: Drivers, Passengers, and RideS
 """
 
 
+from pathlib import Path
+import time
+import json
 import traci
 from classes.rideservices import RideServices
 from classes.passengers import Passengers
 from classes.drivers import Drivers
 from classes.logger import Logger
-import time
-import json
-from pathlib import Path
 from constants.config_constants import (DRIVERS_PERSONALITY, DRIVERS_ACCEPTANCE, PASSENGERS_PERSONALITY,
                                         PASSENGERS_ACCEPTANCE, PROVIDERS_CONFIG, TIMEOUT_CONFIG)
 

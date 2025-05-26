@@ -1,3 +1,10 @@
+import random
+import os
+from datetime import datetime
+from classes.simulator import Simulator
+from constants.data_constants import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
+                                      SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_TAZ_COORDINATES_PATH)
+from constants.sumoenv_constants import (SUMO_NET_PATH, SUMO_SCENARIOS_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH)
 from libraries.io_utils import get_valid_date, get_valid_hour, get_valid_int, get_valid_scenario, get_valid_gui, \
     generate_output_csv
 from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_data, check_import_traffic
@@ -5,13 +12,6 @@ from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generati
     export_taz_coords, map_coords_to_sumo_edges, get_strongly_connected_edges, generate_matched_drt_requests, \
     add_sf_traffic_taz_matching, generate_vehicle_start_lanes_from_taz_polygons, generate_drt_vehicle_instances_from_lanes, \
     get_valid_taxi_edges, map_taz_to_edges
-from constants.data_constants import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
-                                      SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_TAZ_COORDINATES_PATH)
-from constants.sumoenv_constants import (SUMO_NET_PATH, SUMO_SCENARIOS_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH)
-from classes.simulator import Simulator
-import random
-import os
-from datetime import datetime
 
 
 # 0. Set initial variables and initialize Simulator class

@@ -1,15 +1,25 @@
 """
 io_utils.py
+
 This module provides utility functions for validating user input and generating output CSV files.
+It includes utilities for:
+
+1. get_valid_date: Validating date input in MM-DD format.
+2. get_valid_hour: Validating hour input in HH:MM format.
+3. get_valid_int: Validating agents interval input within a specified range.
+4. get_valid_scenario: Validating scenario names.
+5. get_valid_gui: Validating GUI input (yes/no).
+6. generate_output_csv: Generating output CSV files from simulation data, and creating an interactive line plot.
 """
 
-from datetime import datetime
-from constants.sumoenv_constants import SUMO_SCENARIOS_PATH
-import xml.etree.ElementTree as ET
-from collections import defaultdict
-import pandas as pd
+
 import os
+from collections import defaultdict
+from datetime import datetime
+import xml.etree.ElementTree as ET
+import pandas as pd
 import plotly.express as px
+from constants.sumoenv_constants import SUMO_SCENARIOS_PATH
 
 
 def get_valid_date(prompt: str) -> str:

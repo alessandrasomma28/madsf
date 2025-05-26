@@ -23,28 +23,25 @@ real traffic data using a SUMO network. It includes utilities for:
 """
 
 
-import pandas as pd
-import xml.etree.ElementTree as ET
+from pathlib import Path
+from typing import Optional
 from collections import defaultdict
-from sumolib import net
+import random
+from collections import defaultdict
 from datetime import datetime, time, timedelta
 import os
+import ast
+import subprocess
+import pandas as pd
+import numpy as np
+import xml.etree.ElementTree as ET
 import geopandas as gpd
 from shapely.geometry import Point, MultiPolygon, Polygon
 from scipy.spatial import cKDTree
-import numpy as np
-import subprocess
-from pathlib import Path
-import ast
-import random
+from sumolib import net
 import traci
-import xml.etree.ElementTree as ET
-import random
-from collections import defaultdict
-import ast
-from typing import Optional
-from libraries.data_utils import read_sf_traffic_data
 from constants.sumoenv_constants import SUMO_BIN_PATH
+from libraries.data_utils import read_sf_traffic_data
 
 
 def get_strongly_connected_edges(sf_map_file_path: str) -> set:

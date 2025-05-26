@@ -1,15 +1,29 @@
+"""
+data_utils.py
+
+This module provides utility functions for downloading, processing, and converting San Francisco data.
+It includes utilities for:
+
+1. check_import_traffic: Downloading San Francisco traffic data from the SFMTA API.
+2. read_sf_traffic_data: Reading and processing the downloaded traffic data into a structured DataFrame.
+3. convert_sf_traffic_csv_format: Converting the traffic data CSV format to a localized format.
+4. extract_sf_traffic_timeslot: Extracting a specific time slot of traffic data and saving it in a structured folder format.
+5. read_tnc_stats_data: Reading TNC hourly pickup/dropoff data and filtering it based on a specified time window.
+"""
+
+
+from pathlib import Path
+import time
+from datetime import datetime, timedelta
+import os
+import csv
+import itertools
+import sys
 import requests
-import pandas as pd
 from urllib.parse import quote
 import certifi
 import threading
-import itertools
-import sys
-import time
-import os
-import csv
-from datetime import datetime, timedelta
-from pathlib import Path
+import pandas as pd
 from constants.data_constants import (SF_TRAFFIC_FOLDER_PATH, SF_TRAFFIC_BASE_URL)
 
 

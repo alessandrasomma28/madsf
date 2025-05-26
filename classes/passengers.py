@@ -18,14 +18,14 @@ It supports the following operations:
 """
 
 
+from collections import defaultdict
+import random
+import traci
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
 if TYPE_CHECKING:
     from classes.logger import Logger
-import traci
-from collections import defaultdict
-import random
 
 
 class Passengers:
@@ -50,7 +50,7 @@ class Passengers:
         self.__acceptance_distribution = acceptance_distribution
         self.logger = logger
         self.__unassigned_requests = set()
-        self.__passengers_with_personality = {}  # Maps res_id → "normal", "budget" or "greedy"
+        self.__passengers_with_personality = {}  # Maps reservation IDs to personalities
 
 
     def step(self) -> None:

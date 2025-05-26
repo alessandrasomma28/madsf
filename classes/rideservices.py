@@ -22,14 +22,14 @@ It supports the following operations:
 """
 
 
+import math
+import heapq
+import traci
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
 if TYPE_CHECKING:
     from classes.logger import Logger
-import traci
-import math
-import heapq
 
 
 class RideServices:

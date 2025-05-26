@@ -20,13 +20,13 @@ It supports the following operations:
 
 
 import random
+from collections import defaultdict
+import traci
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
 if TYPE_CHECKING:
     from classes.logger import Logger
-import traci
-from collections import defaultdict
 
 
 class Drivers:
