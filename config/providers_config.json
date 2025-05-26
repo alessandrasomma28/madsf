@@ -6,7 +6,7 @@
     "cost_per_km": 1.45,
     "service_fee": 5.31,
     "surge_multiplier": 1.0,
-    "max_surge": 8.0,
+    "max_surge": 5.0,
     "share": 0.75
   },
   "Lyft": {
@@ -16,7 +16,7 @@
     "cost_per_km": 1.50,
     "service_fee": 3.60,
     "surge_multiplier": 1.0,
-    "max_surge": 5.0,
+    "max_surge": 8.0,
     "share": 1.0
   }
 }

@@ -238,12 +238,12 @@ class Simulator:
         - ImportError: If traci or libsumo is not installed or SUMO_HOME is not set.
         """
         if not self.sumocfg_file_path or not self.sumocfg_file_path.exists():
-            raise FileNotFoundError("SUMO configuration file not found. Please generate it first.")
+            raise FileNotFoundError("SUMO configuration file not found, please generate it first")
 
         try:
             from sumolib import checkBinary
         except ImportError:
-            raise ImportError("SUMO Python tools not found. Install with: 'pip install eclipse-sumo'.")
+            raise ImportError("SUMO Python tools not found, install with: 'pip install eclipse-sumo'")
 
         # Choose GUI or headless mode
         sumo_binary = checkBinary("sumo-gui" if activeGui else "sumo")
@@ -266,8 +266,8 @@ class Simulator:
                 traci.close()
                 end_time = time.time()
                 elapsed = end_time - start_time
-                print("Simulation finished.")
-                print(f"⏱️ Total computation time: {elapsed:.2f} seconds\n")
+                print("Simulation finished!")
+                print(f"⏱️  Total computation time: {elapsed:.2f} seconds\n")
         else:
             print("Simulation started with standard logic...")
             try:
@@ -280,5 +280,5 @@ class Simulator:
                 traci.close()
                 end_time = time.time()
                 elapsed = end_time - start_time
-                print("Simulation finished.")
-                print(f"⏱️ Total computation time: {elapsed:.2f} seconds\n")
+                print("Simulation finished!")
+                print(f"⏱️  Total computation time: {elapsed:.2f} seconds\n")

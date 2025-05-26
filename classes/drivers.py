@@ -65,7 +65,7 @@ class Drivers:
         # Get the set of idle drivers from TraCI
         self.__idle_drivers = set(traci.vehicle.getTaxiFleet(0))
         print(f"🚕 {len(self.__idle_drivers)} idle drivers")
-        # Persist provider and personality assignments
+        # Assign providers and personalities
         provider_counts = {provider: 0 for provider in self.__providers}
         for driver_id in self.__idle_drivers:
             if driver_id not in self.__drivers_with_provider:
@@ -103,7 +103,8 @@ class Drivers:
             # Reject the offer if surge is too low and temporarily remove driver from available
             personality = self.__drivers_with_personality[driver_id]
             surge = offers[0][1]["surge"]
-            acceptance = next((perc for low, up, perc in self.__acceptance_distribution[personality] if low < surge <= up), None)
+            acceptance_ranges = self.__acceptance_distribution[personality]
+            acceptance = next((perc for low, up, perc in acceptance_ranges if low < surge <= up), None)
             if random.random() > acceptance:
                 self.model.rideservices.reject_offer(key)
                 reject+=1

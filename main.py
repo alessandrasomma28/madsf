@@ -1,5 +1,5 @@
-import random
 import os
+import random
 from datetime import datetime
 from classes.simulator import Simulator
 from constants.data_constants import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
@@ -15,7 +15,7 @@ from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generati
 
 
 # 0. Set initial variables and initialize Simulator class
-print("\n🛫 Welcome to the SF Ride-Hailing Digital Mirror Setup! 🗓️\n")
+print("\n✨ Welcome to the SF Ride-Hailing Digital Mirror Setup! ✨\n")
 start_date = get_valid_date("⚙️  Enter simulation start date (MM-DD, between 01-01 and 12-30): ")
 start_date_prompt = start_date[5:]
 while True:

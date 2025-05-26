@@ -146,11 +146,7 @@ class RideServices:
                 print(f"⚠️ Failed to get position for taxi {taxi_id}")
 
         # Initialize statistics
-        expected_time_sum = 0.0
-        expected_length_sum = 0.0
-        radius_sum = 0.0
-        price_sum = 0.0
-        surge_multiplier_sum = 0.0
+        offer_stats = {"radius": 0.0, "price": 0.0, "time": 0.0, "length": 0.0, "surge": 0.0}
 
         # Iterates over all passenger requests
         existing_res_ids = {r_id for (r_id, _) in self.__offers}
@@ -171,9 +167,11 @@ class RideServices:
             taxis_radius = []
             for taxi_id, taxi_pos in taxi_positions.items():
                 # Bounding box filter (within 10km square)
-                if abs(taxi_pos[0] - pax_pos[0]) > 10000 or abs(taxi_pos[1] - pax_pos[1]) > 10000:
+                dx = abs(taxi_pos[0] - pax_pos[0])
+                dy = abs(taxi_pos[1] - pax_pos[1])
+                if dx > 10000 or dy > 10000:
                     continue
-                radius = math.hypot(taxi_pos[0] - pax_pos[0], taxi_pos[1] - pax_pos[1])
+                radius = math.hypot(dx, dy)
                 if radius <= 10000:
                     taxis_radius.append((radius, taxi_id))
 
@@ -205,28 +203,22 @@ class RideServices:
                     "provider": provider
                 }
                 # Update statistics
-                expected_time_sum += travel_time
-                expected_length_sum += route_length
-                radius_sum += radius
-                price_sum += price
-                surge_multiplier_sum += surge_multiplier
+                offer_stats["radius"] += radius
+                offer_stats["price"] += price
+                offer_stats["time"] += travel_time
+                offer_stats["length"] += route_length
+                offer_stats["surge"] += surge_multiplier
         self.__generated_offers = len(self.__offers)
         print(f"📋 {self.__generated_offers} pending offers")
 
-        # Compute average metrics
-        avg_radius = round(radius_sum / len(self.__offers), 2) if len(self.__offers) > 0 else 0.0
-        avg_price = round(price_sum / len(self.__offers), 2) if len(self.__offers) > 0 else 0.0
-        avg_expected_time = round(expected_time_sum / len(self.__offers), 2) if len(self.__offers) > 0 else 0.0
-        avg_expected_length = round(expected_length_sum / len(self.__offers), 2) if len(self.__offers) > 0 else 0.0
-        avg_surge_multiplier = round(surge_multiplier_sum / len(self.__offers), 2) if len(self.__offers) > 0 else 0.0
-        # Update the logger
+        # Compute average metrics and update the logger
         self.logger.update_offer_metrics(
             timestamp=self.model.time,
-            avg_expected_time=avg_expected_time,
-            avg_expected_length=avg_expected_length,
-            avg_radius=avg_radius,
-            avg_price=avg_price,
-            avg_surge_multiplier=avg_surge_multiplier
+            avg_expected_time=round(offer_stats["time"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
+            avg_expected_length=round(offer_stats["length"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
+            avg_radius=round(offer_stats["radius"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
+            avg_price=round(offer_stats["price"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
+            avg_surge_multiplier=round(offer_stats["surge"] / self.__generated_offers, 2) if self.__generated_offers else 0.0
         )
 
 
@@ -248,16 +240,12 @@ class RideServices:
         """
         # Get fully-accepted matches
         matched_keys = [
-            (res_id, driver_id)
-            for (res_id, driver_id), (agents, _) in self.__acceptances.items()
+            key for key, (agents, _) in self.__acceptances.items()
             if "driver" in agents and "passenger" in agents
         ]
         print(f"🚕 Dispatching {len(matched_keys)} taxis")
         # Count partial acceptances for log
-        self.__partial_acceptances = sum(
-            1 for agents, _ in self.__acceptances.values()
-            if len(agents) == 1
-        )
+        self.__partial_acceptances = sum(1 for agents, _ in self.__acceptances.values() if len(agents) == 1)
 
         # For each match try to dispatch the taxi
         for res_id, driver_id in matched_keys:
@@ -322,18 +310,17 @@ class RideServices:
         travel_time = int(route.travelTime)
         route_length = route.length
         # Convert units
-        travel_minutes = travel_time / 60
+        travel_min = travel_time / 60
         route_km = round(route_length / 1000, 3)
         # Provider-specific pricing table
         config = self.__providers[provider]
-        base = config["base_price"]
-        cost_per_min = config["cost_per_min"]
-        cost_per_km = config["cost_per_km"]
-        fee = config["service_fee"]
-        min_price = config["min_price"]
         # Compute price
-        price = (base + cost_per_min * travel_minutes + cost_per_km * route_km) * surge_multiplier + fee
-        price = round(max(min_price, price), 3)
+        price = (
+            config["base_price"]
+            + config["cost_per_min"] * travel_min
+            + config["cost_per_km"] * route_km
+        ) * surge_multiplier + config["service_fee"]
+        price = round(max(config["min_price"], price), 3)
 
         return travel_time, route_length, price
     
@@ -449,10 +436,7 @@ class RideServices:
         dict
             A dictionary containing offers where the driver identifier (k[1]) is in the provided drivers list.
         """
-        return {
-            k: v for k, v in self.__offers.items()
-            if k[1] in drivers
-        }
+        return {k: v for k, v in self.__offers.items() if k[1] in drivers}
 
 
     def get_offers_for_passengers(
@@ -472,10 +456,7 @@ class RideServices:
         dict
             A dictionary containing offers where the passenger identifier (k[0]) is in the provided passengers list.
         """
-        return {
-            k: v for k, v in self.__offers.items()
-            if k[0] in passengers
-        }
+        return {k: v for k, v in self.__offers.items() if k[0] in passengers}
 
 
     def remove_offer(
@@ -516,10 +497,7 @@ class RideServices:
         bool
         """
         key = (res_id, driver_id)
-        return (
-            key in self.__acceptances and
-            "passenger" in self.__acceptances[key][0]
-        )
+        return "passenger" in self.__acceptances.get(key, ({}, 0))[0]
     
     
     def is_driver_accepted(self,
@@ -541,10 +519,7 @@ class RideServices:
         bool
         """
         key = (res_id, driver_id)
-        return (
-            key in self.__acceptances and
-            "driver" in self.__acceptances[key][1]
-        )
+        return "driver" in self.__acceptances.get(key, ({}, 0))[0]
 
     
     def remove_acceptance(

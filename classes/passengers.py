@@ -9,10 +9,10 @@ It supports the following operations:
     (i) updating the set of unassigned requests, 
     (ii) distributing the personalities of new passengers,
     (iii) processing unassigned ride requests,
-    (iii) evaluating driver offers,
-    (iv) assigning the best offers to each passenger (who either accepts or rejects), and
-    (v) cleaning up redundant offers.
-    (vi) updating the logger with the current state of passengers.
+    (iv) evaluating driver offers,
+    (v) assigning the best offers to each passenger (who either accepts or rejects), and
+    (vi) cleaning up redundant offers.
+    (vii) updating the logger with the current state of passengers.
 2. get_unassigned_requests: Returns the set of unassigned requests.
 3. get_passenger_timeout: Returns the timeout value for the passenger.
 """
@@ -67,7 +67,7 @@ class Passengers:
         # Get ID from each reservation object
         unassigned_requests_ids = {res.id for res in self.__unassigned_requests}
         print(f"☝🏻 {len(unassigned_requests_ids)} unassigned requests")
-        # Persist personalities
+        # Assign personalities
         new_requests = 0
         for res_id in unassigned_requests_ids:
             if res_id not in self.__passengers_with_personality:
@@ -100,7 +100,8 @@ class Passengers:
                     # Reject the offer if surge is too low and temporarily remove passenger from available
                     personality = self.__passengers_with_personality[res_id]
                     surge = offer["surge"]
-                    acceptance = next((perc for low, up, perc in self.__acceptance_distribution[personality] if low < surge <= up), None)
+                    acceptance_ranges = self.__acceptance_distribution[personality]
+                    acceptance = next((perc for low, up, perc in acceptance_ranges if low < surge <= up), None)
                     if random.random() > acceptance:
                         self.model.rideservices.reject_offer((res_id, driver_id))
                         reservations_to_remove.add(res_id)
@@ -118,7 +119,6 @@ class Passengers:
                         self.model.rideservices.remove_offer((res_id, driver_id))
                         removed+=1
                     continue
-
             # Remove all other offers for this reservation (except the best one)
             for driver_id, _ in offers:
                 if driver_id != best_driver_id:
