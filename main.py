@@ -31,7 +31,7 @@ start_time_same_day_prompt = str(int(start_time[:-3])+1)
 if start_date == end_date:
     end_time = get_valid_hour(f"⚙️  Enter simulation hour ({start_time_same_day_prompt}-23): ")
 else:
-    end_time = get_valid_hour(f"⚙️  Enter simulation end hour (0-23): ")
+    end_time = get_valid_hour(f"⚙️  Enter simulation end hour (1-23): ", end_hour_check=True)
 if start_date == end_date:
     if int(end_time.split(":")[0]) <= int(start_time.split(":")[0]):
         print("⚠️  End hour must be after start hour")
@@ -46,13 +46,12 @@ os.makedirs(SCENARIO_PATH, exist_ok=True)
  # Interval (seconds) for computing one step for agents
 agents_interval = get_valid_int("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
 activeGui = get_valid_gui("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")
-radius = 150
-start_lanes = 10   # Number of possible start lanes for taxis in each TAZ
-number_vehicles_available = 8000   # TODO Change with something realistic based on number of requests
-max_vehicles_day = 45000
-peak_vehicles = 5700
-dispatch_algorithm = "traci"
-idle_mechanism = "randomCircling"
+radius = 150                        # Radius (meters) for map matching
+n_start_lanes = 10                    # Number of possible start lanes for taxis in each TAZ
+max_vehicles_day = 45000            # Maximum number of DRT vehicles in a day
+peak_vehicles = 5700                # Peak number of DRT vehicles in a day
+dispatch_algorithm = "traci"        # Dispatch algorithm to use (e.g., "traci", "greedy")
+idle_mechanism = "randomCircling"   # Idle mechanism to use (e.g., "randomCircling", "stop")
 sumoSimulator = Simulator(
     net_file_path=SUMO_NET_PATH, 
     config_template_path=SUMO_CFGTEMPLATE_PATH, 
@@ -142,10 +141,10 @@ data = read_tnc_stats_data(
     )
 
 # 9. Map TAZ polygons to lanes
-start_lanes = generate_vehicle_start_lanes_from_taz_polygons(
+start_lanes_by_taz = generate_vehicle_start_lanes_from_taz_polygons(
     shapefile_path=SF_TAZ_SHAPEFILE_PATH,
     net_file=SUMO_NET_PATH,
-    points_per_taz=start_lanes,
+    points_per_taz=n_start_lanes,
     safe_edge_ids=safe_edge_ids
     )
 
@@ -158,7 +157,9 @@ ratio_vehicles_requests = compute_requests_vehicles_ratio(
 
 # 11. Generate taxi trips
 SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
-    lane_ids=random.sample(start_lanes, number_vehicles_available),
+    start_lanes_by_taz=start_lanes_by_taz,
+    ratio_vehicles_requests=ratio_vehicles_requests,
+    tnc_data=data,
     start_date_str=start_date,
     end_date_str=end_date,
     start_time_str=start_time, 

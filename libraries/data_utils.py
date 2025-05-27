@@ -389,7 +389,6 @@ def read_tnc_stats_data(
     # Compute pickups and dropoffs across all zones and selected hours
     total_pickups = sum(hour_data['pickups'] for zone in zone_data.values() for hour_data in zone.values())
     total_dropoffs = sum(hour_data['dropoffs'] for zone in zone_data.values() for hour_data in zone.values())
-    print(f"Total pickups:  {total_pickups}")
-    print(f"Total dropoffs: {total_dropoffs}")
+    print(f"🚕 Total pickups:  {total_pickups}, Total dropoffs: {total_dropoffs}")
 
     return zone_data

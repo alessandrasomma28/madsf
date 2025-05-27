@@ -16,7 +16,7 @@ real traffic data using a SUMO network. It includes utilities for:
 10. map_taz_to_edges: Mapping TAZ IDs to SUMO edges.
 11. generate_vehicle_start_lanes_from_taz_polygons: Mapping points inside each TAZ polygon to the nearest lane.
 12. compute_requests_vehicles_ratio: Computing the ratio of TNC requests to TNC vehicles.
-13. generate_drt_vehicle_instances_from_lanes: Generating a DRT fleet file with <vType> and <vehicle> entries, and dummy routes.
+13. generate_drt_vehicle_instances_from_lanes: Generating a DRT fleet file with <vType> and <vehicle> entries.
 14. get_valid_taxi_edges: Getting valid edges for taxi routes.
 15. generate_matched_drt_requests: Generating matched DRT requests based on TNC data and TAZ mapping.
 16. filter_polygon_edges: Filter edge list string, keeping only strongly connected edges
@@ -28,7 +28,6 @@ from pathlib import Path
 from typing import Optional
 from collections import defaultdict
 import random
-from collections import defaultdict
 from datetime import datetime, time, timedelta
 import os
 import ast
@@ -455,7 +454,7 @@ def sf_traffic_routes_generation(
     # Create XML structure
     root = ET.Element("routes")
 
-    for index, row in df.iterrows():
+    for _, row in df.iterrows():
         if pd.notna(row['origin_edge_id']) and pd.notna(row['destination_edge_id']):
             depart = int((row['origin_starting_time'] - sim_start).total_seconds())
             arrival = int((row['destination_ending_time'] - sim_start).total_seconds())
@@ -776,7 +775,7 @@ def map_taz_to_edges(
 def generate_vehicle_start_lanes_from_taz_polygons(
         shapefile_path: str,
         net_file: str,
-        points_per_taz: int = 2,
+        points_per_taz: int = 5,
         safe_edge_ids: set = None
     ) -> list:
     """
@@ -786,7 +785,7 @@ def generate_vehicle_start_lanes_from_taz_polygons(
     - Reads a TAZ shapefile and converts it to WGS84 coordinates.
     - For each TAZ polygon, samples random points.
     - For each point, finds the nearest edge and lane in the SUMO network.
-    - Returns a list of lane IDs where vehicles should be placed.
+    - Returns a list of lane IDs where vehicles should be placed for each TAZ.
     - If safe_edge_ids is provided, only considers edges in that set.
 
     Parameters:
@@ -803,34 +802,30 @@ def generate_vehicle_start_lanes_from_taz_polygons(
 
     Returns:
     -------
-    List[str]
-        List of lane IDs where vehicles should be placed.
+    dict
+        Dictionary mapping TAZ IDs to lists of lane IDs where vehicles should be placed.
     """
 
     gdf = gpd.read_file(shapefile_path)
     # Ensure coordinates are in WGS84 (lat/lon)
     gdf = gdf.to_crs(epsg=4326)
-
     network = net.readNet(net_file)
 
     print("🚕 Sampling vehicle start points...")
 
-    start_lanes = []
-
+    lanes_by_taz = defaultdict(list)
     for _, row in gdf.iterrows():
         geom = row['geometry']
-
+        taz_id = str(row["TAZ"])
         if isinstance(geom, MultiPolygon):
             geom = max(geom.geoms, key=lambda a: a.area)
-
         if not isinstance(geom, Polygon):
             continue
 
         minx, miny, maxx, maxy = geom.bounds
-
         points = []
         attempts = 0
-        while len(points) < points_per_taz and attempts < 50:
+        while len(points) < points_per_taz and attempts < 100:
             x = random.uniform(minx, maxx)
             y = random.uniform(miny, maxy)
             pt = Point(x, y)
@@ -840,15 +835,16 @@ def generate_vehicle_start_lanes_from_taz_polygons(
 
         for pt in points:
             lon, lat = pt.x, pt.y
-            lane_id = get_nearest_edge(network, lon, lat, radius=100, safe_edge_ids=safe_edge_ids)
-            if lane_id:
-                lanes = network.getEdge(lane_id).getLanes()
+            edge_id = get_nearest_edge(network, lon, lat, radius=100, safe_edge_ids=safe_edge_ids)
+            if edge_id:
+                lanes = network.getEdge(edge_id).getLanes()
                 if lanes:
-                    start_lanes.append(lanes[0].getID())
+                    lanes_by_taz[taz_id].append(lanes[0].getID())
 
-    print(f"✅ Found {len(start_lanes)} start lanes across TAZs.")
+    total_lanes = sum(len(l) for l in lanes_by_taz.values())
+    print(f"✅ Found {total_lanes} start lanes across TAZs.")
 
-    return start_lanes
+    return dict(lanes_by_taz)
 
 
 def compute_requests_vehicles_ratio(
@@ -905,7 +901,9 @@ def compute_requests_vehicles_ratio(
 
 
 def generate_drt_vehicle_instances_from_lanes(
-        lane_ids: list, 
+        start_lanes_by_taz: dict,
+        ratio_vehicles_requests: float,
+        tnc_data: dict,
         start_date_str: str,
         end_date_str: str,
         start_time_str: str,
@@ -917,15 +915,19 @@ def generate_drt_vehicle_instances_from_lanes(
     Generates a DRT fleet file with <vType> and <vehicle> entries, and dummy routes.
 
     This function:
-    - Creates a SUMO route XML structure with <vType> and <vehicle> entries.
-    - Each vehicle is assigned a lane ID from the provided list.
-    - The vehicle types are defined with specific emission classes and colors.
-    - The output is saved to the specified path.
+    - Reads hourly requests data from a dictionary.
+    - Calculates the total number of vehicles needed based on the ratio of requests to drivers.
+    - Allocates vehicles per TAZ and hour based on the requests.
+    - Creates a SUMO .rou.xml file with <vehicle> entries for each allocated vehicle.
 
     Parameters:
     ----------
-    - lane_ids: list
-        List of lane IDs where vehicles will be placed.
+    - start_lanes_by_taz: dict
+        Dictionary mapping TAZ IDs to lists of start lane IDs where vehicles should be placed.
+    - ratio_vehicles_requests: float
+        Ratio of requests to drivers, used to determine the number of vehicles.
+    - tnc_data: dict
+        Dictionary containing hourly requests data, where keys are hours (0-23) and values are the number of requests for that hour.
     - start_date_str: str
         Start date in 'YYYY-MM-DD' format (e.g., '2021-03-25').
     - end_date_str: str
@@ -946,13 +948,60 @@ def generate_drt_vehicle_instances_from_lanes(
 
     Raises:
     ------
-    - ValueError: If the number of provided lane_ids are not sufficient for the taxi fleet.
-    - ValueError: If idle_mechanism is not "stop" or "randomCircling".
+    ValueError: If idle_mechanism is not "stop" or "randomCircling".
     """
-    eco = int(len(lane_ids) // 3.5)
-    diesel = int(len(lane_ids) // 3.5)
-    gas = int(len(lane_ids) // 3.5)
-    zero = len(lane_ids) - eco - diesel - gas
+    # Compute simulation start time
+    sim_start = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
+
+    # Flatten pickups across all TAZs and hours
+    total_requests = 0
+    requests_per_taz_hour = {}
+    requests_per_hour = {}
+    requests_per_taz = {}
+    # Calculate total requests and requests per TAZ and hour
+    for taz, taz_data in tnc_data.items():
+        requests_per_taz[taz] = 0
+        requests_per_taz_hour[taz] = {}
+        for hour, metrics in taz_data.items():
+            pickups = metrics.get('pickups', 0)
+            requests_per_taz_hour[taz][hour] = pickups
+            requests_per_hour[hour] = requests_per_hour.get(hour, 0) + pickups
+            requests_per_taz[taz] += pickups
+            total_requests += pickups
+
+    # Calculate total number of vehicles needed based on the ratio
+    total_vehicles = int(total_requests / ratio_vehicles_requests)
+    # Determine how many vehicles to assign per hour and per TAZ
+    raw_allocations = defaultdict(dict)
+    fractional_parts = []
+    # int truncation will leave leftover vehicles to be distributed later
+    for taz, hour_data in requests_per_taz_hour.items():
+        for hour, pickups in hour_data.items():
+            proportion = pickups / total_requests if total_requests > 0 else 0
+            exact = proportion * total_vehicles
+            base = int(exact)
+            frac = exact - base
+            raw_allocations[taz][hour] = base
+            fractional_parts.append((frac, taz, hour))
+    # Distribute leftover vehicles to largest fractional parts
+    vehicles_per_taz_hour = defaultdict(dict)
+    total_assigned = sum(base for taz_hours in raw_allocations.values() for base in taz_hours.values())
+    remaining = total_vehicles - total_assigned
+    # Sort by descending fractional parts
+    fractional_parts.sort(reverse=True)
+    # Assign the remaining vehicles to the TAZ-hour pairs with the largest fractional parts
+    for i in range(remaining):
+        _, taz, hour = fractional_parts[i]
+        raw_allocations[taz][hour] += 1
+    # Now we have a complete allocation of vehicles per TAZ and hour
+    for taz, hours in raw_allocations.items():
+        for hour, count in hours.items():
+            vehicles_per_taz_hour[taz][hour] = count
+    
+    eco = int(total_vehicles // 3.5)
+    diesel = int(total_vehicles // 3.5)
+    gas = int(total_vehicles // 3.5)
+    zero = total_vehicles - eco - diesel - gas
     vehicle_types = [
         {
             "id": "electric_eco",
@@ -985,60 +1034,63 @@ def generate_drt_vehicle_instances_from_lanes(
     ]
 
     root = ET.Element("routes")
-    lane_iter = iter(lane_ids)
     vehicle_counter = 0
-
-    # Create vTypes
+    # Define <vType> entries
     for vt in vehicle_types:
         vtype = ET.SubElement(root, "vType", {
-            "id": vt["id"],
+            "id": vt["id"], 
             "vClass": vt["vClass"],
-            "color": vt["color"],
-            "emissionClass": vt["emissionClass"],
+            "color": vt["color"], 
+            "emissionClass": vt["emissionClass"]
         })
         ET.SubElement(vtype, "param", key="has.taxi.device", value="true")
         ET.SubElement(vtype, "param", key="device.taxi.pickUpDuration", value="30")
         ET.SubElement(vtype, "param", key="device.taxi.dropOffDuration", value="30")
-
-    # Create vehicles
-    for vt in vehicle_types:
-        for i in range(vt["count"]):
-            try:
-                lane_id = next(lane_iter)
-            except StopIteration:
-                raise ValueError("Not enough lane IDs.")
-
-            edge_id = lane_id.split("_")[0]  # Take the edge ID part (remove "_0" lane suffix)
-
-            if idle_mechanism == "randomCircling":
-                vehicle = ET.SubElement(root, "vehicle", {
-                    "id": f"taxi_{vehicle_counter}",
-                    "depart": "0.00",
-                    "type": vt["id"]
-                })
-                # ➔ Dummy initial route = just the edge where the vehicle is starting
-                vehicle = ET.SubElement(vehicle, "route", {
-                    "edges": edge_id,
-                })
-                end_of_shift = generate_work_duration()
-                ET.SubElement(vehicle, "param", key="device.taxi.end", value=str(end_of_shift))
-            elif idle_mechanism == "stop":
-                trip = ET.SubElement(root, "trip", {
-                    "id": f"taxi_{vehicle_counter}",
-                    "depart": "0.00",
-                    "type": vt["id"],
-                    "personCapacity": "4"
-                })
-                # ➔ Dummy initial route = just the edge where the vehicle is starting
-                trip = ET.SubElement(trip, "stop", {
-                    "lane": lane_id,
-                    "triggered": "person"
-                })
-                end_of_shift = generate_work_duration()
-                ET.SubElement(trip, "param", key="device.taxi.end", value=str(end_of_shift))
-            else:
-                raise ValueError("Invalid idle mechanism. Please provide either 'stop' or 'randomCircling'")
-            vehicle_counter += 1
+    
+    # Generate vehicles per TAZ and hour based on request proportions
+    types_cycle = (vt for vt in vehicle_types for _ in range(vt["count"]))
+    vehicle_counter = 0
+    for taz, hour_data in vehicles_per_taz_hour.items():
+        lanes_for_taz = start_lanes_by_taz.get(str(taz), [])
+        if not lanes_for_taz:
+            print(f"No start lanes found for TAZ {taz}")
+            continue
+        lane_index = 0
+        total_lanes = len(lanes_for_taz)
+        for hour, num_vehicles in hour_data.items():
+            for _ in range(num_vehicles):
+                lane_id = lanes_for_taz[lane_index % total_lanes]
+                lane_index += 1
+                vt = next(types_cycle)
+                edge_id = lane_id.split("_")[0]
+                depart_date = sim_start.date()
+                if hour < sim_start.hour:
+                    depart_date += timedelta(days=1)
+                depart_datetime = datetime.combine(depart_date, time(hour=hour))
+                base_offset = int((depart_datetime - sim_start).total_seconds())
+                depart_seconds = base_offset + random.randint(0, 3599)
+                if idle_mechanism == "randomCircling":
+                    vehicle = ET.SubElement(root, "vehicle", {
+                        "id": f"taxi_{vehicle_counter}",
+                        "depart": f"{depart_seconds:.2f}",
+                        "type": vt["id"]
+                    })
+                    # ➔ Dummy initial route = just the edge where the vehicle is starting
+                    ET.SubElement(vehicle, "route", {"edges": edge_id})
+                    ET.SubElement(vehicle, "param", key="device.taxi.end", value=str(generate_work_duration()))
+                elif idle_mechanism == "stop":
+                    trip = ET.SubElement(root, "trip", {
+                        "id": f"taxi_{vehicle_counter}",
+                        "depart": f"{depart_seconds:.2f}",
+                        "type": vt["id"],
+                        "personCapacity": "4"
+                    })
+                    # Lane where the vehicle is starting
+                    ET.SubElement(trip, "stop", {"lane": lane_id, "triggered": "person"})
+                    ET.SubElement(trip, "param", key="device.taxi.end", value=str(generate_work_duration()))
+                else:
+                    raise ValueError("Invalid idle mechanism, please choose 'stop' or 'randomCircling'")
+                vehicle_counter += 1
 
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -1063,7 +1115,7 @@ def generate_drt_vehicle_instances_from_lanes(
     ET.indent(tree, space="  ")
     tree.write(full_path, encoding="utf-8", xml_declaration=True)
 
-    print(f"✅ DRT vehicle fleet with dummy routes written to: {full_path} ({vehicle_counter} vehicles)")
+    print(f"✅ DRT vehicle fleet written to: {full_path} ({vehicle_counter} vehicles)")
 
     return full_path
 
@@ -1167,7 +1219,7 @@ def generate_matched_drt_requests(
     person_elements = []
     person_id = 0
 
-    # Compute simulation start and end times
+    # Compute simulation start time
     sim_start = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
 
     # Build pickup list

@@ -37,25 +37,28 @@ def get_valid_date(prompt: str) -> str:
 
 def get_valid_hour(
         prompt: str,
-        start_hour_same_day_check: bool = False
+        start_hour_same_day_check: bool = False,
+        end_hour_check: bool = False
     ) -> str:
     while True:
         hour_str = input(prompt).strip()
         if hour_str.isdigit():
             hour = int(hour_str)
+            if hour < 0 or hour > 23:
+                print("⚠️  Please enter a valid hour as an integer (e.g., 9 or 17)")
             if start_hour_same_day_check:
                 if 0 <= hour <= 22:
                     return f"{hour:02d}:00"
                 else:
                     print("⚠️  Since you chose to simulate the same day, start hour must be between 0 and 22")
-            else:
-                if 0 <= hour <= 23:
+            elif end_hour_check:
+                if 1 <= hour <= 23:
                     return f"{hour:02d}:00"
                 else:
-                    print("⚠️  Hour must be between 0 and 23")
-        else:
-            print("⚠️  Please enter a valid hour as an integer (e.g., 9 or 17)")
-
+                    print("⚠️  Since you chose to simulate different days, end hour must be after midnight (1-23)")
+            else:
+                return f"{hour:02d}:00"
+            
 
 def get_valid_int(
         prompt: str,
