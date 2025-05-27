@@ -15,11 +15,12 @@ real traffic data using a SUMO network. It includes utilities for:
 9. map_coords_to_sumo_edges: Mapping TAZ polygon and centroid coordinates to nearest SUMO edges and lanes.
 10. map_taz_to_edges: Mapping TAZ IDs to SUMO edges.
 11. generate_vehicle_start_lanes_from_taz_polygons: Mapping points inside each TAZ polygon to the nearest lane.
-12. get_valid_taxi_edges: Getting valid edges for taxi routes.
+12. compute_requests_vehicles_ratio: Computing the ratio of TNC requests to TNC vehicles.
 13. generate_drt_vehicle_instances_from_lanes: Generating a DRT fleet file with <vType> and <vehicle> entries, and dummy routes.
-14. generate_matched_drt_requests: Generating matched DRT requests based on TNC data and TAZ mapping.
-15. filter_polygon_edges: Filter edge list string, keeping only strongly connected edges
-16. filter_polygon_lanes: Filter lane list string, keeping only those lanes whose parent edge is in the strongly connected set.
+14. get_valid_taxi_edges: Getting valid edges for taxi routes.
+15. generate_matched_drt_requests: Generating matched DRT requests based on TNC data and TAZ mapping.
+16. filter_polygon_edges: Filter edge list string, keeping only strongly connected edges
+17. filter_polygon_lanes: Filter lane list string, keeping only those lanes whose parent edge is in the strongly connected set.
 """
 
 
@@ -850,54 +851,57 @@ def generate_vehicle_start_lanes_from_taz_polygons(
     return start_lanes
 
 
-def get_valid_taxi_edges(
-        net_file: str,
-        safe_edge_ids: set = None
-    ) -> set:
+def compute_requests_vehicles_ratio(
+        sf_tnc_fleet_folder_path: str,
+        max_vehicles_day: int,
+        peak_vehicles: int
+    ) -> float:
     """
-    Extracts usable edge IDs where taxis can drive. Uses sumolib (static network loading).
-
+    Computes the ratio of requests to vehicles for each hour of the day.
     This function:
-    - Reads the SUMO network file.
-    - Iterates through edges and checks if they are valid for taxi routing.
-    - Filters out edges that are internal, dead-end, or not strongly connected.
-    - Returns a set of valid edge IDs.
+    - Reads a CSV file containing hourly pickup requests.
+    - Groups the data by hour and computes the average pickups across all TAZs and days.
+    - Estimates the number of drivers needed per hour based on peak requests.
+    - Normalizes the estimated drivers so the total equals the max number of vehicles per day.
+    - Computes the final requests to drivers ratio for each hour.
 
     Parameters:
     ----------
-    - net_file: str
-        Path to the SUMO .net.xml file.
-    - safe_edge_ids: set or None, optional
-        Set of edge IDs to consider as valid (e.g., strongly connected edges).
-        If None, all edges are considered.
+    - sf_tnc_fleet_folder_path: str
+        Path to the CSV file containing hourly pickup requests.
+    - max_vehicles_day: int
+        Maximum number of vehicles available per day.
+    - peak_vehicles: int
+        Number of vehicles available during peak hours (e.g., 7 pm).
 
     Returns:
     -------
-    set
-        Set of valid edge IDs.
+    float
+        The requests to drivers ratio for each hour of the day.
     """
-    # Load the SUMO network
-    sfnet = net.readNet(net_file)
-    valid_edges = set()
+    df = pd.read_csv(sf_tnc_fleet_folder_path)
+    # Group by hour and compute the average pickups across all TAZs and days
+    average_requests_per_hour = df.groupby("hour")["pickups"].sum().reset_index()
+    average_requests_per_hour.columns = ["hour", "average_requests"]
+    average_requests_per_hour["hour"] = (average_requests_per_hour["hour"] - 3) % 24
+    average_requests_per_hour = average_requests_per_hour.sort_values(by="hour").reset_index(drop=True)
+    # Calculate requests per driver at peak (7 pm)
+    requests_at_peak = average_requests_per_hour.loc[average_requests_per_hour["hour"] == 19, "average_requests"].values[0]
+    requests_per_driver_at_peak = requests_at_peak / peak_vehicles
+    # Estimate the number of drivers per hour using the peak ratio
+    average_requests_per_hour["estimated_drivers"] = average_requests_per_hour["average_requests"] / requests_per_driver_at_peak
+    # Normalize the estimated drivers so the total equals the max number of vehicles per day
+    average_requests_per_hour["normalized_drivers"] = (
+        average_requests_per_hour["estimated_drivers"] /
+        average_requests_per_hour["estimated_drivers"].sum()
+    ) * max_vehicles_day
+    # Compute final requests to drivers ratio and create a dictionary
+    average_requests_per_hour["requests_to_drivers_ratio"] = (
+        average_requests_per_hour["average_requests"] /
+        average_requests_per_hour["normalized_drivers"]
+    )
 
-    for edge in sfnet.getEdges():
-        if edge.isSpecial():
-            continue  # Skip internal/junction edges
-        if not edge.getOutgoing():
-            continue  # Skip dead-end edges
-        if safe_edge_ids is not None and edge.getID() not in safe_edge_ids:
-            continue  # Skip not strongly connnected edges
-
-        # Check if any lane in this edge allows taxi or passenger
-        for lane in edge.getLanes():
-            allowed_classes = getattr(lane, '_allowed', [])
-            if "passenger" in allowed_classes or "taxi" in allowed_classes:
-                valid_edges.add(edge.getID())
-                break  # No need to check other lanes once we find one good
-
-    print(f"✅ Found {len(valid_edges)} valid taxi edges.")
-
-    return valid_edges
+    return average_requests_per_hour["requests_to_drivers_ratio"][0]
 
 
 def generate_drt_vehicle_instances_from_lanes(
@@ -1062,6 +1066,56 @@ def generate_drt_vehicle_instances_from_lanes(
     print(f"✅ DRT vehicle fleet with dummy routes written to: {full_path} ({vehicle_counter} vehicles)")
 
     return full_path
+
+
+def get_valid_taxi_edges(
+        net_file: str,
+        safe_edge_ids: set = None
+    ) -> set:
+    """
+    Extracts usable edge IDs where taxis can drive. Uses sumolib (static network loading).
+
+    This function:
+    - Reads the SUMO network file.
+    - Iterates through edges and checks if they are valid for taxi routing.
+    - Filters out edges that are internal, dead-end, or not strongly connected.
+    - Returns a set of valid edge IDs.
+
+    Parameters:
+    ----------
+    - net_file: str
+        Path to the SUMO .net.xml file.
+    - safe_edge_ids: set or None, optional
+        Set of edge IDs to consider as valid (e.g., strongly connected edges).
+        If None, all edges are considered.
+
+    Returns:
+    -------
+    set
+        Set of valid edge IDs.
+    """
+    # Load the SUMO network
+    sfnet = net.readNet(net_file)
+    valid_edges = set()
+
+    for edge in sfnet.getEdges():
+        if edge.isSpecial():
+            continue  # Skip internal/junction edges
+        if not edge.getOutgoing():
+            continue  # Skip dead-end edges
+        if safe_edge_ids is not None and edge.getID() not in safe_edge_ids:
+            continue  # Skip not strongly connnected edges
+
+        # Check if any lane in this edge allows taxi or passenger
+        for lane in edge.getLanes():
+            allowed_classes = getattr(lane, '_allowed', [])
+            if "passenger" in allowed_classes or "taxi" in allowed_classes:
+                valid_edges.add(edge.getID())
+                break  # No need to check other lanes once we find one good
+
+    print(f"✅ Found {len(valid_edges)} valid taxi edges.")
+
+    return valid_edges
 
 
 def generate_matched_drt_requests(

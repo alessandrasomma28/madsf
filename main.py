@@ -11,7 +11,7 @@ from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_dat
 from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generation, sf_traffic_routes_generation, \
     export_taz_coords, map_coords_to_sumo_edges, get_strongly_connected_edges, generate_matched_drt_requests, \
     add_sf_traffic_taz_matching, generate_vehicle_start_lanes_from_taz_polygons, generate_drt_vehicle_instances_from_lanes, \
-    get_valid_taxi_edges, map_taz_to_edges
+    get_valid_taxi_edges, map_taz_to_edges, compute_requests_vehicles_ratio
 
 
 # 0. Set initial variables and initialize Simulator class
@@ -47,8 +47,10 @@ os.makedirs(SCENARIO_PATH, exist_ok=True)
 agents_interval = get_valid_int("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
 activeGui = get_valid_gui("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")
 radius = 150
-start_lanes = 3   # Number of possible start lanes for taxis in each TAZ
-number_vehicles_available = 2000   # TODO Change with something realistic based on number of requests
+start_lanes = 10   # Number of possible start lanes for taxis in each TAZ
+number_vehicles_available = 8000   # TODO Change with something realistic based on number of requests
+max_vehicles_day = 45000
+peak_vehicles = 5700
 dispatch_algorithm = "traci"
 idle_mechanism = "randomCircling"
 sumoSimulator = Simulator(
@@ -147,7 +149,14 @@ start_lanes = generate_vehicle_start_lanes_from_taz_polygons(
     safe_edge_ids=safe_edge_ids
     )
 
-# 10. Generate taxi trips
+# 10. Compute ratio of TNC requests to traffic vehicles
+ratio_vehicles_requests = compute_requests_vehicles_ratio(
+    sf_tnc_fleet_folder_path=SF_RIDE_STATS_PATH,
+    max_vehicles_day=max_vehicles_day,
+    peak_vehicles=peak_vehicles
+    )
+
+# 11. Generate taxi trips
 SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     lane_ids=random.sample(start_lanes, number_vehicles_available),
     start_date_str=start_date,
@@ -158,13 +167,13 @@ SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     idle_mechanism=idle_mechanism
     )
 
-# 11. Get valid edges for taxi routes
+# 12. Get valid edges for taxi routes
 valid_edge_ids = get_valid_taxi_edges(
     net_file=SUMO_NET_PATH, 
     safe_edge_ids=safe_edge_ids
     )
 
-# 12. Generate matched DRT requests
+# 13. Generate matched DRT requests
 SF_TNC_REQUESTS_PATH = generate_matched_drt_requests(
     tnc_data=data,
     taz_edge_mapping=taz_edge_mapping,
@@ -176,7 +185,7 @@ SF_TNC_REQUESTS_PATH = generate_matched_drt_requests(
     sf_requests_folder_path=SCENARIO_PATH
     )
 
-# 13. Configure output directory and run simulation
+# 14. Configure output directory and run simulation
 SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(
     sf_routes_folder_path=SCENARIO_PATH,
     sf_traffic_route_file_path=SF_TRAFFIC_ROUTE_PATH,
@@ -188,20 +197,20 @@ SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(
     end_time_str=end_time
     )
 
-# 14. Generate SUMO configuration file
+# 15. Generate SUMO configuration file
 sumoSimulator.generate_config(
     dispatch_algorithm=dispatch_algorithm,
     idle_mechanism=idle_mechanism
     )
 
-# 15. Run simulation
+# 16. Run simulation
 sumoSimulator.run_simulation(
     activeGui=activeGui,
     agents_interval=agents_interval,
     dispatch_algorithm=dispatch_algorithm
     )
 
-# 16. Generate output CSV file
+# 17. Generate output CSV file
 generate_output_csv(
     start_date_str=start_date,
     end_date_str=end_date,

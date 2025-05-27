@@ -65,7 +65,7 @@ def check_import_traffic(
     - ValueError
         If no traffic data is found in the specified interval.
     """
-    def _spinner(msg="⬇️ Downloading traffic file from SFMTA..."):
+    def _spinner(msg="⬇️  Downloading traffic file from SFMTA..."):
         for char in itertools.cycle("|/-\\"):
             if _spinner_done:
                 break
