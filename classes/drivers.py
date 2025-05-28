@@ -64,7 +64,8 @@ class Drivers:
         logged_busy = len(set(traci.vehicle.getTaxiFleet(2)))
         # Get the set of idle drivers from TraCI
         self.__idle_drivers = set(traci.vehicle.getTaxiFleet(0))
-        print(f"🚕 {len(self.__idle_drivers)} idle drivers")
+        if self.model.verbose:
+            print(f"🚕 {len(self.__idle_drivers)} idle drivers")
         # Assign providers and personalities
         provider_counts = {provider: 0 for provider in self.__providers}
         for driver_id in self.__idle_drivers:
@@ -83,8 +84,9 @@ class Drivers:
                         break
         
         # Print number of newly added drivers per provider
-        for provider, count in provider_counts.items():
-            print(f"🚕 {count} drivers assigned to provider '{provider}'")
+        if self.model.verbose:
+            for provider, count in provider_counts.items():
+                print(f"🚕 {count} drivers assigned to provider '{provider}'")
 
         # Collect pending offers where passenger has already accepted
         offers_by_driver = defaultdict(list)
@@ -128,9 +130,10 @@ class Drivers:
                         self.model.rideservices.remove_offer((res_id, driver_id))
                         removed+=1
 
-        print(f"✅ {accept} offers accepted by drivers")
-        print(f"📵 {reject} offers rejected by drivers")
-        print(f"🧹 {removed} duplicated drivers offers removed")
+        if self.model.verbose:
+            print(f"✅ {accept} offers accepted by drivers")
+            print(f"📵 {reject} offers rejected by drivers")
+            print(f"🧹 {removed} duplicated drivers offers removed")
 
         # Update the logger
         self.logger.update_drivers(

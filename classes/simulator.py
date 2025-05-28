@@ -30,12 +30,14 @@ class Simulator:
     route_file_path: Path
     output_dir_path: Path
     end_time: int
+    verbose: bool
 
     def __init__(
             self,
             net_file_path: str, 
             config_template_path: str,
-            taz_file_path: Optional[str]
+            taz_file_path: Optional[str],
+            verbose: bool = False
         ):
         self.net_file_path = Path(net_file_path).resolve()
         self.config_template_path = Path(config_template_path).resolve()
@@ -51,6 +53,7 @@ class Simulator:
         self.route_file_path = None
         self.output_dir_path = None
         self.end_time = None
+        self.verbose = verbose
 
 
     def configure_output_dir(
@@ -258,7 +261,8 @@ class Simulator:
                 drt_model = Model(
                     sumocfg_path=str(self.sumocfg_file_path),
                     end_time=self.end_time,
-                    output_dir_path=str(self.output_dir_path)
+                    output_dir_path=str(self.output_dir_path),
+                    verbose=self.verbose
                 )
                 # Delegates control to custom multi-agent logic
                 drt_model.run(agents_interval)

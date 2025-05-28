@@ -5,7 +5,7 @@ from classes.simulator import Simulator
 from constants.data_constants import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
                                       SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_TAZ_COORDINATES_PATH)
 from constants.sumoenv_constants import (SUMO_NET_PATH, SUMO_SCENARIOS_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH)
-from libraries.io_utils import get_valid_date, get_valid_hour, get_valid_int, get_valid_scenario, get_valid_gui, \
+from libraries.io_utils import get_valid_date, get_valid_hour, get_valid_int, get_valid_scenario, get_valid_str, \
     generate_output_csv
 from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_data, check_import_traffic
 from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generation, sf_traffic_routes_generation, \
@@ -44,8 +44,9 @@ scenario = get_valid_scenario("⚙️  Enter scenario name (normal): ")
 SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}"
 os.makedirs(SCENARIO_PATH, exist_ok=True)
  # Interval (seconds) for computing one step for agents
-agents_interval = get_valid_int("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
-activeGui = get_valid_gui("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")
+agents_interval = get_valid_str("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
+activeGui = get_valid_str("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")
+verboseMode = get_valid_str("⚙️  Do you want to run the simulation in verbose mode? (yes/no) ")
 radius = 150                        # Radius (meters) for map matching
 n_start_lanes = 10                  # Number of possible start lanes for taxis in each TAZ
 peak_vehicles = 5700                # Peak number of DRT vehicles in a day
@@ -54,7 +55,8 @@ idle_mechanism = "randomCircling"   # Idle mechanism to use (e.g., "randomCircli
 sumoSimulator = Simulator(
     net_file_path=SUMO_NET_PATH, 
     config_template_path=SUMO_CFGTEMPLATE_PATH, 
-    taz_file_path=SUMO_POLY_PATH
+    taz_file_path=SUMO_POLY_PATH,
+    verbose=True
     )
 print("\n🚀 Computing input for the SF Ride-Hailing Digital Mirror...\n")
 

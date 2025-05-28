@@ -89,14 +89,14 @@ def get_valid_scenario(prompt: str) -> str:
             print("⚠️  Scenario name must be alphanumeric")
 
 
-def get_valid_gui(prompt: str) -> bool:
+def get_valid_str(prompt: str) -> bool:
     while True:
-        gui_input = input(prompt).strip().lower()
-        if gui_input in ["yes", "no"]:
-            return gui_input == "yes"
+        input_str = input(prompt).strip().lower()
+        if input_str in ["yes", "no"]:
+            return input_str == "yes"
         else:
             print("⚠️  Please enter 'yes' or 'no'")
-
+            
 
 def generate_output_csv(
         start_date_str: str,

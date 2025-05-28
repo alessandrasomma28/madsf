@@ -66,7 +66,8 @@ class Passengers:
         self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
         # Get ID from each reservation object
         unassigned_requests_ids = {res.id for res in self.__unassigned_requests}
-        print(f"☝🏻 {len(unassigned_requests_ids)} unassigned requests")
+        if self.model.verbose:
+            print(f"☝🏻 {len(unassigned_requests_ids)} unassigned requests")
         # Assign personalities
         new_requests = 0
         for res_id in unassigned_requests_ids:
@@ -77,7 +78,8 @@ class Passengers:
                     if probability < threshold:
                         self.__passengers_with_personality[res_id] = personality
                         break
-        print(f"☝🏻 {new_requests} new requests")
+        if self.model.verbose:
+            print(f"☝🏻 {new_requests} new requests")
 
         # Group offers by reservation ID
         offers_by_passenger = defaultdict(list)
@@ -126,10 +128,12 @@ class Passengers:
                         self.model.rideservices.remove_offer((res_id, driver_id))
                         removed+=1
 
-        print(f"✅ {accept} offers accepted by passengers")
-        print(f"📵 {reject} offers rejected by passengers")
         self.__unassigned_requests = {r for r in self.__unassigned_requests if r.id not in reservations_to_remove}
-        print(f"🧹 {removed} duplicated passengers offers removed")
+
+        if self.model.verbose:
+            print(f"✅ {accept} offers accepted by passengers")
+            print(f"📵 {reject} offers rejected by passengers")
+            print(f"🧹 {removed} duplicated passengers offers removed")
 
         # Update the logger
         self.logger.update_passengers(

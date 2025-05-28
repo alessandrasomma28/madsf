@@ -36,12 +36,14 @@ class RideServices:
     model: "Model"
     providers: dict
     logger: "Logger"
+    verbose: bool
 
     def __init__(
             self,
             model: "Model",
             providers: dict,
-            logger: "Logger"
+            logger: "Logger",
+            verbose: bool = False
         ):
         self.model = model
         self.__providers = providers
@@ -110,8 +112,9 @@ class RideServices:
                 self.__providers[provider]["surge_multiplier"] = self.__compute_surge_multiplier(
                     requests_share, idle_count, provider
                 )
-        for provider, conf in self.__providers.items():
-            print(f"💵 Surge multiplier value for {provider}: {conf['surge_multiplier']}")
+        if self.model.verbose:
+            for provider, conf in self.__providers.items():
+                print(f"💵 Surge multiplier value for {provider}: {conf['surge_multiplier']}")
 
         # Clean up partial acceptances if timeout
         to_remove = []
@@ -126,7 +129,8 @@ class RideServices:
         for key in to_remove:
             self.remove_offer(key)
             self.remove_acceptance(key)
-        print(f"⌛️ Timeout: {self.__expired_acceptances_p} passengers, {self.__expired_acceptances_d} drivers")
+        if self.model.verbose:
+            print(f"⌛️ Timeout: {self.__expired_acceptances_p} passengers, {self.__expired_acceptances_d} drivers")
 
         # Clean up expired offers
         self.__expired_offers = [
@@ -135,7 +139,8 @@ class RideServices:
         ]
         for key in self.__expired_offers:
             self.remove_offer(key)
-        print(f"⌛️ Timeout for {len(self.__expired_offers)} offers")
+        if self.model.verbose:
+            print(f"⌛️ Timeout for {len(self.__expired_offers)} offers")
 
         # Pre-compute and cache positions of all idle taxis
         taxi_positions = {}
@@ -153,7 +158,8 @@ class RideServices:
         for reservation in unassigned:
             res_id = reservation.id
             if res_id in existing_res_ids:
-                print(f"⚠️ Reservation {res_id} already has an offer — skipping")
+                if self.model.verbose:
+                    print(f"⚠️ Reservation {res_id} already has an offer — skipping")
                 continue
             person_id = reservation.persons[0]
             # Get passenger position
@@ -179,7 +185,8 @@ class RideServices:
             closest_taxis = heapq.nsmallest(8, taxis_radius)
             if not closest_taxis:
                 self.__rides_not_served += 1
-                print(f"⚠️ No taxis available for reservation {res_id} — skipping")
+                if self.model.verbose:
+                    print(f"⚠️ No taxis available for reservation {res_id} — skipping")
                 continue
             # Create offers
             from_edge = reservation.fromEdge
@@ -209,7 +216,8 @@ class RideServices:
                 offer_stats["length"] += route_length
                 offer_stats["surge"] += surge_multiplier
         self.__generated_offers = len(self.__offers)
-        print(f"📋 {self.__generated_offers} pending offers")
+        if self.model.verbose:
+            print(f"📋 {self.__generated_offers} pending offers")
 
         # Compute average metrics and update the logger
         self.logger.update_offer_metrics(
@@ -243,7 +251,8 @@ class RideServices:
             key for key, (agents, _) in self.__acceptances.items()
             if "driver" in agents and "passenger" in agents
         ]
-        print(f"🚕 Dispatching {len(matched_keys)} taxis")
+        if self.model.verbose:
+            print(f"🚕 Dispatching {len(matched_keys)} taxis")
         # Count partial acceptances for log
         self.__partial_acceptances = sum(1 for agents, _ in self.__acceptances.values() if len(agents) == 1)
 
@@ -354,7 +363,8 @@ class RideServices:
             return config["max_surge"]
         ratio = unassigned_requests / idle_drivers
         surge = min(config["max_surge"], max(1, ratio))
-        print(f"🔍 Surge multiplier for {provider}: {surge} (requests: {unassigned_requests}, drivers: {idle_drivers})")
+        if self.model.verbose:
+            print(f"🔍 Surge multiplier for {provider}: {surge} (requests: {unassigned_requests}, drivers: {idle_drivers})")
         return round(surge, 2)
 
 
