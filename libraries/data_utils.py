@@ -311,7 +311,7 @@ def read_tnc_stats_data(
         end_date_str: str,
         start_time_str: str, 
         end_time_str: str
-    ) -> dict:
+    ) -> tuple[dict, dict]:
     """
     Reads TNC hourly pickup/dropoff data from a CSV file and filters it based on a specified time window.
 
@@ -319,7 +319,8 @@ def read_tnc_stats_data(
     - Reads TNC hourly pickup/dropoff data from a CSV file.
     - Filters the data based on the specified time window.
     - Computes total pickups and dropoffs across all zones and selected hours.
-    - Returns a nested dictionary with TAZ as keys and hour data as values.
+    - Returns two nested dictionary with TAZ as keys and hour data as values, one for current hour
+      data and one for previous hour data. The latter is useful to compute starting drivers in the simulation.
 
     Parameters:
     ----------
@@ -336,8 +337,8 @@ def read_tnc_stats_data(
 
     Returns:
     -------
-    dict
-        Nested dictionary {taz: {hour: {'pickups': x, 'dropoffs': y}}} where `hour` is in standard 0-23 format.
+    tuple[dict, dict]
+        Nested dictionaries {taz: {hour: {'pickups': x, 'dropoffs': y}}} where `hour` is in standard 0-23 format.
     """
     def parse_hour(time_str):
         # Convert time string (HH:MM) to hour in standard 0-23 format
@@ -346,43 +347,70 @@ def read_tnc_stats_data(
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
     num_days = (end_date - start_date).days + 1
-    selected_days_of_week = {(start_date + timedelta(days=i)).weekday() for i in range(num_days)}
 
     # Parse start and end hours
     start_hour = parse_hour(start_time_str)
     end_hour = parse_hour(end_time_str)
-    if start_hour < end_hour:
-        selected_hours_std = list(range(start_hour, end_hour))
-    else:
-        selected_hours_std = list(range(start_hour, 24)) + list(range(0, end_hour))
 
     # Map dataset hours (3–26) to standard 0–23 format
     dataset_hour_map = {h: h % 24 for h in range(3, 27)}
-    selected_dataset_hours = {h: std_hour for h, std_hour in dataset_hour_map.items() if std_hour in selected_hours_std}
 
-    # Initialize a dictionary to hold the data
-    zone_data = {}
-
-    # Read the CSV file
+    # Read the CSV file    
+    all_rows = []
     with open(sf_rides_stats_path, mode='r') as file:
         reader = csv.DictReader(file, delimiter=',')
         for row in reader:
-            # Process data for day of week
-            day_of_week = int(row['day_of_week'])
-            if day_of_week in selected_days_of_week:
-                taz = int(row['taz'])
-                dataset_hour = int(row['hour'])
-                if dataset_hour in selected_dataset_hours:
-                    std_hour = selected_dataset_hours[dataset_hour]
-                    if taz not in zone_data:
-                        zone_data[taz] = {}
-                    # Round pickups and dropoffs to the nearest integer
-                    row['pickups'] = round(float(row['pickups']))
-                    row['dropoffs'] = round(float(row['dropoffs']))
-                    zone_data[taz][std_hour] = {
-                        'pickups': int(row['pickups']),
-                        'dropoffs': int(row['dropoffs'])
-                    }
+            row['taz'] = int(row['taz'])
+            row['day_of_week'] = int(row['day_of_week'])
+            row['hour'] = int(row['hour'])
+            row['pickups'] = round(float(row['pickups']))
+            row['dropoffs'] = round(float(row['dropoffs']))
+            all_rows.append(row)
+
+    # Index by (day_of_week, hour, taz)
+    data_by_key = {}
+    for row in all_rows:
+        key = (row['day_of_week'], row['hour'], row['taz'])
+        data_by_key[key] = {'pickups': row['pickups'], 'dropoffs': row['dropoffs']}
+
+    # Initialize dictionaries to hold the output
+    zone_data = {}
+    zone_data_previous_hour = {}
+    # For each simulation day, determine hours to include from that day
+    for sim_day_index in range(num_days):
+        sim_date = start_date + timedelta(days=sim_day_index)
+        sim_day_of_week = sim_date.weekday()
+        if sim_day_index == 0:
+            selected_std_hours = list(range(start_hour, 24)) if start_hour < 24 else []
+        elif sim_day_index == num_days - 1:
+            selected_std_hours = list(range(0, end_hour)) if end_hour > 0 else []
+        else:
+            selected_std_hours = list(range(0, 24))
+        selected_dataset_hours = {h: std for h, std in dataset_hour_map.items() if std in selected_std_hours}
+        # Filter rows for this day and hour
+        for row in all_rows:
+            taz = row['taz']
+            hour = row['hour']
+            day = row['day_of_week']
+            if day == sim_day_of_week and hour in selected_dataset_hours:
+                std_hour = selected_dataset_hours[hour]
+                if taz not in zone_data:
+                    zone_data[taz] = {}
+                zone_data[taz][std_hour] = {
+                    'pickups': row['pickups'],
+                    'dropoffs': row['dropoffs']
+                }
+                # Also get previous hour for this hour (possibly from previous weekday)
+                prev_hour = hour - 1
+                prev_day = day
+                if prev_hour < 3:
+                    prev_hour = 26
+                    prev_day = (day - 1) % 7
+                prev_key = (prev_day, prev_hour, taz)
+                if prev_key in data_by_key:
+                    if taz not in zone_data_previous_hour:
+                        zone_data_previous_hour[taz] = {}
+                    zone_data_previous_hour[taz][std_hour] = data_by_key[prev_key]
 
     print(f"✅ TNC stats data read from {sf_rides_stats_path} and filtered to time window {start_date_str} {start_time_str} - {end_date_str} {end_time_str}")
 
@@ -391,4 +419,4 @@ def read_tnc_stats_data(
     total_dropoffs = sum(hour_data['dropoffs'] for zone in zone_data.values() for hour_data in zone.values())
     print(f"🚕 Total pickups:  {total_pickups}, Total dropoffs: {total_dropoffs}")
 
-    return zone_data
+    return zone_data, zone_data_previous_hour

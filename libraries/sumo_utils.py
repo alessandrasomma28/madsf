@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Optional
 from collections import defaultdict
 import random
+from itertools import cycle
 from datetime import datetime, time, timedelta
 import os
 import ast
@@ -849,7 +850,6 @@ def generate_vehicle_start_lanes_from_taz_polygons(
 
 def compute_requests_vehicles_ratio(
         sf_tnc_fleet_folder_path: str,
-        max_vehicles_day: int,
         peak_vehicles: int
     ) -> float:
     """
@@ -865,8 +865,6 @@ def compute_requests_vehicles_ratio(
     ----------
     - sf_tnc_fleet_folder_path: str
         Path to the CSV file containing hourly pickup requests.
-    - max_vehicles_day: int
-        Maximum number of vehicles available per day.
     - peak_vehicles: int
         Number of vehicles available during peak hours (e.g., 7 pm).
 
@@ -876,27 +874,25 @@ def compute_requests_vehicles_ratio(
         The requests to drivers ratio for each hour of the day.
     """
     df = pd.read_csv(sf_tnc_fleet_folder_path)
+    df["hour"] = df["hour"] % 24
     # Group by hour and compute the average pickups across all TAZs and days
-    average_requests_per_hour = df.groupby("hour")["pickups"].sum().reset_index()
-    average_requests_per_hour.columns = ["hour", "average_requests"]
-    average_requests_per_hour["hour"] = (average_requests_per_hour["hour"] - 3) % 24
-    average_requests_per_hour = average_requests_per_hour.sort_values(by="hour").reset_index(drop=True)
-    # Calculate requests per driver at peak (7 pm)
+    average_requests_per_hour = (
+        df.groupby("hour")["pickups"].sum()
+        .reset_index()
+        .rename(columns={"pickups": "average_requests"})
+        .sort_values(by="hour")
+        .reset_index(drop=True)
+    )
+    # Compute requests per driver at peak (7 pm)
     requests_at_peak = average_requests_per_hour.loc[average_requests_per_hour["hour"] == 19, "average_requests"].values[0]
     requests_per_driver_at_peak = requests_at_peak / peak_vehicles
     # Estimate the number of drivers per hour using the peak ratio
     average_requests_per_hour["estimated_drivers"] = average_requests_per_hour["average_requests"] / requests_per_driver_at_peak
-    # Normalize the estimated drivers so the total equals the max number of vehicles per day
-    average_requests_per_hour["normalized_drivers"] = (
-        average_requests_per_hour["estimated_drivers"] /
-        average_requests_per_hour["estimated_drivers"].sum()
-    ) * max_vehicles_day
-    # Compute final requests to drivers ratio and create a dictionary
+    # Compute requests to drivers ratio
     average_requests_per_hour["requests_to_drivers_ratio"] = (
         average_requests_per_hour["average_requests"] /
-        average_requests_per_hour["normalized_drivers"]
+        average_requests_per_hour["estimated_drivers"]
     )
-
     return average_requests_per_hour["requests_to_drivers_ratio"][0]
 
 
@@ -904,6 +900,7 @@ def generate_drt_vehicle_instances_from_lanes(
         start_lanes_by_taz: dict,
         ratio_vehicles_requests: float,
         tnc_data: dict,
+        tnc_previous_hour_data: dict,
         start_date_str: str,
         end_date_str: str,
         start_time_str: str,
@@ -918,6 +915,7 @@ def generate_drt_vehicle_instances_from_lanes(
     - Reads hourly requests data from a dictionary.
     - Calculates the total number of vehicles needed based on the ratio of requests to drivers.
     - Allocates vehicles per TAZ and hour based on the requests.
+    - Generates 50% of drivers from the previous hour at simulation start.
     - Creates a SUMO .rou.xml file with <vehicle> entries for each allocated vehicle.
 
     Parameters:
@@ -928,6 +926,8 @@ def generate_drt_vehicle_instances_from_lanes(
         Ratio of requests to drivers, used to determine the number of vehicles.
     - tnc_data: dict
         Dictionary containing hourly requests data, where keys are hours (0-23) and values are the number of requests for that hour.
+    - tnc_previous_hour_data: dict
+        Dictionary containing hourly requests data for the previous hour, used to calculate the number of starting vehicles needed.
     - start_date_str: str
         Start date in 'YYYY-MM-DD' format (e.g., '2021-03-25').
     - end_date_str: str
@@ -1048,7 +1048,7 @@ def generate_drt_vehicle_instances_from_lanes(
         ET.SubElement(vtype, "param", key="device.taxi.dropOffDuration", value="30")
     
     # Generate vehicles per TAZ and hour based on request proportions
-    types_cycle = (vt for vt in vehicle_types for _ in range(vt["count"]))
+    types_cycle = cycle(vehicle_types)
     vehicle_counter = 0
     for taz, hour_data in vehicles_per_taz_hour.items():
         lanes_for_taz = start_lanes_by_taz.get(str(taz), [])
@@ -1091,6 +1091,60 @@ def generate_drt_vehicle_instances_from_lanes(
                 else:
                     raise ValueError("Invalid idle mechanism, please choose 'stop' or 'randomCircling'")
                 vehicle_counter += 1
+
+    # Add 50% of previous hour's vehicles at time 0
+    prev_total_pickups = sum(metrics.get('pickups', 0) for taz_data in tnc_previous_hour_data.values() for metrics in taz_data.values())
+    total_prev_vehicles = int((prev_total_pickups / ratio_vehicles_requests) * 0.5)
+    # int truncation will leave leftover vehicles to be distributed later
+    raw_prev_allocations = []
+    for taz, hour_data in tnc_previous_hour_data.items():
+        for hour, metrics in hour_data.items():
+            pickups = metrics.get('pickups', 0)
+            if pickups == 0:
+                continue
+            exact = pickups / prev_total_pickups * total_prev_vehicles
+            base = int(exact)
+            frac = exact - base
+            raw_prev_allocations.append((frac, taz, hour, base))
+    # Distribute leftover vehicles to largest fractional parts
+    allocated_prev = sum(base for (_, _, _, base) in raw_prev_allocations)
+    leftover = total_prev_vehicles - allocated_prev
+    raw_prev_allocations.sort(reverse=True)
+    for i in range(leftover):
+        frac, taz, hour, base = raw_prev_allocations[i]
+        raw_prev_allocations[i] = (frac, taz, hour, base + 1)
+    # Generate starting vehicles at time 0
+    for (_, taz, hour, count) in raw_prev_allocations:
+        lanes_for_taz = start_lanes_by_taz.get(str(taz), [])
+        if not lanes_for_taz:
+            continue
+        lane_index = 0
+        total_lanes = len(lanes_for_taz)
+        for _ in range(count):
+            lane_id = lanes_for_taz[lane_index % total_lanes]
+            lane_index += 1
+            vt = next(types_cycle)
+            edge_id = lane_id.split("_")[0]
+            if idle_mechanism == "randomCircling":
+                vehicle = ET.SubElement(root, "vehicle", {
+                    "id": f"taxi_{vehicle_counter}",
+                    "depart": "0.00",
+                    "type": vt["id"]
+                })
+                ET.SubElement(vehicle, "route", {"edges": edge_id})
+                ET.SubElement(vehicle, "param", key="device.taxi.end", value=str(generate_work_duration()))
+            elif idle_mechanism == "stop":
+                trip = ET.SubElement(root, "trip", {
+                    "id": f"taxi_{vehicle_counter}",
+                    "depart": "0.00",
+                    "type": vt["id"],
+                    "personCapacity": "4"
+                })
+                ET.SubElement(trip, "stop", {"lane": lane_id, "triggered": "person"})
+                ET.SubElement(trip, "param", key="device.taxi.end", value=str(generate_work_duration(starting = True)))
+            else:
+                raise ValueError("Invalid idle mechanism, please choose 'stop' or 'randomCircling'")
+            vehicle_counter += 1
 
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -1343,7 +1397,7 @@ def filter_polygon_lanes(
     return [l for l in lane_list if l.split('_')[0] in safe_edge_ids]
 
 
-def generate_work_duration():
+def generate_work_duration(starting: bool = False) -> int:
     """
     Generates a taxi work duration (in hours) based on the following distribution:
     - 51% work between 30 minutes and 2 hours
@@ -1351,17 +1405,30 @@ def generate_work_duration():
     - 12% work between 5 and 7 hours
     - 7% work between 7 and 8 hours
 
+    Parameters:
+    ----------
+    - starting: bool
+        If True, the duration is generated for the vehicles at the simulation start.
+
     Returns:
     ------ 
     int
         Duration in seconds.
     """
     r = random.random()
-    if r < 0.51:
-        return round(random.uniform(1800, 7200))
-    elif r < 0.81:
-        return round(random.uniform(7201, 18000))
-    elif r < 0.93:
-        return round(random.uniform(18001, 25200))
+    if starting:
+        if r < 0.58:
+            return round(random.uniform(1800, 3600))
+        elif r < 0.88:
+            return round(random.uniform(3601, 14400))
+        else:
+            return round(random.uniform(14401, 21600))
     else:
-        return round(random.uniform(25201, 28800))
+        if r < 0.51:
+            return round(random.uniform(1800, 7200))
+        elif r < 0.81:
+            return round(random.uniform(7201, 18000))
+        elif r < 0.93:
+            return round(random.uniform(18001, 25200))
+        else:
+            return round(random.uniform(25201, 28800))

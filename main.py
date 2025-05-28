@@ -47,8 +47,7 @@ os.makedirs(SCENARIO_PATH, exist_ok=True)
 agents_interval = get_valid_int("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
 activeGui = get_valid_gui("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")
 radius = 150                        # Radius (meters) for map matching
-n_start_lanes = 10                    # Number of possible start lanes for taxis in each TAZ
-max_vehicles_day = 45000            # Maximum number of DRT vehicles in a day
+n_start_lanes = 10                  # Number of possible start lanes for taxis in each TAZ
 peak_vehicles = 5700                # Peak number of DRT vehicles in a day
 dispatch_algorithm = "traci"        # Dispatch algorithm to use (e.g., "traci", "greedy")
 idle_mechanism = "randomCircling"   # Idle mechanism to use (e.g., "randomCircling", "stop")
@@ -132,7 +131,7 @@ taz_edge_mapping = map_taz_to_edges(
     )
 
 # 8. Read TNC data
-data = read_tnc_stats_data(
+data, previous_hour_data = read_tnc_stats_data(
     sf_rides_stats_path=SF_RIDE_STATS_PATH,
     start_date_str=start_date,
     end_date_str=end_date,
@@ -151,7 +150,6 @@ start_lanes_by_taz = generate_vehicle_start_lanes_from_taz_polygons(
 # 10. Compute ratio of TNC requests to traffic vehicles
 ratio_vehicles_requests = compute_requests_vehicles_ratio(
     sf_tnc_fleet_folder_path=SF_RIDE_STATS_PATH,
-    max_vehicles_day=max_vehicles_day,
     peak_vehicles=peak_vehicles
     )
 
@@ -160,6 +158,7 @@ SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     start_lanes_by_taz=start_lanes_by_taz,
     ratio_vehicles_requests=ratio_vehicles_requests,
     tnc_data=data,
+    tnc_previous_hour_data=previous_hour_data,
     start_date_str=start_date,
     end_date_str=end_date,
     start_time_str=start_time, 

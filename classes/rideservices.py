@@ -354,6 +354,7 @@ class RideServices:
             return config["max_surge"]
         ratio = unassigned_requests / idle_drivers
         surge = min(config["max_surge"], max(1, ratio))
+        print(f"🔍 Surge multiplier for {provider}: {surge} (requests: {unassigned_requests}, drivers: {idle_drivers})")
         return round(surge, 2)
 
 
