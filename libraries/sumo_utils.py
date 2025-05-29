@@ -280,12 +280,10 @@ def sf_traffic_od_generation(
 
     # Build a list for the OD data
     od_data = []
-
     for vehicle_id, group in df.groupby('vehicle_id'):
         group = group.sort_values('relative_time')
         origin_row = group.iloc[0]
         destination_row = group.iloc[-1]
-
         od_data.append({
             'vehicle_id': vehicle_id,
             'origin_edge_id': origin_row['edge_id'],
@@ -312,7 +310,6 @@ def sf_traffic_od_generation(
     timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
     date_folder = os.path.join(sf_traffic_od_folder_path, timeslot)
     os.makedirs(date_folder, exist_ok=True)
-
     filename = f"sf_traffic_od_{timeslot}.csv"
     full_path = os.path.join(date_folder, filename)
 

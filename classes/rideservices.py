@@ -9,7 +9,7 @@ It supports the following operations:
 3. __check_matches: Internal method to dispatch taxis when both driver and passenger have accepted an offer.
 4. __compute_offer: Computes travel time, route length, and price of a reservation.
 5. __compute_surge_multiplier: Computes the price multiplication factor based on the ratio between
-    number of pending requests and number of available drivers.
+    number of offers for passengers and number of available drivers.
 6. accept_offer: Registers an acceptance of an offer by either a driver or passenger.
 7. reject_offer: Registers a reject of an offer by either a driver or passenger and removes the related offer (and acceptance).
 8. get_offers: Returns the dictionary of all offers.
@@ -107,12 +107,12 @@ class RideServices:
             # Map provider -> share probability
             shares = dict(zip(provider_names, provider_probs))
             for provider in self.__providers:
-                requests_share = int(len(unassigned) * shares[provider])
+                requests_share = int(self.model.passengers.get_accepted_offers() * shares[provider])
                 idle_count = len(idle_by_provider.get(provider, set()))
                 self.__providers[provider]["surge_multiplier"] = self.__compute_surge_multiplier(
                     requests_share, idle_count, provider
                 )
-        if self.model.verbose:
+        if self.model.verbose and now % 300 != 0:
             for provider, conf in self.__providers.items():
                 print(f"💵 Surge multiplier value for {provider}: {conf['surge_multiplier']}")
 
@@ -155,7 +155,9 @@ class RideServices:
 
         # Iterates over all passenger requests
         existing_res_ids = {r_id for (r_id, _) in self.__offers}
+        tot_res = 0
         for reservation in unassigned:
+            tot_res += 1
             res_id = reservation.id
             if res_id in existing_res_ids:
                 if self.model.verbose:
@@ -217,7 +219,7 @@ class RideServices:
                 offer_stats["surge"] += surge_multiplier
         self.__generated_offers = len(self.__offers)
         if self.model.verbose:
-            print(f"📋 {self.__generated_offers} pending offers")
+            print(f"📋 {self.__generated_offers} pending offers for {tot_res} reservations")
 
         # Compute average metrics and update the logger
         self.logger.update_offer_metrics(
@@ -336,19 +338,19 @@ class RideServices:
 
     def __compute_surge_multiplier(
             self,
-            unassigned_requests: set,
-            idle_drivers: set,
+            offers_passengers: int,
+            idle_drivers: int,
             provider: str
             ) -> float:
         """
-        Computes the surge multiplier based on the ratio of unassigned ride requests
+        Computes the surge multiplier based on the ratio of total offers for passengers
         to available idle drivers. The multiplier ranges from 1.0 (normal conditions)
         to max_surge for each provider.
 
         Parameters:
         ----------
-        - unassigned_requests: int
-            Number of pending requests.
+        - offers_passengers: int
+            Number of offers for passengers.
         - idle_drivers: int
             Number of available drivers.
 
@@ -361,10 +363,10 @@ class RideServices:
         if idle_drivers == 0:
             # Max surge if no drivers available
             return config["max_surge"]
-        ratio = unassigned_requests / idle_drivers
+        ratio = offers_passengers / idle_drivers
         surge = min(config["max_surge"], max(1, ratio))
         if self.model.verbose:
-            print(f"🔍 Surge multiplier for {provider}: {surge} (requests: {unassigned_requests}, drivers: {idle_drivers})")
+            print(f"💵 New surge multiplier value for {provider}: {round(surge, 2)} (offers: {offers_passengers}, available: {idle_drivers})")
         return round(surge, 2)
 
 

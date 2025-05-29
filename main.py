@@ -44,19 +44,19 @@ scenario = get_valid_scenario("⚙️  Enter scenario name (normal): ")
 SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}"
 os.makedirs(SCENARIO_PATH, exist_ok=True)
  # Interval (seconds) for computing one step for agents
-agents_interval = get_valid_str("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
+agents_interval = get_valid_int("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
 activeGui = get_valid_str("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")
 verboseMode = get_valid_str("⚙️  Do you want to run the simulation in verbose mode? (yes/no) ")
 radius = 150                        # Radius (meters) for map matching
 n_start_lanes = 10                  # Number of possible start lanes for taxis in each TAZ
-peak_vehicles = 5700                # Peak number of DRT vehicles in a day
+peak_vehicles = 6500                # Peak number of DRT vehicles in a day
 dispatch_algorithm = "traci"        # Dispatch algorithm to use (e.g., "traci", "greedy")
 idle_mechanism = "randomCircling"   # Idle mechanism to use (e.g., "randomCircling", "stop")
 sumoSimulator = Simulator(
     net_file_path=SUMO_NET_PATH, 
     config_template_path=SUMO_CFGTEMPLATE_PATH, 
     taz_file_path=SUMO_POLY_PATH,
-    verbose=True
+    verbose=verboseMode
     )
 print("\n🚀 Computing input for the SF Ride-Hailing Digital Mirror...\n")
 

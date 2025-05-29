@@ -380,12 +380,15 @@ def read_tnc_stats_data(
     for sim_day_index in range(num_days):
         sim_date = start_date + timedelta(days=sim_day_index)
         sim_day_of_week = sim_date.weekday()
-        if sim_day_index == 0:
-            selected_std_hours = list(range(start_hour, 24)) if start_hour < 24 else []
-        elif sim_day_index == num_days - 1:
-            selected_std_hours = list(range(0, end_hour)) if end_hour > 0 else []
+        if num_days == 1:
+            selected_std_hours = list(range(start_hour, end_hour))
         else:
-            selected_std_hours = list(range(0, 24))
+            if sim_day_index == 0:
+                selected_std_hours = list(range(start_hour, 24))
+            elif sim_day_index == num_days - 1:
+                selected_std_hours = list(range(0, end_hour))
+            else:
+                selected_std_hours = list(range(0, 24))
         selected_dataset_hours = {h: std for h, std in dataset_hour_map.items() if std in selected_std_hours}
         # Filter rows for this day and hour
         for row in all_rows:

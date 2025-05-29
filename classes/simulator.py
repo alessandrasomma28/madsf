@@ -278,7 +278,7 @@ class Simulator:
                 start_time = time.time()
                 while len(traci.person.getTaxiReservations(3)) > 0 or traci.simulation.getMinExpectedNumber() > 0:
                     if traci.simulation.getTime() % 1000 == 0:
-                        print("Simulation time:", traci.simulation.getTime())
+                        print(f"Simulation time: {int(traci.simulation.getTime())} seconds\n")
                         traci.simulationStep()
             finally:
                 traci.close()

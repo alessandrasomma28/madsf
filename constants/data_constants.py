@@ -22,4 +22,4 @@ SF_RIDE_FOLDER_PATH = DATA_FOLDER_PATH + "/ridehailing_stats"
 SF_RIDE_STATS_PATH = SF_RIDE_FOLDER_PATH + "/trip_stats_taz.csv"
 SF_TAZ_COORDINATES_PATH = SF_RIDE_FOLDER_PATH + "/taz_coordinates_centroids.csv"
 
-SF_TRAFFIC_BASE_URL = "https://data.sfgov.org/resource/9722-grnf.csv"
+SF_TRAFFIC_BASE_URL = "https://data.sfgov.org/resource/x344-v6h6.csv"

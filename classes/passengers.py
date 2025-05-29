@@ -15,6 +15,7 @@ It supports the following operations:
     (vii) updating the logger with the current state of passengers.
 2. get_unassigned_requests: Returns the set of unassigned requests.
 3. get_passenger_timeout: Returns the timeout value for the passenger.
+4. get_accepted_offers: Returns the number of accepted offers from passengers.
 """
 
 
@@ -51,6 +52,7 @@ class Passengers:
         self.logger = logger
         self.__unassigned_requests = set()
         self.__passengers_with_personality = {}  # Maps reservation IDs to personalities
+        self.__accepted_offers = 0
 
 
     def step(self) -> None:
@@ -94,36 +96,38 @@ class Passengers:
         accept = 0
         reject = 0
         removed = 0
+        self.__accepted_offers = 0
         for res_id, offers in offers_by_passenger.items():
             best_driver_id = None
             # Sort by closest drivers (min radius)
             for driver_id, offer in sorted(offers, key=lambda x: x[1]["radius"]):
-                if driver_id not in assigned_drivers:
-                    # Reject the offer if surge is too low and temporarily remove passenger from available
-                    personality = self.__passengers_with_personality[res_id]
-                    surge = offer["surge"]
-                    acceptance_ranges = self.__acceptance_distribution[personality]
-                    acceptance = next((perc for low, up, perc in acceptance_ranges if low < surge <= up), None)
-                    if random.random() > acceptance:
-                        self.model.rideservices.reject_offer((res_id, driver_id))
-                        reservations_to_remove.add(res_id)
-                        reject+=1
-                        continue
-                    # Accept the offer
-                    best_driver_id = driver_id
-                    assigned_drivers.add(driver_id)
-                    self.model.rideservices.accept_offer((res_id, driver_id), "passenger")
-                    accept+=1
-                    reservations_to_remove.add(res_id)
+                # Reject all offers if surge is too low and temporarily remove passenger from available
+                personality = self.__passengers_with_personality[res_id]
+                surge = offer["surge"]
+                acceptance_ranges = self.__acceptance_distribution[personality]
+                acceptance = next((perc for low, up, perc in acceptance_ranges if low < surge <= up), None)
+                if random.random() > acceptance:
+                    self.model.rideservices.reject_offer((res_id, driver_id))
+                    reject+=1
                     break
                 else:
-                    if (res_id, driver_id) in self.model.rideservices.get_offers():
-                        self.model.rideservices.remove_offer((res_id, driver_id))
-                        removed+=1
-                    continue
-            # Remove all other offers for this reservation (except the best one)
+                    if driver_id not in assigned_drivers:
+                        # Accept the offer
+                        best_driver_id = driver_id
+                        assigned_drivers.add(driver_id)
+                        self.model.rideservices.accept_offer((res_id, driver_id), "passenger")
+                        self.__accepted_offers += 1
+                        accept+=1
+                        reservations_to_remove.add(res_id)
+                        break
+                    elif driver_id in assigned_drivers:
+                        if (res_id, driver_id) in self.model.rideservices.get_offers():
+                            self.model.rideservices.remove_offer((res_id, driver_id))
+                            removed+=1
+                        continue
+            # Remove all other offers for this reservation
             for driver_id, _ in offers:
-                if driver_id != best_driver_id:
+                if driver_id != best_driver_id or best_driver_id is None:
                     if (res_id, driver_id) in self.model.rideservices.get_offers():
                         self.model.rideservices.remove_offer((res_id, driver_id))
                         removed+=1
@@ -168,3 +172,15 @@ class Passengers:
             An int containing the max waiting time for passengers.
         """
         return self.__timeout
+
+
+    def get_accepted_offers(self) -> int:
+        """
+        Gets the number of accepted offers from passengers.
+
+        Returns:
+        -------
+        int
+            An int containing the total number of accepted offers from passengers.
+        """
+        return self.__accepted_offers

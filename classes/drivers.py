@@ -16,6 +16,7 @@ It supports the following operations:
 3. get_idle_drivers_by_provider: Returns a dictionary containing the sets of available drivers by provider.
 4. get_driver_provider: Returns the provider of a specific driver.
 5. get_driver_timeout: Returns the timeout value for the driver.
+6. get_total_offers: Returns the total number of offers made to drivers.
 """
 
 
@@ -98,6 +99,10 @@ class Drivers:
         accept = 0
         reject = 0
         removed = 0
+        self.__tot_offers = sum(len(offers) for offers in offers_by_driver.values())
+        available_drivers = len(self.__idle_drivers)
+        # Dynamic greediness adjustment
+        greediness = (self.__tot_offers - available_drivers) / available_drivers if available_drivers > 0 else 0
         for driver_id, offers in offers_by_driver.items():
             # Choose the closest passenger (min radius)
             best_res_id, _ = min(offers, key=lambda x: x[1]["radius"])
@@ -107,7 +112,10 @@ class Drivers:
             surge = offers[0][1]["surge"]
             acceptance_ranges = self.__acceptance_distribution[personality]
             acceptance = next((perc for low, up, perc in acceptance_ranges if low < surge <= up), None)
-            if random.random() > acceptance:
+            greediness = greediness / len(offers) if len(offers) > 0 else 1 # Normalize greediness by number of offers per driver
+            dynamic_acceptance = max(0, min(1, acceptance - greediness))
+            #print(f"Tot offers: {self.__tot_offers}, Idle drivers: {available_drivers}, Acceptance: {acceptance}, Greediness: {greediness}, Dynamic Acceptance: {dynamic_acceptance}")
+            if random.random() > dynamic_acceptance:
                 self.model.rideservices.reject_offer(key)
                 reject+=1
                 self.__idle_drivers.discard(driver_id)
@@ -200,3 +208,15 @@ class Drivers:
             An int containing the max waiting time for drivers.
         """
         return self.__timeout
+    
+
+    def get_total_offers(self) -> int:
+        """
+        Gets the total number of offers made to drivers.
+
+        Returns:
+        -------
+        int
+            An int containing the total number of offers.
+        """
+        return self.__tot_offers
