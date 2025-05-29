@@ -103,6 +103,7 @@ class Drivers:
         available_drivers = len(self.__idle_drivers)
         # Dynamic greediness adjustment
         greediness = (self.__tot_offers - available_drivers) / available_drivers if available_drivers > 0 else 0
+        print(f"Total offers: {self.__tot_offers}, Available drivers: {available_drivers}, Greediness: {greediness}")
         for driver_id, offers in offers_by_driver.items():
             # Choose the closest passenger (min radius)
             best_res_id, _ = min(offers, key=lambda x: x[1]["radius"])
@@ -114,7 +115,6 @@ class Drivers:
             acceptance = next((perc for low, up, perc in acceptance_ranges if low < surge <= up), None)
             greediness = greediness / len(offers) if len(offers) > 0 else 1 # Normalize greediness by number of offers per driver
             dynamic_acceptance = max(0, min(1, acceptance - greediness))
-            #print(f"Tot offers: {self.__tot_offers}, Idle drivers: {available_drivers}, Acceptance: {acceptance}, Greediness: {greediness}, Dynamic Acceptance: {dynamic_acceptance}")
             if random.random() > dynamic_acceptance:
                 self.model.rideservices.reject_offer(key)
                 reject+=1

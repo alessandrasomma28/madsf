@@ -8,3 +8,4 @@ data/sf_traffic/daily_traffic/2021-01-14/sf_vehicle_210114_0910.csv
 data/sf_traffic/map_matched/2021-01-14/sf_vehicle_210114_0910_edges.csv
 check_traffic.py
 clean.sh
+.env

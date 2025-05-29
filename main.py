@@ -1,12 +1,14 @@
 import os
 import random
 from datetime import datetime
+from dotenv import load_dotenv, set_key
+from pathlib import Path
 from classes.simulator import Simulator
 from constants.data_constants import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
                                       SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_TAZ_COORDINATES_PATH)
 from constants.sumoenv_constants import (SUMO_NET_PATH, SUMO_SCENARIOS_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH)
 from libraries.io_utils import get_valid_date, get_valid_hour, get_valid_int, get_valid_scenario, get_valid_str, \
-    generate_output_csv
+    generate_output_csv, get_or_prompt, load_env, save_to_env
 from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_data, check_import_traffic
 from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generation, sf_traffic_routes_generation, \
     export_taz_coords, map_coords_to_sumo_edges, get_strongly_connected_edges, generate_matched_drt_requests, \
@@ -16,37 +18,30 @@ from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generati
 
 # 0. Set initial variables and initialize Simulator class
 print("\n✨ Welcome to the SF Ride-Hailing Digital Mirror Setup! ✨\n")
-start_date = get_valid_date("⚙️  Enter simulation start date (MM-DD, between 01-01 and 12-30): ")
+load_env()
+start_date = get_or_prompt("START_DATE", lambda: get_valid_date("⚙️  Enter simulation start date (MM-DD, between 01-01 and 12-30): "))
 start_date_prompt = start_date[5:]
-while True:
-    end_date = get_valid_date(f"⚙️  Enter simulation end date (MM-DD, between {start_date_prompt} and 12-30): ")
-    if datetime.strptime(end_date, "%Y-%m-%d") >= datetime.strptime(start_date, "%Y-%m-%d"):
-        break
+end_date = get_or_prompt("END_DATE", lambda: get_valid_date(f"⚙️  Enter simulation end date (MM-DD, between {start_date_prompt} and 12-30): "))
+while datetime.strptime(end_date, "%Y-%m-%d") < datetime.strptime(start_date, "%Y-%m-%d"):
     print("⚠️  End date must be after or equal to start date")
+    end_date = get_valid_date(f"⚙️  Enter simulation end date (MM-DD, between {start_date_prompt} and 12-30): ")
+    save_to_env("END_DATE", end_date)
 if start_date == end_date:
-    start_time = get_valid_hour("⚙️  Enter simulation start hour (0-22): ", start_hour_same_day_check=True)
-else:
-    start_time = get_valid_hour("⚙️  Enter simulation start hour (0-23): ")
-start_time_same_day_prompt = str(int(start_time[:-3])+1)
-if start_date == end_date:
-    end_time = get_valid_hour(f"⚙️  Enter simulation hour ({start_time_same_day_prompt}-23): ")
-else:
-    end_time = get_valid_hour(f"⚙️  Enter simulation end hour (1-23): ", end_hour_check=True)
-if start_date == end_date:
-    if int(end_time.split(":")[0]) <= int(start_time.split(":")[0]):
+    start_time = get_or_prompt("START_TIME", lambda: get_valid_hour("⚙️  Enter simulation start hour (0-22): ", start_hour_same_day_check=True))
+    end_time = get_or_prompt("END_TIME", lambda: get_valid_hour(f"⚙️  Enter simulation hour ({int(start_time[:-3]) + 1}-23): "))
+    while int(end_time.split(":")[0]) <= int(start_time.split(":")[0]):
         print("⚠️  End hour must be after start hour")
-        while True:
-            end_time = get_valid_hour(f"⚙️  Enter end hour ({start_time_same_day_prompt}-23): ")
-            if int(end_time.split(":")[0]) > int(start_time.split(":")[0]):
-                break
-            print("⚠️  End hour must be after start hour")
-scenario = get_valid_scenario("⚙️  Enter scenario name (normal): ")
+        end_time = get_valid_hour(f"⚙️  Enter simulation hour ({int(start_time[:-3]) + 1}-23): ")
+        save_to_env("END_TIME", end_time)
+else:
+    start_time = get_or_prompt("START_TIME", lambda: get_valid_hour("⚙️  Enter simulation start hour (0-23): "))
+    end_time = get_or_prompt("END_TIME", lambda: get_valid_hour("⚙️  Enter simulation end hour (1-23): ", end_hour_check=True))
+scenario = get_or_prompt("SCENARIO", lambda: get_valid_scenario("⚙️  Enter scenario name (normal): "))
+agents_interval = int(get_or_prompt("AGENTS_INTERVAL", lambda: str(get_valid_int("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300))))
+activeGui = get_or_prompt("ACTIVE_GUI", lambda: get_valid_str("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")) == "yes"
+verboseMode = get_or_prompt("VERBOSE_MODE", lambda: get_valid_str("⚙️  Do you want to run the simulation in verbose mode? (yes/no) ")) == "yes"
 SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}"
 os.makedirs(SCENARIO_PATH, exist_ok=True)
- # Interval (seconds) for computing one step for agents
-agents_interval = get_valid_int("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300)
-activeGui = get_valid_str("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")
-verboseMode = get_valid_str("⚙️  Do you want to run the simulation in verbose mode? (yes/no) ")
 radius = 150                        # Radius (meters) for map matching
 n_start_lanes = 10                  # Number of possible start lanes for taxis in each TAZ
 peak_vehicles = 6500                # Peak number of DRT vehicles in a day

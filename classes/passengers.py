@@ -120,7 +120,7 @@ class Passengers:
                         accept+=1
                         reservations_to_remove.add(res_id)
                         break
-                    elif driver_id in assigned_drivers:
+                    else:
                         if (res_id, driver_id) in self.model.rideservices.get_offers():
                             self.model.rideservices.remove_offer((res_id, driver_id))
                             removed+=1

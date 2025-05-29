@@ -4,22 +4,49 @@ io_utils.py
 This module provides utility functions for validating user input and generating output CSV files.
 It includes utilities for:
 
-1. get_valid_date: Validating date input in MM-DD format.
-2. get_valid_hour: Validating hour input in HH:MM format.
-3. get_valid_int: Validating agents interval input within a specified range.
-4. get_valid_scenario: Validating scenario names.
-5. get_valid_gui: Validating GUI input (yes/no).
-6. generate_output_csv: Generating output CSV files from simulation data, and creating an interactive line plot.
+1. load_env: Loading environment variables from a .env file.
+2. save_to_env: Saving key-value pairs to the .env file.
+3. get_or_prompt: Retrieving or prompting for environment variables.
+4. get_valid_date: Validating date input in MM-DD format.
+5. get_valid_hour: Validating hour input in HH:MM format.
+6. get_valid_int: Validating agents interval input within a specified range.
+7. get_valid_scenario: Validating scenario names.
+8. get_valid_gui: Validating GUI input (yes/no).
+9. generate_output_csv: Generating output CSV files from simulation data, and creating an interactive line plot.
 """
 
 
 import os
 from collections import defaultdict
 from datetime import datetime
+from dotenv import load_dotenv, set_key
+from pathlib import Path
 import xml.etree.ElementTree as ET
 import pandas as pd
 import plotly.express as px
 from constants.sumoenv_constants import SUMO_SCENARIOS_PATH
+
+
+ENV_PATH = Path(".env")
+
+
+def load_env():
+    if ENV_PATH.exists():
+        load_dotenv(dotenv_path=ENV_PATH)
+        return True
+    return False
+
+
+def save_to_env(key, value):
+    set_key(dotenv_path=ENV_PATH, key_to_set=key, value_to_set=value)
+
+
+def get_or_prompt(key, prompt_func):
+    val = os.getenv(key)
+    if not val:
+        val = prompt_func()
+        save_to_env(key, val)
+    return val
 
 
 def get_valid_date(prompt: str) -> str:
@@ -93,7 +120,7 @@ def get_valid_str(prompt: str) -> bool:
     while True:
         input_str = input(prompt).strip().lower()
         if input_str in ["yes", "no"]:
-            return input_str == "yes"
+            return input_str
         else:
             print("⚠️  Please enter 'yes' or 'no'")
             

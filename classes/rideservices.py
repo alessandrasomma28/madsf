@@ -48,7 +48,7 @@ class RideServices:
         self.model = model
         self.__providers = providers
         self.logger = logger
-        self.__expired_offers = []
+        self.__expired_offers = 0
         self.__expired_acceptances_p = 0
         self.__expired_acceptances_d = 0
         self.__rides_not_served = 0
@@ -73,7 +73,7 @@ class RideServices:
         - Iterates over all unassigned passenger ride requests.
         - For each request, skips if an offer already exists.
         - Attempts to retrieve the passenger's current position; skips the request if unsuccessful.
-        - Calculates the radius from each idle taxi to the passenger's position, skipping taxis with unavailable positions or farther than 10km.
+        - Calculates the radius from each idle taxi to the passenger's position, skipping taxis with unavailable positions or farther than 10 miles.
         - Selects up to 8 closest taxis.
         - Creates ride offers for each selected taxi, including radius, travel time, route length, price information, and provider.
         - Skips requests if no taxis are available.
@@ -94,6 +94,7 @@ class RideServices:
         self.__expired_acceptances_d = 0
         self.__rides_not_served = 0
         self.__generated_offers = 0
+        self.__expired_offers = 0
 
         # Compute surge multiplier for all providers
         now = int(self.model.time)
@@ -132,16 +133,6 @@ class RideServices:
         if self.model.verbose:
             print(f"⌛️ Timeout: {self.__expired_acceptances_p} passengers, {self.__expired_acceptances_d} drivers")
 
-        # Clean up expired offers
-        self.__expired_offers = [
-            key for key, offer in self.__offers.items()
-            if now - offer["timestamp"] >= self.model.agents_interval
-        ]
-        for key in self.__expired_offers:
-            self.remove_offer(key)
-        if self.model.verbose:
-            print(f"⌛️ Timeout for {len(self.__expired_offers)} offers")
-
         # Pre-compute and cache positions of all idle taxis
         taxi_positions = {}
         for taxi_id in idle_taxis:
@@ -160,9 +151,8 @@ class RideServices:
             tot_res += 1
             res_id = reservation.id
             if res_id in existing_res_ids:
-                if self.model.verbose:
-                    print(f"⚠️ Reservation {res_id} already has an offer — skipping")
-                continue
+                self.__expired_offers += 1
+                self.remove_offer(key)
             person_id = reservation.persons[0]
             # Get passenger position
             try:
@@ -174,13 +164,13 @@ class RideServices:
             # Compute radius of each driver from the passenger
             taxis_radius = []
             for taxi_id, taxi_pos in taxi_positions.items():
-                # Bounding box filter (within 10km square)
+                # Bounding box filter (within 10 miles square)
                 dx = abs(taxi_pos[0] - pax_pos[0])
                 dy = abs(taxi_pos[1] - pax_pos[1])
-                if dx > 10000 or dy > 10000:
+                if dx > 16093 or dy > 16093:
                     continue
                 radius = math.hypot(dx, dy)
-                if radius <= 10000:
+                if radius <= 16093:
                     taxis_radius.append((radius, taxi_id))
 
             # Get top 8 closest taxis
@@ -281,7 +271,7 @@ class RideServices:
             timestamp = self.model.time,
             dispatched_taxis = len(matched_keys),
             generated_offers = self.__generated_offers,
-            timeout_offers = len(self.__expired_offers),
+            timeout_offers = self.__expired_offers,
             partial_acceptances = self.__partial_acceptances,
             requests_canceled = self.__expired_acceptances_p,
             requests_not_served = self.__rides_not_served
