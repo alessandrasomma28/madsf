@@ -179,15 +179,21 @@ class RideServices:
             # Create offers
             from_edge = reservation.fromEdge
             to_edge = reservation.toEdge
+            cached_offer_by_provider = {}
             for radius, taxi_id in closest_taxis:
                 offer_key = (res_id, taxi_id)
                 provider = self.model.drivers.get_driver_provider(taxi_id)
                 surge_multiplier = self.__providers[provider]["surge_multiplier"]
-                try:
-                    travel_time, route_length, price = self.__compute_offer(from_edge, to_edge, surge_multiplier, provider)
-                except traci.TraCIException as e:
-                    print(f"⚠️ Failed to compute route for offer {offer_key}: {e}")
-                    continue
+                # Check if the offer with the same provider already exists in cache
+                if provider in cached_offer_by_provider:
+                    travel_time, route_length, price = cached_offer_by_provider[provider]
+                else:
+                    try:
+                        travel_time, route_length, price = self.__compute_offer(from_edge, to_edge, surge_multiplier, provider)
+                        cached_offer_by_provider[provider] = (travel_time, route_length, price)
+                    except traci.TraCIException as e:
+                        print(f"⚠️ Failed to compute route for offer {offer_key}: {e}")
+                        continue
                 self.__offers[offer_key] = {
                     "timestamp": now,
                     "radius": radius,
