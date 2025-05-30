@@ -1,8 +1,5 @@
 import os
-import random
 from datetime import datetime
-from dotenv import load_dotenv, set_key
-from pathlib import Path
 from classes.simulator import Simulator
 from constants.data_constants import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
                                       SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_TAZ_COORDINATES_PATH)
@@ -37,14 +34,17 @@ else:
     start_time = get_or_prompt("START_TIME", lambda: get_valid_hour("⚙️  Enter simulation start hour (0-23): "))
     end_time = get_or_prompt("END_TIME", lambda: get_valid_hour("⚙️  Enter simulation end hour (1-23): ", end_hour_check=True))
 scenario = get_or_prompt("SCENARIO", lambda: get_valid_scenario("⚙️  Enter scenario name (normal): "))
-agents_interval = int(get_or_prompt("AGENTS_INTERVAL", lambda: str(get_valid_int("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300))))
+#agents_interval = int(get_or_prompt("AGENTS_INTERVAL", lambda: str(get_valid_int("⚙️  Enter agents computation interval (1-300 seconds, default is 60): ", 1, 300))))
+agents_interval = 60  # Default agents interval
+save_to_env("AGENTS_INTERVAL", str(agents_interval))
 activeGui = get_or_prompt("ACTIVE_GUI", lambda: get_valid_str("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")) == "yes"
 verboseMode = get_or_prompt("VERBOSE_MODE", lambda: get_valid_str("⚙️  Do you want to run the simulation in verbose mode? (yes/no) ")) == "yes"
 SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}"
 os.makedirs(SCENARIO_PATH, exist_ok=True)
 radius = 150                        # Radius (meters) for map matching
 n_start_lanes = 10                  # Number of possible start lanes for taxis in each TAZ
-peak_vehicles = 6500                # Peak number of DRT vehicles in a day
+peak_vehicles = 5700                # Peak number of DRT vehicles in a day
+max_vehicles = 45000                # Maximum number of drivers available in one day
 dispatch_algorithm = "traci"        # Dispatch algorithm to use (e.g., "traci", "greedy")
 idle_mechanism = "randomCircling"   # Idle mechanism to use (e.g., "randomCircling", "stop")
 sumoSimulator = Simulator(
@@ -147,7 +147,8 @@ start_lanes_by_taz = generate_vehicle_start_lanes_from_taz_polygons(
 # 10. Compute ratio of TNC requests to traffic vehicles
 ratio_vehicles_requests = compute_requests_vehicles_ratio(
     sf_tnc_fleet_folder_path=SF_RIDE_STATS_PATH,
-    peak_vehicles=peak_vehicles
+    peak_vehicles=peak_vehicles,
+    max_total_drivers=max_vehicles
     )
 
 # 11. Generate taxi trips
@@ -204,7 +205,8 @@ sumoSimulator.generate_config(
 sumoSimulator.run_simulation(
     activeGui=activeGui,
     agents_interval=agents_interval,
-    dispatch_algorithm=dispatch_algorithm
+    dispatch_algorithm=dispatch_algorithm,
+    ratio_vehicles_requests=ratio_vehicles_requests,
     )
 
 # 17. Generate output CSV file

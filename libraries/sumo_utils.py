@@ -847,15 +847,14 @@ def generate_vehicle_start_lanes_from_taz_polygons(
 
 def compute_requests_vehicles_ratio(
         sf_tnc_fleet_folder_path: str,
-        peak_vehicles: int
+        peak_vehicles: int,
+        max_total_drivers: int
     ) -> float:
     """
     Computes the ratio of requests to vehicles for each hour of the day.
     This function:
     - Reads a CSV file containing hourly pickup requests.
     - Groups the data by hour and computes the average pickups across all TAZs and days.
-    - Estimates the number of drivers needed per hour based on peak requests.
-    - Normalizes the estimated drivers so the total equals the max number of vehicles per day.
     - Computes the final requests to drivers ratio for each hour.
 
     Parameters:
@@ -864,33 +863,32 @@ def compute_requests_vehicles_ratio(
         Path to the CSV file containing hourly pickup requests.
     - peak_vehicles: int
         Number of vehicles available during peak hours (e.g., 7 pm).
+    - max_total_drivers: int
+        Maximum number of drivers available across all hours for one day.
 
     Returns:
     -------
     float
-        The requests to drivers ratio for each hour of the day.
+        The requests to drivers ratio.
     """
     df = pd.read_csv(sf_tnc_fleet_folder_path)
     df["hour"] = df["hour"] % 24
     # Group by hour and compute the average pickups across all TAZs and days
-    average_requests_per_hour = (
-        df.groupby("hour")["pickups"].sum()
-        .reset_index()
-        .rename(columns={"pickups": "average_requests"})
-        .sort_values(by="hour")
-        .reset_index(drop=True)
+    sum_pickups_per_hour_day = df.groupby(["day_of_week", "hour"])["pickups"].sum().reset_index()
+    avg_pickups_per_hour = sum_pickups_per_hour_day.groupby("hour")["pickups"].mean().reset_index()
+    # Estimate driver needs assuming peak_vehicles at peak hour
+    max_pickups = avg_pickups_per_hour["pickups"].max()
+    avg_pickups_per_hour["estimated_vehicles"] = (avg_pickups_per_hour["pickups"] / max_pickups) * peak_vehicles
+    # Normalize the number of vehicles per hour to sum to max_total_drivers
+    total_raw_drivers = avg_pickups_per_hour["estimated_vehicles"].sum()
+    scale_factor = max_total_drivers / total_raw_drivers
+    avg_pickups_per_hour["normalized_vehicles"] = avg_pickups_per_hour["estimated_vehicles"] * scale_factor
+    # Compute hourly requests-to-drivers ratio
+    avg_pickups_per_hour["requests_to_drivers_ratio"] = (
+        avg_pickups_per_hour["pickups"] / avg_pickups_per_hour["normalized_vehicles"]
     )
-    # Compute requests per driver at peak (7 pm)
-    requests_at_peak = average_requests_per_hour.loc[average_requests_per_hour["hour"] == 19, "average_requests"].values[0]
-    requests_per_driver_at_peak = requests_at_peak / peak_vehicles
-    # Estimate the number of drivers per hour using the peak ratio
-    average_requests_per_hour["estimated_drivers"] = average_requests_per_hour["average_requests"] / requests_per_driver_at_peak
-    # Compute requests to drivers ratio
-    average_requests_per_hour["requests_to_drivers_ratio"] = (
-        average_requests_per_hour["average_requests"] /
-        average_requests_per_hour["estimated_drivers"]
-    )
-    return average_requests_per_hour["requests_to_drivers_ratio"][0]
+    
+    return avg_pickups_per_hour["requests_to_drivers_ratio"].mean()
 
 
 def generate_drt_vehicle_instances_from_lanes(
@@ -967,7 +965,7 @@ def generate_drt_vehicle_instances_from_lanes(
             total_requests += pickups
 
     # Calculate total number of vehicles needed based on the ratio
-    total_vehicles = int(total_requests / ratio_vehicles_requests)
+    total_vehicles = round(total_requests / ratio_vehicles_requests)
     # Determine how many vehicles to assign per hour and per TAZ
     raw_allocations = defaultdict(dict)
     fractional_parts = []
@@ -1029,7 +1027,6 @@ def generate_drt_vehicle_instances_from_lanes(
             "vClass": "taxi"
         }
     ]
-
     root = ET.Element("routes")
     vehicle_counter = 0
     # Define <vType> entries

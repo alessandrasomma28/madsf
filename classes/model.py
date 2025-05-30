@@ -33,13 +33,15 @@ class Model:
     passengers_personality_distribution: list
     passengers_acceptance_distribution: list
     verbose: bool
+    ratio_vehicles_requests: float
 
     def __init__(
             self,
             sumocfg_path: str,
             end_time: int,
             output_dir_path: str,
-            verbose: bool = False
+            verbose: bool = False,
+            ratio_vehicles_requests: float = 1.0
         ):
         with open(Path(DRIVERS_PERSONALITY), "r") as f:
             self.drivers_personality_distribution = json.load(f)
@@ -59,6 +61,7 @@ class Model:
         self.end_time = end_time
         self.output_dir_path = output_dir_path
         self.verbose = verbose
+        self.ratio_vehicles_requests = ratio_vehicles_requests
         self.logger = Logger(
             self,
             output_dir_path=output_dir_path

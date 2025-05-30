@@ -19,7 +19,7 @@
    </output>
 
    <processing>
-      <threads value="4"/>
+      <threads value="8"/>
       <ignore-junction-blocker value="1"/>
       <ignore-route-errors value="true"/>
       <time-to-teleport value="180"/>
@@ -28,6 +28,7 @@
    <report>
       <log value="{output_dir}/sumo_log.txt"/>
       <no-step-log value="true"/>
+      <no-warnings value="true"/>
    </report>
 
     <taxi_device>

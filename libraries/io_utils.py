@@ -38,7 +38,11 @@ def load_env():
 
 
 def save_to_env(key, value):
-    set_key(dotenv_path=ENV_PATH, key_to_set=key, value_to_set=value)
+    set_key(
+        dotenv_path=ENV_PATH,
+        key_to_set=key,
+        value_to_set=value
+        )
 
 
 def get_or_prompt(key, prompt_func):
@@ -214,6 +218,7 @@ def generate_output_csv(
         "passengers_pickup": 0,
         "passengers_accept": 0,
         "passengers_reject": 0,
+        "passengers_cancel": 0,
 
         # Drivers metrics
         "drivers_shift_durations": [],
@@ -233,14 +238,13 @@ def generate_output_csv(
         "rides_waiting_durations": [],
         "rides_durations": [],
         "rides_lengths": [],
+        "rides_not_served": 0,
         "expected_rides_durations": 0.0,
         "expected_rides_lengths": 0.0,
         "taxis_dispatched": 0,
         "partial_acceptances": 0,
         "offers_generated": 0,
         "offers_timeout": 0,
-        "requests_canceled": 0,
-        "requests_not_served": 0,
         "offers_radius": 0.0,
         "offers_price": 0.0,
         "offers_surge_multiplier": 0.0,
@@ -358,6 +362,7 @@ def generate_output_csv(
             ts["passengers_pickup"] = int(float(passengers.find("pickup_requests").text))
             ts["passengers_accept"] = int(float(passengers.find("accepted_requests").text))
             ts["passengers_reject"] = int(float(passengers.find("rejected_requests").text))
+            ts["passengers_cancel"] = int(float(passengers.find("canceled_requests").text))
         if drivers is not None:
             ts["drivers_idle"] = int(float(drivers.find("idle_drivers").text))
             ts["drivers_pickup"] = int(float(drivers.find("pickup_drivers").text))
@@ -375,8 +380,7 @@ def generate_output_csv(
             ts["offers_generated"] = int(float(rideservices.find("generated_offers").text))
             ts["offers_timeout"] = int(float(rideservices.find("timeout_offers").text))
             ts["partial_acceptances"] = int(float(rideservices.find("partial_acceptances").text))
-            ts["requests_canceled"] = int(float(rideservices.find("requests_canceled").text))
-            ts["requests_not_served"] = int(float(rideservices.find("requests_not_served").text))
+            ts["rides_not_served"] = int(float(rideservices.find("requests_not_served").text))
 
     # Format results into a DataFrame
     data = []
@@ -391,6 +395,7 @@ def generate_output_csv(
             "passengers_pickup": stats["passengers_pickup"],
             "passengers_accept": stats["passengers_accept"],
             "passengers_reject": stats["passengers_reject"],
+            "passengers_cancel": stats["passengers_cancel"],
             "drivers_shift_duration_avg": sum(stats["drivers_shift_durations"]) / len(stats["drivers_shift_durations"]) if stats["drivers_shift_durations"] else 0,
             "drivers_total_length_avg": sum(stats["drivers_total_lengths"]) / len(stats["drivers_total_lengths"]) if stats["drivers_total_lengths"] else 0,
             "drivers_total_duration_avg": sum(stats["drivers_total_durations"]) / len(stats["drivers_total_durations"]) if stats["drivers_total_durations"] else 0,
@@ -410,10 +415,9 @@ def generate_output_csv(
             "rides_length_expected_avg": stats["expected_rides_lengths"],
             "rides_dispatched": stats["taxis_dispatched"],
             "rides_partial_acceptances": stats["partial_acceptances"],
+            "rides_not_served": stats["rides_not_served"],
             "rides_offers_generated": stats["offers_generated"],
             "rides_offers_timeout": stats["offers_timeout"],
-            "rides_requests_canceled": stats["requests_canceled"],
-            "rides_requests_not_served": stats["requests_not_served"],
             "rides_offers_radius_avg": stats["offers_radius"],
             "rides_offers_price_avg": stats["offers_price"],
             "rides_offers_surge_multiplier_avg": stats["offers_surge_multiplier"],

@@ -25,6 +25,8 @@ It supports the following operations:
 import math
 import heapq
 import traci
+from collections import defaultdict
+from scipy.spatial import KDTree
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
@@ -85,19 +87,21 @@ class RideServices:
         """
 
         # Load information from drivers and passengers agents
+        now = int(self.model.time)
         idle_taxis = self.model.drivers.get_idle_drivers()
-        unassigned = self.model.passengers.get_unassigned_requests()
+        unassigned = sorted(self.model.passengers.get_unassigned_requests(), key=lambda r: r.reservationTime)
         timeout_p = self.model.passengers.get_passengers_timeout()
         timeout_d = self.model.drivers.get_drivers_timeout()
         idle_by_provider = self.model.drivers.get_idle_drivers_by_provider()
+
         self.__expired_acceptances_p = 0
         self.__expired_acceptances_d = 0
         self.__rides_not_served = 0
-        self.__generated_offers = 0
         self.__expired_offers = 0
+        self.__offers = {}
+        self.__generated_offers = 0
 
         # Compute surge multiplier for all providers
-        now = int(self.model.time)
         if (now % 300 == 0):
             # Convert cumulative shares to probabilities
             provider_names = list(self.__providers.keys())
@@ -108,12 +112,12 @@ class RideServices:
             # Map provider -> share probability
             shares = dict(zip(provider_names, provider_probs))
             for provider in self.__providers:
-                requests_share = int(self.model.passengers.get_accepted_offers() * shares[provider])
+                requests_share = int(len(unassigned) * shares[provider])
                 idle_count = len(idle_by_provider.get(provider, set()))
                 self.__providers[provider]["surge_multiplier"] = self.__compute_surge_multiplier(
                     requests_share, idle_count, provider
                 )
-        if self.model.verbose and now % 300 != 0:
+        if self.model.verbose:
             for provider, conf in self.__providers.items():
                 print(f"💵 Surge multiplier value for {provider}: {conf['surge_multiplier']}")
 
@@ -128,7 +132,6 @@ class RideServices:
                     to_remove.append(key)
                     self.__expired_acceptances_d += 1
         for key in to_remove:
-            self.remove_offer(key)
             self.remove_acceptance(key)
         if self.model.verbose:
             print(f"⌛️ Timeout: {self.__expired_acceptances_p} passengers, {self.__expired_acceptances_d} drivers")
@@ -140,20 +143,20 @@ class RideServices:
                 taxi_positions[taxi_id] = traci.vehicle.getPosition(taxi_id)
             except traci.TraCIException:
                 print(f"⚠️ Failed to get position for taxi {taxi_id}")
+        
+        # Build KDTree for taxi lookup
+        taxi_coords = list(taxi_positions.values())
+        taxi_ids = list(taxi_positions.keys())
+        tree = KDTree(taxi_coords)
 
-        # Initialize statistics
-        offer_stats = {"radius": 0.0, "price": 0.0, "time": 0.0, "length": 0.0, "surge": 0.0}
-
-        # Iterates over all passenger requests
-        existing_res_ids = {r_id for (r_id, _) in self.__offers}
+        offer_stats = defaultdict(float)
         tot_res = 0
+        # Iterate over all passenger requests
         for reservation in unassigned:
             tot_res += 1
             res_id = reservation.id
-            if res_id in existing_res_ids:
-                self.__expired_offers += 1
-                self.remove_offer(key)
             person_id = reservation.persons[0]
+
             # Get passenger position
             try:
                 pax_pos = traci.person.getPosition(person_id)
@@ -161,20 +164,13 @@ class RideServices:
                 print(f"⚠️ Failed to get position for reservation {res_id}: {reservation}")
                 continue
 
-            # Compute radius of each driver from the passenger
-            taxis_radius = []
-            for taxi_id, taxi_pos in taxi_positions.items():
-                # Bounding box filter (within 10 miles square)
-                dx = abs(taxi_pos[0] - pax_pos[0])
-                dy = abs(taxi_pos[1] - pax_pos[1])
-                if dx > 16093 or dy > 16093:
-                    continue
-                radius = math.hypot(dx, dy)
-                if radius <= 16093:
-                    taxis_radius.append((radius, taxi_id))
-
-            # Get top 8 closest taxis
-            closest_taxis = heapq.nsmallest(8, taxis_radius)
+            # Query KDTree for 8 closest taxis within 10 miles (16093 meters)
+            dists, idxs = tree.query(pax_pos, k=8, distance_upper_bound=16093)
+            closest_taxis = [
+                (dists[i], taxi_ids[idxs[i]])
+                for i in range(len(idxs))
+                if idxs[i] < len(taxi_ids) and dists[i] != float("inf")
+            ]
             if not closest_taxis:
                 self.__rides_not_served += 1
                 if self.model.verbose:
@@ -202,14 +198,14 @@ class RideServices:
                     "provider": provider
                 }
                 # Update statistics
+                self.__generated_offers += 1
                 offer_stats["radius"] += radius
                 offer_stats["price"] += price
                 offer_stats["time"] += travel_time
                 offer_stats["length"] += route_length
                 offer_stats["surge"] += surge_multiplier
-        self.__generated_offers = len(self.__offers)
         if self.model.verbose:
-            print(f"📋 {self.__generated_offers} pending offers for {tot_res} reservations")
+            print(f"📋 {len(self.__offers)} pending offers for {tot_res} reservations")
 
         # Compute average metrics and update the logger
         self.logger.update_offer_metrics(
@@ -263,7 +259,6 @@ class RideServices:
                     if key[0] == res_id or key[1] == driver_id
                 ]
                 for key in to_remove:
-                    self.remove_offer(key)
                     self.remove_acceptance(key)
         
         # Update the logger
@@ -273,8 +268,7 @@ class RideServices:
             generated_offers = self.__generated_offers,
             timeout_offers = self.__expired_offers,
             partial_acceptances = self.__partial_acceptances,
-            requests_canceled = self.__expired_acceptances_p,
-            requests_not_served = self.__rides_not_served
+            requests_not_served = self.__rides_not_served + self.__expired_acceptances_p
         )
 
 
@@ -328,19 +322,19 @@ class RideServices:
 
     def __compute_surge_multiplier(
             self,
-            offers_passengers: int,
+            pending_requests: int,
             idle_drivers: int,
             provider: str
             ) -> float:
         """
-        Computes the surge multiplier based on the ratio of total offers for passengers
+        Computes the surge multiplier based on the ratio of passengers pending requests
         to available idle drivers. The multiplier ranges from 1.0 (normal conditions)
         to max_surge for each provider.
 
         Parameters:
         ----------
-        - offers_passengers: int
-            Number of offers for passengers.
+        - pending_requests: int
+            Number of passengers pending requests.
         - idle_drivers: int
             Number of available drivers.
 
@@ -353,10 +347,10 @@ class RideServices:
         if idle_drivers == 0:
             # Max surge if no drivers available
             return config["max_surge"]
-        ratio = offers_passengers / idle_drivers
+        ratio = (pending_requests / self.model.ratio_vehicles_requests) / idle_drivers
         surge = min(config["max_surge"], max(1, ratio))
         if self.model.verbose:
-            print(f"💵 New surge multiplier value for {provider}: {round(surge, 2)} (offers: {offers_passengers}, available: {idle_drivers})")
+            print(f"💵 New surge multiplier value for {provider}: {round(surge, 2)} (pending requests: {pending_requests}, available drivers: {idle_drivers})")
         return round(surge, 2)
 
 

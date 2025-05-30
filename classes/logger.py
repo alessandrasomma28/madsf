@@ -39,7 +39,8 @@ class Logger:
             assigned_requests: int,
             pickup_requests: int,
             accepted_requests: int,
-            rejected_requests: int
+            rejected_requests: int,
+            canceled_requests: int
             ) -> None:
         entry = ET.SubElement(self.root, "step", timestamp=str(timestamp))
         passengers_el = ET.SubElement(entry, "passengers")
@@ -48,6 +49,7 @@ class Logger:
         ET.SubElement(passengers_el, "pickup_requests").text = str(pickup_requests)
         ET.SubElement(passengers_el, "accepted_requests").text = str(accepted_requests)
         ET.SubElement(passengers_el, "rejected_requests").text = str(rejected_requests)
+        ET.SubElement(passengers_el, "canceled_requests").text = str(canceled_requests)
         self.__write()
 
 
@@ -77,7 +79,6 @@ class Logger:
             generated_offers: int,
             timeout_offers: int,
             partial_acceptances: int,
-            requests_canceled: int,
             requests_not_served: int
             ) -> None:
         entry = ET.SubElement(self.root, "step", timestamp=str(timestamp))
@@ -86,7 +87,6 @@ class Logger:
         ET.SubElement(rideservices_el, "generated_offers").text = str(generated_offers)
         ET.SubElement(rideservices_el, "timeout_offers").text = str(timeout_offers)
         ET.SubElement(rideservices_el, "partial_acceptances").text = str(partial_acceptances)
-        ET.SubElement(rideservices_el, "requests_canceled").text = str(requests_canceled)
         ET.SubElement(rideservices_el, "requests_not_served").text = str(requests_not_served)
         self.__write()
 

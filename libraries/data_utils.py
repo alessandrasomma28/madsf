@@ -376,6 +376,7 @@ def read_tnc_stats_data(
     # Initialize dictionaries to hold the output
     zone_data = {}
     zone_data_previous_hour = {}
+
     # For each simulation day, determine hours to include from that day
     for sim_day_index in range(num_days):
         sim_date = start_date + timedelta(days=sim_day_index)
@@ -403,17 +404,23 @@ def read_tnc_stats_data(
                     'pickups': row['pickups'],
                     'dropoffs': row['dropoffs']
                 }
-                # Also get previous hour for this hour (possibly from previous weekday)
-                prev_hour = hour - 1
-                prev_day = day
-                if prev_hour < 3:
-                    prev_hour = 26
-                    prev_day = (day - 1) % 7
-                prev_key = (prev_day, prev_hour, taz)
-                if prev_key in data_by_key:
-                    if taz not in zone_data_previous_hour:
-                        zone_data_previous_hour[taz] = {}
-                    zone_data_previous_hour[taz][std_hour] = data_by_key[prev_key]
+    # Also get previous hour for this hour (possibly from previous weekday)
+    first_std_hour = start_hour
+    first_sim_date = start_date
+    first_day_of_week = first_sim_date.weekday()
+    first_dataset_hour = next((h for h, std in dataset_hour_map.items() if std == first_std_hour), None)
+    if first_dataset_hour is not None:
+        prev_dataset_hour = first_dataset_hour - 1
+        prev_day = first_day_of_week
+        if prev_dataset_hour < 3:
+            prev_dataset_hour = 26
+            prev_day = (first_day_of_week - 1) % 7
+        for row in all_rows:
+            taz = row['taz']
+            if (prev_day, prev_dataset_hour, taz) in data_by_key:
+                if taz not in zone_data_previous_hour:
+                    zone_data_previous_hour[taz] = {}
+                zone_data_previous_hour[taz][first_std_hour] = data_by_key[(prev_day, prev_dataset_hour, taz)]
 
     print(f"✅ TNC stats data read from {sf_rides_stats_path} and filtered to time window {start_date_str} {start_time_str} - {end_date_str} {end_time_str}")
 

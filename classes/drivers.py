@@ -60,11 +60,12 @@ class Drivers:
 
 
     def step(self) -> None:
-        logged_idle = len(set(traci.vehicle.getTaxiFleet(0)))
-        logged_pickup = len(set(traci.vehicle.getTaxiFleet(1)))
-        logged_busy = len(set(traci.vehicle.getTaxiFleet(2)))
+        fleet_status = {s: set(traci.vehicle.getTaxiFleet(s)) for s in [0, 1, 2]}
+        logged_idle = len(fleet_status[0])
+        logged_pickup = len(fleet_status[1])
+        logged_busy = len(fleet_status[2])
         # Get the set of idle drivers from TraCI
-        self.__idle_drivers = set(traci.vehicle.getTaxiFleet(0))
+        self.__idle_drivers = fleet_status[0]
         if self.model.verbose:
             print(f"🚕 {len(self.__idle_drivers)} idle drivers")
         # Assign providers and personalities
@@ -98,11 +99,11 @@ class Drivers:
         # Iterate over grouped offers
         accept = 0
         reject = 0
-        removed = 0
         self.__tot_offers = sum(len(offers) for offers in offers_by_driver.values())
         available_drivers = len(self.__idle_drivers)
         # Dynamic greediness adjustment
         greediness = (self.__tot_offers - available_drivers) / available_drivers if available_drivers > 0 else 0
+        greediness = greediness / self.model.ratio_vehicles_requests
         print(f"Total offers: {self.__tot_offers}, Available drivers: {available_drivers}, Greediness: {greediness}")
         for driver_id, offers in offers_by_driver.items():
             # Choose the closest passenger (min radius)
@@ -113,35 +114,20 @@ class Drivers:
             surge = offers[0][1]["surge"]
             acceptance_ranges = self.__acceptance_distribution[personality]
             acceptance = next((perc for low, up, perc in acceptance_ranges if low < surge <= up), None)
-            greediness = greediness / len(offers) if len(offers) > 0 else 1 # Normalize greediness by number of offers per driver
             dynamic_acceptance = max(0, min(1, acceptance - greediness))
             if random.random() > dynamic_acceptance:
                 self.model.rideservices.reject_offer(key)
                 reject+=1
                 self.__idle_drivers.discard(driver_id)
-                # Remove all other offers for the same driver
-                for res_id, _ in offers:
-                    if res_id != best_res_id:
-                        if (res_id, driver_id) in self.model.rideservices.get_offers():
-                            self.model.rideservices.remove_offer((res_id, driver_id))
-                            removed+=1
                 continue
             # Accept the offer
             self.model.rideservices.accept_offer(key, "driver")
             accept+=1
             self.__idle_drivers.discard(driver_id)
 
-            # Remove all other offers for the same driver
-            for res_id, _ in offers:
-                if res_id != best_res_id:
-                    if (res_id, driver_id) in self.model.rideservices.get_offers():
-                        self.model.rideservices.remove_offer((res_id, driver_id))
-                        removed+=1
-
         if self.model.verbose:
             print(f"✅ {accept} offers accepted by drivers")
             print(f"📵 {reject} offers rejected by drivers")
-            print(f"🧹 {removed} duplicated drivers offers removed")
 
         # Update the logger
         self.logger.update_drivers(
