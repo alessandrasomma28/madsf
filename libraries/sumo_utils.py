@@ -893,7 +893,7 @@ def compute_requests_vehicles_ratio(
 
 def generate_drt_vehicle_instances_from_lanes(
         start_lanes_by_taz: dict,
-        ratio_vehicles_requests: float,
+        ratio_requests_vehicles: float,
         tnc_data: dict,
         tnc_previous_hour_data: dict,
         start_date_str: str,
@@ -917,7 +917,7 @@ def generate_drt_vehicle_instances_from_lanes(
     ----------
     - start_lanes_by_taz: dict
         Dictionary mapping TAZ IDs to lists of start lane IDs where vehicles should be placed.
-    - ratio_vehicles_requests: float
+    - ratio_requests_vehicles: float
         Ratio of requests to drivers, used to determine the number of vehicles.
     - tnc_data: dict
         Dictionary containing hourly requests data, where keys are hours (0-23) and values are the number of requests for that hour.
@@ -965,7 +965,7 @@ def generate_drt_vehicle_instances_from_lanes(
             total_requests += pickups
 
     # Calculate total number of vehicles needed based on the ratio
-    total_vehicles = round(total_requests / ratio_vehicles_requests)
+    total_vehicles = round(total_requests / ratio_requests_vehicles)
     # Determine how many vehicles to assign per hour and per TAZ
     raw_allocations = defaultdict(dict)
     fractional_parts = []
@@ -1088,7 +1088,7 @@ def generate_drt_vehicle_instances_from_lanes(
 
     # Add 50% of previous hour's vehicles at time 0
     prev_total_pickups = sum(metrics.get('pickups', 0) for taz_data in tnc_previous_hour_data.values() for metrics in taz_data.values())
-    total_prev_vehicles = int((prev_total_pickups / ratio_vehicles_requests) * 0.5)
+    total_prev_vehicles = int((prev_total_pickups / ratio_requests_vehicles) * 0.5)
     # int truncation will leave leftover vehicles to be distributed later
     raw_prev_allocations = []
     for taz, hour_data in tnc_previous_hour_data.items():

@@ -70,10 +70,9 @@ class RideServices:
         Generates ride offers by matching unassigned passenger requests with the closest available idle taxis.
 
         This function:
-        - Cleans up partial acceptances that have timed out for either passengers or drivers.
         - Compute the surge multiplier according to unassigned requests and available drivers for all providers.
+        - Cleans up partial acceptances that have timed out for either passengers or drivers.
         - Iterates over all unassigned passenger ride requests.
-        - For each request, skips if an offer already exists.
         - Attempts to retrieve the passenger's current position; skips the request if unsuccessful.
         - Calculates the radius from each idle taxi to the passenger's position, skipping taxis with unavailable positions or farther than 10 miles.
         - Selects up to 8 closest taxis.
@@ -90,8 +89,6 @@ class RideServices:
         now = int(self.model.time)
         idle_taxis = self.model.drivers.get_idle_drivers()
         unassigned = sorted(self.model.passengers.get_unassigned_requests(), key=lambda r: r.reservationTime)
-        timeout_p = self.model.passengers.get_passengers_timeout()
-        timeout_d = self.model.drivers.get_drivers_timeout()
         idle_by_provider = self.model.drivers.get_idle_drivers_by_provider()
 
         self.__expired_acceptances_p = 0
@@ -102,7 +99,7 @@ class RideServices:
         self.__generated_offers = 0
 
         # Compute surge multiplier for all providers
-        if (now % 300 == 0):
+        if now % 300 == 0:
             # Convert cumulative shares to probabilities
             provider_names = list(self.__providers.keys())
             provider_probs = [self.__providers[provider_names[0]]["share"]] + [
@@ -125,10 +122,10 @@ class RideServices:
         to_remove = []
         for key, (agents, timestamp) in self.__acceptances.items():
             if len(agents) == 1:
-                if "passenger" in agents and now - timestamp >= timeout_p:
+                if "passenger" in agents and now - timestamp >= self.model.agents_interval:
                     self.__expired_acceptances_p += 1
                     to_remove.append(key)
-                elif "driver" in agents and now - timestamp >= timeout_d:
+                elif "driver" in agents and now - timestamp >= self.model.agents_interval:
                     to_remove.append(key)
                     self.__expired_acceptances_d += 1
         for key in to_remove:
@@ -143,11 +140,6 @@ class RideServices:
                 taxi_positions[taxi_id] = traci.vehicle.getPosition(taxi_id)
             except traci.TraCIException:
                 print(f"⚠️ Failed to get position for taxi {taxi_id}")
-        
-        # Build KDTree for taxi lookup
-        taxi_coords = list(taxi_positions.values())
-        taxi_ids = list(taxi_positions.keys())
-        tree = KDTree(taxi_coords)
 
         offer_stats = defaultdict(float)
         tot_res = 0
@@ -164,13 +156,22 @@ class RideServices:
                 print(f"⚠️ Failed to get position for reservation {res_id}: {reservation}")
                 continue
 
-            # Query KDTree for 8 closest taxis within 10 miles (16093 meters)
-            dists, idxs = tree.query(pax_pos, k=8, distance_upper_bound=16093)
-            closest_taxis = [
-                (dists[i], taxi_ids[idxs[i]])
-                for i in range(len(idxs))
-                if idxs[i] < len(taxi_ids) and dists[i] != float("inf")
-            ]
+            # Compute radius of each driver from the passenger
+            taxis_radius = []
+            for taxi_id, taxi_pos in taxi_positions.items():
+                # Bounding box filter (within 10 miles square)
+                dx = abs(taxi_pos[0] - pax_pos[0])
+                if dx > 16093:
+                    continue
+                dy = abs(taxi_pos[1] - pax_pos[1])
+                if dy > 16093:
+                    continue
+                radius = math.hypot(dx, dy)
+                if radius <= 16093:
+                    taxis_radius.append((radius, taxi_id))
+
+            # Get top 8 closest taxis
+            closest_taxis = heapq.nsmallest(8, taxis_radius)
             if not closest_taxis:
                 self.__rides_not_served += 1
                 if self.model.verbose:
@@ -347,7 +348,7 @@ class RideServices:
         if idle_drivers == 0:
             # Max surge if no drivers available
             return config["max_surge"]
-        ratio = (pending_requests / self.model.ratio_vehicles_requests) / idle_drivers
+        ratio = (pending_requests / self.model.ratio_requests_vehicles) / idle_drivers
         surge = min(config["max_surge"], max(1, ratio))
         if self.model.verbose:
             print(f"💵 New surge multiplier value for {provider}: {round(surge, 2)} (pending requests: {pending_requests}, available drivers: {idle_drivers})")
@@ -536,3 +537,17 @@ class RideServices:
         None
         """
         self.__acceptances.pop(key, None)
+
+    
+    def get_number_unassigned_requests(
+            self
+        ) -> set:
+        """
+        Gets the set of unassigned passenger requests.
+
+        Returns:
+        -------
+        set
+            A set containing all unassigned passenger requests.
+        """
+        return len(self.model.passengers.get_unassigned_requests())

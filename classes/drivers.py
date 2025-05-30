@@ -12,11 +12,10 @@ It supports the following operations:
     (iv) assigning the best offer to each idle driver (who either accepts or rejects), and
     (v) cleaning up redundant offers.
     (vi) updating the logger with the current state of drivers.
-2. get_idle_drivers: Returns the set of idle drivers.
-3. get_idle_drivers_by_provider: Returns a dictionary containing the sets of available drivers by provider.
-4. get_driver_provider: Returns the provider of a specific driver.
-5. get_driver_timeout: Returns the timeout value for the driver.
-6. get_total_offers: Returns the total number of offers made to drivers.
+2. step_no_social_groups: Similar to step, but does not consider social groups and acceptance probabilities.
+3. get_idle_drivers: Returns the set of idle drivers.
+4. get_idle_drivers_by_provider: Returns a dictionary containing the sets of available drivers by provider.
+5. get_driver_provider: Returns the provider of a specific driver.
 """
 
 
@@ -99,12 +98,15 @@ class Drivers:
         # Iterate over grouped offers
         accept = 0
         reject = 0
-        self.__tot_offers = sum(len(offers) for offers in offers_by_driver.values())
         available_drivers = len(self.__idle_drivers)
-        # Dynamic greediness adjustment
-        greediness = (self.__tot_offers - available_drivers) / available_drivers if available_drivers > 0 else 0
-        greediness = greediness / self.model.ratio_vehicles_requests
-        print(f"Total offers: {self.__tot_offers}, Available drivers: {available_drivers}, Greediness: {greediness}")
+        total_requests = self.model.rideservices.get_number_unassigned_requests()
+        total_requests_scaled = total_requests / self.model.ratio_requests_vehicles
+        if total_requests_scaled - available_drivers > 0:
+            # Dynamic greediness adjustment
+            greediness = (total_requests_scaled - available_drivers) / available_drivers if available_drivers > 0 else total_requests_scaled
+            print(f"Total requests scaled: {total_requests_scaled}, Available drivers: {available_drivers}, Greediness: {greediness}")
+        else:
+            greediness = 0
         for driver_id, offers in offers_by_driver.items():
             # Choose the closest passenger (min radius)
             best_res_id, _ = min(offers, key=lambda x: x[1]["radius"])
@@ -114,12 +116,72 @@ class Drivers:
             surge = offers[0][1]["surge"]
             acceptance_ranges = self.__acceptance_distribution[personality]
             acceptance = next((perc for low, up, perc in acceptance_ranges if low < surge <= up), None)
+            greediness = greediness / surge
             dynamic_acceptance = max(0, min(1, acceptance - greediness))
             if random.random() > dynamic_acceptance:
                 self.model.rideservices.reject_offer(key)
                 reject+=1
                 self.__idle_drivers.discard(driver_id)
                 continue
+            # Accept the offer
+            self.model.rideservices.accept_offer(key, "driver")
+            accept+=1
+            self.__idle_drivers.discard(driver_id)
+
+        if self.model.verbose:
+            print(f"✅ {accept} offers accepted by drivers")
+            print(f"📵 {reject} offers rejected by drivers")
+
+        # Update the logger
+        self.logger.update_drivers(
+            timestamp = self.model.time,
+            idle_drivers = logged_idle,
+            pickup_drivers = logged_pickup,
+            busy_drivers = logged_busy,
+            accepted_requests = accept,
+            rejected_requests = reject
+        )
+
+
+    def step_no_social_groups(self) -> None:
+        fleet_status = {s: set(traci.vehicle.getTaxiFleet(s)) for s in [0, 1, 2]}
+        logged_idle = len(fleet_status[0])
+        logged_pickup = len(fleet_status[1])
+        logged_busy = len(fleet_status[2])
+        # Get the set of idle drivers from TraCI
+        self.__idle_drivers = fleet_status[0]
+        if self.model.verbose:
+            print(f"🚕 {len(self.__idle_drivers)} idle drivers")
+        # Assign providers
+        provider_counts = {provider: 0 for provider in self.__providers}
+        for driver_id in self.__idle_drivers:
+            if driver_id not in self.__drivers_with_provider:
+                probability = random.random()
+                for provider, config in self.__providers.items():
+                    if probability < config["share"]:
+                        self.__drivers_with_provider[driver_id] = provider
+                        provider_counts[provider] += 1
+                        break
+        
+        # Print number of newly added drivers per provider
+        if self.model.verbose:
+            for provider, count in provider_counts.items():
+                print(f"🚕 {count} drivers assigned to provider '{provider}'")
+
+        # Collect pending offers where passenger has already accepted
+        offers_by_driver = defaultdict(list)
+        for (res_id, driver_id), offer in self.model.rideservices.get_offers_for_drivers(self.__idle_drivers).items():
+            if self.model.rideservices.is_passenger_accepted(res_id, driver_id):
+                offers_by_driver[driver_id].append((res_id, offer))
+
+        # Iterate over grouped offers
+        accept = 0
+        reject = 0
+        self.__tot_offers = sum(len(offers) for offers in offers_by_driver.values())
+        for driver_id, offers in offers_by_driver.items():
+            # Choose the closest passenger (min radius)
+            best_res_id, _ = min(offers, key=lambda x: x[1]["radius"])
+            key = (best_res_id, driver_id)
             # Accept the offer
             self.model.rideservices.accept_offer(key, "driver")
             accept+=1
@@ -182,27 +244,3 @@ class Drivers:
             A string containing the provider of the driver.
         """
         return self.__drivers_with_provider.get(driver_id)
-    
-
-    def get_drivers_timeout(self) -> int:
-        """
-        Gets the timeout for drivers.
-
-        Returns:
-        -------
-        int
-            An int containing the max waiting time for drivers.
-        """
-        return self.__timeout
-    
-
-    def get_total_offers(self) -> int:
-        """
-        Gets the total number of offers made to drivers.
-
-        Returns:
-        -------
-        int
-            An int containing the total number of offers.
-        """
-        return self.__tot_offers

@@ -217,7 +217,8 @@ class Simulator:
             activeGui: bool = False,
             agents_interval: int = 60,
             dispatch_algorithm: str = "traci",
-            ratio_vehicles_requests: float = 1.0
+            ratio_requests_vehicles: float = 1.0,
+            mode: str = "social_groups"
         ):
         """
         Runs the SUMO simulation using the generated configuration file,
@@ -231,8 +232,8 @@ class Simulator:
             Interval (timestamps) for agents execution.
         - dispatch_algorithm: str
             Runs the simulation with the custom multi-agent logic if "traci" is specified
-        - ratio_vehicles_requests: float
-            Ratio of vehicles to requests, used in the surge multiplier computation.
+        - ratio_requests_vehicles: float
+            Ratio of requests to vehicles, used in the surge multiplier computation.
 
         Returns:
         -------
@@ -266,7 +267,8 @@ class Simulator:
                     end_time=self.end_time,
                     output_dir_path=str(self.output_dir_path),
                     verbose=self.verbose,
-                    ratio_vehicles_requests=ratio_vehicles_requests
+                    ratio_requests_vehicles=ratio_requests_vehicles,
+                    mode=mode
                 )
                 # Delegates control to custom multi-agent logic
                 drt_model.run(agents_interval)

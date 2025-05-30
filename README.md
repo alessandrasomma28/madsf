@@ -3,17 +3,6 @@
 This is a work-in-progress project, feel free to report any inconsistency or bug.
 
 
-## Why 3 branches?
-
-This repo has 3 branches because they refer to 3 different implementation:
-
-1. `main`. Implementation of standard taxi service with just *SUMO* logic.
-2. `multi-agent`. Implementation of multi-agent based ride-hailing service.
-3. `multi-agent-social-groups`. Implementation of multi-agent based ride-hailing service with social groups and consequent handling of accept/reject requests.
-
-So, `multi-agent-social-groups` branch is actually the most recent one, used to complete all the functionalities of the digital mirror. We can consider the other 2 branches `main` and `multi-agent` as completed, and they will serve for comparison purposes. 
-
-
 ## Description
 
 This repo is composed of 7 folders, a *main.py*, and a *requirements.txt* file.
@@ -33,9 +22,19 @@ This repo is composed of 7 folders, a *main.py*, and a *requirements.txt* file.
 2. Open project (`cd/path/to/this/project`), create a virtual environment with Python >=3.10 (`python3.10 -m venv venv`) and activate it (`source venv/bin/activate`).
 3. If needed, change paths indicated in `constants/sumoenv_constants.py`.
 4. Install requirements from *requirements.txt* file (`pip install -r requirements.txt`).
-5. Run simulation by simply executing *main.py*. If you don't want to use the GUI, simply set `activeGui=False` in *main.py*.
-6. Follow the instructions printed in the command line to initialize the simulation.
-7. Inspect output folder `sumoenv/scenario/{scenario_name}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the HTML interactive line plot visualization `sf_final_metrics_visualization.html`.
+5. Run simulation by simply executing *main.py*.
+6. Follow the instructions printed in the command line to initialize the simulation:
+    - **START_DATE**: the date of the first day of the simulation in the format `YYYY-MM-DD`.
+    - **END_DATE**: the date of the last day of the simulation in the format `YYYY-MM-DD`.
+    - **START_TIME**: the time of the first day of the simulation in the format `HH:MM`.
+    - **END_TIME**: the time of the last day of the simulation in the format `HH:MM`.
+    - **SCENARIO_NAME**: the name of the scenario to be created (e.g., `normal`).
+    - **MODE**: `sumo` to run the simulation with *SUMO* logic only, `multi-agent` to run the simulation with multi-agent logic, or `multi-agent-social-groups` to run the simulation with both multi-agent logic and acceptance probabilities of social groups.
+    - **ACTIVE_GUI**: `True` to run the simulation with the *SUMO* GUI, `False` otherwise.
+    - **VERBOSE**: `True` to print detailed information about the simulation, `False` otherwise.
+    
+    Options will be saved in the `.env` file in the root folder of the project.
+7. Inspect output folder `sumoenv/scenario/{scenario_name}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the `HTML` interactive line plot visualization `sf_final_metrics_visualization.html`.
 
 
 ## Evolvability
@@ -50,6 +49,7 @@ The project is designed to be easily extensible and adaptable to different scena
 - `Passengers`: Manages unassigned ride requests and interacts with the ride service to accept/reject offers from drivers.
 - `Drivers`: Manages idle drivers and interacts with the ride service to accept/reject offers from passengers.
 - `RideServices`: Manages ride offers and acceptances between passengers and drivers. When both passenger and driver accept the offer, the ride is dispatched.
+- `Logger`: Handles logging of the simulation and multi-agent model, saving metrics and statistics in CSV files.
 
 
 ## Architecture
@@ -68,7 +68,7 @@ The simulation is then run with a real-time interaction between *SUMO* and the m
 
 ### Multi-agent model
 
-The multi-agent model is composed of three main components: `Passengers`, `Drivers` and `RideServices`. The logic of the multi-agent model is run every 60 timestamps by default, but it can be changed by setting the related option during the initial command line setup. 
+The multi-agent model is composed of three main components: `Passengers`, `Drivers` and `RideServices`. The logic of the multi-agent model is run every 60 timestamps by default, but it can be changed by setting the related option in `main.py`. 
 
 ![](doc/Multi-agent_architecture.png)
 

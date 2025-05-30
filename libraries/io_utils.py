@@ -11,8 +11,10 @@ It includes utilities for:
 5. get_valid_hour: Validating hour input in HH:MM format.
 6. get_valid_int: Validating agents interval input within a specified range.
 7. get_valid_scenario: Validating scenario names.
-8. get_valid_gui: Validating GUI input (yes/no).
-9. generate_output_csv: Generating output CSV files from simulation data, and creating an interactive line plot.
+8. get_valid_str: Validating yes/no input.
+9. get_valid_mode: Validating simulation modes (e.g., sumo, multi_agent, social_groups).
+10. get_valid_gui: Validating GUI input (yes/no).
+11. generate_output_csv: Generating output CSV files from simulation data, and creating an interactive line plot.
 """
 
 
@@ -128,6 +130,16 @@ def get_valid_str(prompt: str) -> bool:
         else:
             print("⚠️  Please enter 'yes' or 'no'")
             
+
+def get_valid_mode(prompt: str) -> str:
+    modes = ["sumo", "multi_agent", "social_groups"]
+    while True:
+        input_str = input(prompt).strip().lower()
+        if input_str in modes:
+            return input_str
+        else:
+            print(f"⚠️  Invalid mode. Available modes: {', '.join(modes)}")
+
 
 def generate_output_csv(
         start_date_str: str,

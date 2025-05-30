@@ -33,7 +33,8 @@ class Model:
     passengers_personality_distribution: list
     passengers_acceptance_distribution: list
     verbose: bool
-    ratio_vehicles_requests: float
+    ratio_requests_vehicles: float
+    mode: str
 
     def __init__(
             self,
@@ -41,7 +42,8 @@ class Model:
             end_time: int,
             output_dir_path: str,
             verbose: bool = False,
-            ratio_vehicles_requests: float = 1.0
+            ratio_requests_vehicles: float = 1.0,
+            mode: str = "social_groups"
         ):
         with open(Path(DRIVERS_PERSONALITY), "r") as f:
             self.drivers_personality_distribution = json.load(f)
@@ -61,7 +63,7 @@ class Model:
         self.end_time = end_time
         self.output_dir_path = output_dir_path
         self.verbose = verbose
-        self.ratio_vehicles_requests = ratio_vehicles_requests
+        self.ratio_requests_vehicles = ratio_requests_vehicles
         self.logger = Logger(
             self,
             output_dir_path=output_dir_path
@@ -88,6 +90,7 @@ class Model:
             )
         self.time = 0
         self.agents_interval = 0
+        self.mode = mode
 
 
     def run(
@@ -111,22 +114,40 @@ class Model:
         -------
         None
         """
-        
         self.agents_interval = agents_interval
-        while len(traci.person.getTaxiReservations(3)) > 0 or traci.simulation.getMinExpectedNumber() > 0:
-            traci.simulationStep()
-            if int(traci.simulation.getTime()) % agents_interval == 0:
-                print(f"Simulation time: {int(traci.simulation.getTime())} seconds\n")
-                self.time = traci.simulation.getTime()
-                start = time.time()
-                self.passengers.step()
-                end = time.time()
-                print(f"⏱️  Passengers step computed in {round((end - start), 2)} seconds\n")
-                start = time.time()
-                self.drivers.step()
-                end = time.time()
-                print(f"⏱️  Drivers step computed in {round((end - start), 2)} seconds\n")
-                start = time.time()
-                self.rideservices.step()
-                end = time.time()
-                print(f"⏱️  RideServices step computed in {round((end - start), 2)} seconds\n")
+        if self.mode == "social_groups":
+            while len(traci.person.getTaxiReservations(3)) > 0 or traci.simulation.getMinExpectedNumber() > 0:
+                traci.simulationStep()
+                self.time = int(traci.simulation.getTime())
+                if int(traci.simulation.getTime()) % agents_interval == 0:
+                    print(f"Simulation time: {self.time} seconds\n")
+                    start = time.time()
+                    self.passengers.step()
+                    end = time.time()
+                    print(f"⏱️  Passengers step computed in {round((end - start), 2)} seconds\n")
+                    start = time.time()
+                    self.drivers.step()
+                    end = time.time()
+                    print(f"⏱️  Drivers step computed in {round((end - start), 2)} seconds\n")
+                    start = time.time()
+                    self.rideservices.step()
+                    end = time.time()
+                    print(f"⏱️  RideServices step computed in {round((end - start), 2)} seconds\n")
+        elif self.mode == "multi_agent":
+            while len(traci.person.getTaxiReservations(3)) > 0 or traci.simulation.getMinExpectedNumber() > 0:
+                traci.simulationStep()
+                self.time = int(traci.simulation.getTime())
+                if int(traci.simulation.getTime()) % agents_interval == 0:
+                    print(f"Simulation time: {self.time} seconds\n")
+                    start = time.time()
+                    self.passengers.step_no_social_groups()
+                    end = time.time()
+                    print(f"⏱️  Passengers step computed in {round((end - start), 2)} seconds\n")
+                    start = time.time()
+                    self.drivers.step_no_social_groups()
+                    end = time.time()
+                    print(f"⏱️  Drivers step computed in {round((end - start), 2)} seconds\n")
+                    start = time.time()
+                    self.rideservices.step()
+                    end = time.time()
+                    print(f"⏱️  RideServices step computed in {round((end - start), 2)} seconds\n")
