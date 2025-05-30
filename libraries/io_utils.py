@@ -32,22 +32,31 @@ from constants.sumoenv_constants import SUMO_SCENARIOS_PATH
 ENV_PATH = Path(".env")
 
 
-def load_env():
+def load_env(override: bool = False) -> bool:
     if ENV_PATH.exists():
-        load_dotenv(dotenv_path=ENV_PATH)
+        load_dotenv(
+            dotenv_path=ENV_PATH,
+            override=override
+        )
         return True
     return False
 
 
-def save_to_env(key, value):
+def save_to_env(
+        key: str,
+        value: str | int | float | bool | None = None
+    ) -> None:
     set_key(
         dotenv_path=ENV_PATH,
         key_to_set=key,
         value_to_set=value
-        )
+    )
 
 
-def get_or_prompt(key, prompt_func):
+def get_or_prompt(
+        key: str,
+        prompt_func: callable
+    ) -> str:
     val = os.getenv(key)
     if not val:
         val = prompt_func()
@@ -61,7 +70,7 @@ def get_valid_date(prompt: str) -> str:
         try:
             date_obj = datetime.strptime(date_str, "%m-%d")
             if datetime(2021, 1, 1) <= datetime(2021, date_obj.month, date_obj.day) <= datetime(2021, 12, 30):
-                return f"2021-{date_str}"
+                return date_obj.strftime("2021-%m-%d")
             else:
                 print("⚠️  Date must be between 01-01 and 12-30")
         except ValueError:

@@ -19,6 +19,7 @@ It supports the following operations:
 12. is_passenger_accepted: Returns True if the passenger has accepted a specific offer.
 13. is_driver_accepted: Returns True if the driver has accepted a specific offer.
 14. remove_acceptance: Removes an acceptance from the acceptances dict.
+15. get_number_unassigned_requests: Returns the number of unassigned passenger requests.
 """
 
 
@@ -26,7 +27,6 @@ import math
 import heapq
 import traci
 from collections import defaultdict
-from scipy.spatial import KDTree
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
@@ -38,7 +38,6 @@ class RideServices:
     model: "Model"
     providers: dict
     logger: "Logger"
-    verbose: bool
 
     def __init__(
             self,
@@ -58,6 +57,9 @@ class RideServices:
         self.__partial_acceptances = 0
         self.__offers = {}  # key: (res_id, driver_id), value: dict with travel time, route length, price
         self.__acceptances = {}  # key: (res_id, driver_id), value: (set of agents, timestamp)
+        self.__miles_radius_max = 16093
+        self.__max_offers_per_reservation = 8
+        self.__radius_square = self.__miles_radius_max ** 2
 
 
     def step(self):
@@ -151,32 +153,29 @@ class RideServices:
 
             # Get passenger position
             try:
-                pax_pos = traci.person.getPosition(person_id)
+                pax_x, pax_y = traci.person.getPosition(person_id)
             except traci.TraCIException:
                 print(f"⚠️ Failed to get position for reservation {res_id}: {reservation}")
                 continue
 
-            # Compute radius of each driver from the passenger
+            # Filter nearby taxis using bounding box and Euclidean distance
             taxis_radius = []
-            for taxi_id, taxi_pos in taxi_positions.items():
-                # Bounding box filter (within 10 miles square)
-                dx = abs(taxi_pos[0] - pax_pos[0])
-                if dx > 16093:
+            for taxi_id, (tx, ty) in taxi_positions.items():
+                dx, dy = tx - pax_x, ty - pax_y
+                if abs(dx) > self.__miles_radius_max or abs(dy) > self.__miles_radius_max:
                     continue
-                dy = abs(taxi_pos[1] - pax_pos[1])
-                if dy > 16093:
-                    continue
-                radius = math.hypot(dx, dy)
-                if radius <= 16093:
-                    taxis_radius.append((radius, taxi_id))
+                dist_sq = dx * dx + dy * dy
+                if dist_sq <= self.__radius_square:
+                    taxis_radius.append((dist_sq, taxi_id))
 
             # Get top 8 closest taxis
-            closest_taxis = heapq.nsmallest(8, taxis_radius)
+            closest_taxis = heapq.nsmallest(self.__max_offers_per_reservation, taxis_radius)
             if not closest_taxis:
                 self.__rides_not_served += 1
                 if self.model.verbose:
                     print(f"⚠️ No taxis available for reservation {res_id} — skipping")
                 continue
+            
             # Create offers
             from_edge = reservation.fromEdge
             to_edge = reservation.toEdge
@@ -205,6 +204,7 @@ class RideServices:
                 offer_stats["time"] += travel_time
                 offer_stats["length"] += route_length
                 offer_stats["surge"] += surge_multiplier
+                
         if self.model.verbose:
             print(f"📋 {len(self.__offers)} pending offers for {tot_res} reservations")
 
@@ -277,7 +277,7 @@ class RideServices:
             self,
             from_edge: str,
             to_edge: str,
-            surge_multiplier : float,
+            surge: float,
             provider: str
         ) -> tuple[int, float, float]:
         """
@@ -289,8 +289,10 @@ class RideServices:
             Departure edge ID of the reservation.
         - to_edge: str
             Arrival edge ID of the reservation.
-        - surge_multiplier: float
+        - surge: float
             Multiplication factor applied to the final price.
+        - provider: str
+            Provider of the ride service.
 
         Returns:
         -------
@@ -315,11 +317,11 @@ class RideServices:
             config["base_price"]
             + config["cost_per_min"] * travel_min
             + config["cost_per_km"] * route_km
-        ) * surge_multiplier + config["service_fee"]
+        ) * surge + config["service_fee"]
         price = round(max(config["min_price"], price), 3)
 
         return travel_time, route_length, price
-    
+
 
     def __compute_surge_multiplier(
             self,

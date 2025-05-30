@@ -15,7 +15,7 @@ from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generati
 
 # 0. Set initial variables and initialize Simulator class
 print("\n✨ Welcome to the SF Ride-Hailing Digital Mirror Setup! ✨\n")
-load_env()
+load_env(override=True)
 start_date = get_or_prompt("START_DATE", lambda: get_valid_date("⚙️  Enter simulation start date (MM-DD, between 01-01 and 12-30): "))
 start_date_prompt = start_date[5:]
 end_date = get_or_prompt("END_DATE", lambda: get_valid_date(f"⚙️  Enter simulation end date (MM-DD, between {start_date_prompt} and 12-30): "))
@@ -40,7 +40,7 @@ activeGui = get_or_prompt("ACTIVE_GUI", lambda: get_valid_str("⚙️  Do you wa
 verboseMode = get_or_prompt("VERBOSE", lambda: get_valid_str("⚙️  Do you want to run the simulation in verbose mode? (yes/no) ")) == "yes"
 SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}"
 os.makedirs(SCENARIO_PATH, exist_ok=True)
-radius = 150                        # Radius (meters) for map matching
+radius = 200                        # Radius (meters) for map matching
 n_start_lanes = 10                  # Number of possible start lanes for taxis in each TAZ
 peak_vehicles = 5700                # Peak number of DRT vehicles in a day
 max_vehicles = 45000                # Maximum number of drivers available in one day

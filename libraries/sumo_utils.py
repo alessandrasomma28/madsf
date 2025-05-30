@@ -244,9 +244,7 @@ def sf_traffic_od_generation(
 
     This function:
     - Reads the map-matched traffic data with edge IDs.
-    - Groups the data by vehicle ID.
-    - For each vehicle, extracts the first and last edge IDs (origin and destination),
-      and captures the corresponding timestamps.
+    - Randomly pairs each row's origin edge to a destination from the dataset.
     - Saves the resulting OD data in a structured folder format (sf_traffic_od_{YYMMDD}_{HHHH}.csv).
 
     Parameters:
@@ -275,24 +273,29 @@ def sf_traffic_od_generation(
     # Ensure the timestamp column is in datetime format
     df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-    # Sort the data by vehicle_id and relative_time (ensuring chronological order)
-    df = df.sort_values(['vehicle_id', 'relative_time'])
+    # Pre-index edge_id to assigned_taz
+    edge_to_taz = df.dropna(subset=['edge_id']).drop_duplicates('edge_id').set_index('edge_id')['assigned_taz'].to_dict()
 
-    # Build a list for the OD data
+    # Prepare OD data with random destinations
     od_data = []
-    for vehicle_id, group in df.groupby('vehicle_id'):
-        group = group.sort_values('relative_time')
-        origin_row = group.iloc[0]
-        destination_row = group.iloc[-1]
-        od_data.append({
-            'vehicle_id': vehicle_id,
-            'origin_edge_id': origin_row['edge_id'],
-            'origin_taz_id': origin_row['assigned_taz'],
-            'destination_edge_id': destination_row['edge_id'],
-            'destination_taz_id': destination_row['assigned_taz'],
-            'origin_starting_time': origin_row['timestamp'],
-            'destination_ending_time': destination_row['timestamp']
-        })
+    edge_ids = list(edge_to_taz.keys())
+    vehicle_id = 0
+    for _, origin_row in df.iterrows():
+        origin_edge = origin_row['edge_id']
+        if pd.notna(origin_edge) and str(origin_edge).strip() != '':
+            for _ in range(5):
+                dest_edge = random.choice(edge_ids)
+                if dest_edge != origin_edge:
+                    od_data.append({
+                        'vehicle_id': vehicle_id,
+                        'origin_edge_id': origin_edge,
+                        'origin_taz_id': origin_row['assigned_taz'],
+                        'destination_edge_id': dest_edge,
+                        'destination_taz_id': edge_to_taz.get(dest_edge),
+                        'origin_starting_time': origin_row['timestamp']
+                    })
+                    vehicle_id+=1
+                    break
 
     od_df = pd.DataFrame(od_data)
 
@@ -303,11 +306,7 @@ def sf_traffic_od_generation(
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
 
     # Prepare directory and filename
-    start_d = start_date.replace("-", "")
-    end_d = end_date.replace("-", "")
-    start_h = start_hour.replace(":", "")
-    end_h = end_hour.replace(":", "")
-    timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
+    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
     date_folder = os.path.join(sf_traffic_od_folder_path, timeslot)
     os.makedirs(date_folder, exist_ok=True)
     filename = f"sf_traffic_od_{timeslot}.csv"
@@ -371,7 +370,6 @@ def add_sf_traffic_taz_matching(
     od_gdf = gpd.GeoDataFrame(df, geometry=geometry, crs="EPSG:4326")
 
     zones_gdf = gpd.read_file(shapefile_path).to_crs("EPSG:4326")
-
     if zone_id_field not in zones_gdf.columns:
         raise ValueError(f"Zone ID field '{zone_id_field}' not found in the shapefile.")
 
@@ -418,7 +416,6 @@ def sf_traffic_routes_generation(
     - Departure time (seconds from simulation start)
     - Origin edge
     - Destination edge
-    - Expected arrival time (seconds from simulation start)
     
     Parameters:
     ----------
@@ -443,7 +440,6 @@ def sf_traffic_routes_generation(
     # Load OD data
     df = pd.read_csv(sf_traffic_od_path, sep=";")
     df['origin_starting_time'] = pd.to_datetime(df['origin_starting_time'])
-    df['destination_ending_time'] = pd.to_datetime(df['destination_ending_time'])
     df.sort_values('origin_starting_time', inplace=True)
 
     # Determine simulation start time (reference zero)
@@ -453,22 +449,20 @@ def sf_traffic_routes_generation(
     root = ET.Element("routes")
 
     for _, row in df.iterrows():
-        if pd.notna(row['origin_edge_id']) and pd.notna(row['destination_edge_id']):
-            depart = int((row['origin_starting_time'] - sim_start).total_seconds())
-            arrival = int((row['destination_ending_time'] - sim_start).total_seconds())
-
-            ET.SubElement(root, "trip", {
-                "id": str(row['vehicle_id']),
-                "depart": str(depart),
-                "from": row['origin_edge_id'],
-                "to": row['destination_edge_id'],
-                "arrival": str(arrival)
-            })
-        else:
-            if pd.isna(row['origin_edge_id']):
-                print(f"Skipping vehicle {row['vehicle_id']} due to missing origin edge ID(s).")
+        if random.random() < 0.9:   # 10% of trips are TNC
+            if pd.notna(row['origin_edge_id']):
+                depart = int((row['origin_starting_time'] - sim_start).total_seconds())
+                ET.SubElement(root, "trip", {
+                    "id": str(row['vehicle_id']),
+                    "depart": str(depart),
+                    "from": row['origin_edge_id'],
+                    "to": row['destination_edge_id']
+                })
             else:
-                print(f"Skipping vehicle {row['vehicle_id']} due to missing destination edge ID(s).")
+                if pd.isna(row['origin_edge_id']):
+                    print(f"Skipping vehicle {row['vehicle_id']} due to missing origin edge ID(s).")
+                else:
+                    print(f"Skipping vehicle {row['vehicle_id']} due to missing destination edge ID(s).")
 
     # Format parts for folder structure and filename
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -477,15 +471,9 @@ def sf_traffic_routes_generation(
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
 
     # Create full folder path: root/timeslot/
-    start_d = start_date.replace("-", "")
-    end_d = end_date.replace("-", "")
-    start_h = start_hour.replace(":", "")
-    end_h = end_hour.replace(":", "")
-    timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
+    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
     full_folder_path = os.path.join(sf_traffic_routes_folder_path, timeslot)
     os.makedirs(full_folder_path, exist_ok=True)
-
-    # Filename and full path
     filename = f"sf_routes_{timeslot}.rou.xml"
     full_path = os.path.join(full_folder_path, filename)
 
