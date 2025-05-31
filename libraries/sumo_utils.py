@@ -244,7 +244,7 @@ def sf_traffic_od_generation(
 
     This function:
     - Reads the map-matched traffic data with edge IDs.
-    - Randomly pairs each row's origin edge to a destination from the dataset.
+    - Pairs each row's origin edge to a destination edge whose TAZ is within ±3 of the origin TAZ.
     - Saves the resulting OD data in a structured folder format (sf_traffic_od_{YYMMDD}_{HHHH}.csv).
 
     Parameters:
@@ -270,32 +270,44 @@ def sf_traffic_od_generation(
     # Read the CSV file
     df = pd.read_csv(sf_real_traffic_edge_path, sep=";")
 
-    # Ensure the timestamp column is in datetime format
+    # Filter valid edge and taz mappings
     df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df_valid = df.dropna(subset=['edge_id', 'assigned_taz'])
+    df_valid = df_valid[df_valid['assigned_taz'].apply(lambda x: str(x).isdigit())].copy()
+    df_valid['assigned_taz'] = df_valid['assigned_taz'].astype(int)
 
-    # Pre-index edge_id to assigned_taz
-    edge_to_taz = df.dropna(subset=['edge_id']).drop_duplicates('edge_id').set_index('edge_id')['assigned_taz'].to_dict()
+    # Map edge_id to assigned_taz
+    edge_to_taz = df_valid.drop_duplicates('edge_id').set_index('edge_id')['assigned_taz'].to_dict()
 
-    # Prepare OD data with random destinations
+    # Inverse mapping: assigned_taz -> list of edge_ids
+    taz_to_edges = defaultdict(list)
+    for edge, taz in edge_to_taz.items():
+        taz_to_edges[taz].append(edge)
+
+    # Generate OD data
     od_data = []
-    edge_ids = list(edge_to_taz.keys())
     vehicle_id = 0
     for _, origin_row in df.iterrows():
         origin_edge = origin_row['edge_id']
-        if pd.notna(origin_edge) and str(origin_edge).strip() != '':
-            for _ in range(5):
-                dest_edge = random.choice(edge_ids)
-                if dest_edge != origin_edge:
-                    od_data.append({
-                        'vehicle_id': vehicle_id,
-                        'origin_edge_id': origin_edge,
-                        'origin_taz_id': origin_row['assigned_taz'],
-                        'destination_edge_id': dest_edge,
-                        'destination_taz_id': edge_to_taz.get(dest_edge),
-                        'origin_starting_time': origin_row['timestamp']
-                    })
-                    vehicle_id+=1
-                    break
+        origin_taz = origin_row['assigned_taz']
+        if pd.notna(origin_edge) and pd.notna(origin_taz) and str(origin_edge).strip() != '':
+            origin_taz = int(origin_taz)
+            possible_dest_edges = []
+            for taz_candidate in range(origin_taz - 3, origin_taz + 4):
+                possible_dest_edges.extend(taz_to_edges.get(taz_candidate, []))
+            # Remove self-loop destinations
+            possible_dest_edges = [e for e in possible_dest_edges if e != origin_edge]
+            if possible_dest_edges:
+                dest_edge = random.choice(possible_dest_edges)
+                od_data.append({
+                    'vehicle_id': vehicle_id,
+                    'origin_edge_id': origin_edge,
+                    'origin_taz_id': origin_taz,
+                    'destination_edge_id': dest_edge,
+                    'destination_taz_id': edge_to_taz.get(dest_edge),
+                    'origin_starting_time': origin_row['timestamp']
+                })
+                vehicle_id += 1
 
     od_df = pd.DataFrame(od_data)
 
@@ -448,21 +460,25 @@ def sf_traffic_routes_generation(
     # Create XML structure
     root = ET.Element("routes")
 
+    traffic_counter = 0
+
     for _, row in df.iterrows():
-        if random.random() < 0.9:   # 10% of trips are TNC
-            if pd.notna(row['origin_edge_id']):
-                depart = int((row['origin_starting_time'] - sim_start).total_seconds())
-                ET.SubElement(root, "trip", {
-                    "id": str(row['vehicle_id']),
-                    "depart": str(depart),
-                    "from": row['origin_edge_id'],
-                    "to": row['destination_edge_id']
-                })
+        if random.random() >= 0.64:   # 36% of trips are TNC
+            continue
+        if pd.notna(row['origin_edge_id']):
+            depart = int((row['origin_starting_time'] - sim_start).total_seconds())
+            ET.SubElement(root, "trip", {
+                "id": str(row['vehicle_id']),
+                "depart": str(depart),
+                "from": row['origin_edge_id'],
+                "to": row['destination_edge_id']
+            })
+            traffic_counter += 1
+        else:
+            if pd.isna(row['origin_edge_id']):
+                print(f"Skipping vehicle {row['vehicle_id']} due to missing origin edge ID(s).")
             else:
-                if pd.isna(row['origin_edge_id']):
-                    print(f"Skipping vehicle {row['vehicle_id']} due to missing origin edge ID(s).")
-                else:
-                    print(f"Skipping vehicle {row['vehicle_id']} due to missing destination edge ID(s).")
+                print(f"Skipping vehicle {row['vehicle_id']} due to missing destination edge ID(s).")
 
     # Format parts for folder structure and filename
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -481,6 +497,8 @@ def sf_traffic_routes_generation(
     ET.indent(tree, space="  ")
     with open(full_path, "wb") as f:
         tree.write(f, encoding="UTF-8", xml_declaration=True)
+
+    print(f"✅ Generated {traffic_counter} traffic routes. Saved to: {full_path}")
 
     return full_path
 

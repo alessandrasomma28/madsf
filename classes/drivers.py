@@ -104,7 +104,7 @@ class Drivers:
         if total_requests_scaled - available_drivers > 0:
             # Dynamic greediness adjustment
             greediness = (total_requests_scaled - available_drivers) / available_drivers if available_drivers > 0 else total_requests_scaled
-            print(f"Total requests scaled: {total_requests_scaled}, Available drivers: {available_drivers}, Greediness: {greediness}")
+            #print(f"Total requests scaled: {total_requests_scaled}, Available drivers: {available_drivers}, Greediness: {greediness}")
         else:
             greediness = 0
         for driver_id, offers in offers_by_driver.items():
