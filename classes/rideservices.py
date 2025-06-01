@@ -167,9 +167,12 @@ class RideServices:
                 dist_sq = dx * dx + dy * dy
                 if dist_sq <= self.__radius_square:
                     taxis_radius.append((dist_sq, taxi_id))
-
+            
             # Get top 8 closest taxis
-            closest_taxis = heapq.nsmallest(self.__max_offers_per_reservation, taxis_radius)
+            closest_taxis = [
+                (math.sqrt(dist_sq), taxi_id)
+                for dist_sq, taxi_id in heapq.nsmallest(self.__max_offers_per_reservation, taxis_radius)
+            ]
             if not closest_taxis:
                 self.__rides_not_served += 1
                 if self.model.verbose:

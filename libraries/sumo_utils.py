@@ -463,7 +463,7 @@ def sf_traffic_routes_generation(
     traffic_counter = 0
 
     for _, row in df.iterrows():
-        if random.random() >= 0.64:   # 36% of trips are TNC
+        if random.random() >= 0.75:   # 25% of trips are TNC
             continue
         if pd.notna(row['origin_edge_id']):
             depart = int((row['origin_starting_time'] - sim_start).total_seconds())
@@ -1418,16 +1418,16 @@ def generate_work_duration(starting: bool = False) -> int:
     r = random.random()
     if starting:
         if r < 0.58:
-            return round(random.uniform(1800, 3600))
+            return round(random.uniform(1200, 3600))
         elif r < 0.88:
             return round(random.uniform(3601, 14400))
         else:
             return round(random.uniform(14401, 21600))
     else:
         if r < 0.51:
-            return round(random.uniform(1800, 7200))
+            return round(random.uniform(1200, 5400))
         elif r < 0.81:
-            return round(random.uniform(7201, 18000))
+            return round(random.uniform(5401, 18000))
         elif r < 0.93:
             return round(random.uniform(18001, 25200))
         else:
