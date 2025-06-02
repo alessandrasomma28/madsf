@@ -61,7 +61,7 @@ class Passengers:
         # Remove requests if timeout
         canceled = 0
         now = int(self.model.time)
-        for res in traci.person.getTaxiReservations(3):
+        for res in reservations_status[3]:
             if now - int(res.reservationTime) >= self.__timeout:
                 traci.person.remove(res.persons[0])
                 canceled += 1

@@ -28,7 +28,7 @@
    <report>
       <log value="{output_dir}/sumo_log.txt"/>
       <no-step-log value="true"/>
-      <no-warnings value="false"/>
+      <no-warnings value="true"/>
    </report>
 
     <taxi_device>
