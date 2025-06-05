@@ -200,20 +200,16 @@ def generate_output_csv(
     if not os.path.exists(SUMO_SCENARIOS_PATH):
         raise FileNotFoundError(f"SUMO scenarios path does not exist: {SUMO_SCENARIOS_PATH}")
     
-    # Format date and time parts
+    # Format time and date strings
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
     start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
 
     # Prepare directory and filename
-    start_d = start_date.replace("-", "")
-    end_d = end_date.replace("-", "")
-    start_h = start_hour.replace(":", "")
-    end_h = end_hour.replace(":", "")
-    timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
+    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
     output_path = os.path.join(SUMO_SCENARIOS_PATH, scenario, timeslot)
-
+            
     # Load XML data
     tripinfos = os.path.join(output_path, "tripinfos.xml")
     if not os.path.exists(tripinfos):
@@ -244,7 +240,7 @@ def generate_output_csv(
         # Drivers metrics
         "drivers_shift_durations": [],
         "drivers_total_lengths": [],
-        "drivers_total_durations": [],
+        "drivers_idle_durations": [],
         "drivers_occupied_distance": [],
         "drivers_occupied_durations": [],
         "drivers_passengers_served": 0,
@@ -265,7 +261,6 @@ def generate_output_csv(
         "taxis_dispatched": 0,
         "partial_acceptances": 0,
         "offers_generated": 0,
-        "offers_timeout": 0,
         "offers_radius": 0.0,
         "offers_price": 0.0,
         "offers_surge_multiplier": 0.0,
@@ -293,13 +288,14 @@ def generate_output_csv(
             duration = float(ride.attrib.get("duration"))
             waiting_durations = float(ride.attrib.get("waitingTime"))
             route_length = float(ride.attrib.get("routeLength"))
+            vehicle = ride.attrib.get("vehicle")
             for t in range(request, arrival + 1):
                 ts = timestamps[t]
                 ts["passengers_new"] += 1 if t == request else 0
                 ts["passengers_departures"] += 1 if t == depart else 0
                 ts["rides_in_progress"] += 1 if depart < t < arrival else 0
                 ts["passengers_arrivals"] += 1  if t == arrival else 0
-                if t == arrival:
+                if t == arrival and vehicle != "NULL":
                     ts["rides_waiting_durations"].append(waiting_durations)
                     ts["rides_durations"].append(duration)
                     ts["rides_lengths"].append(route_length)
@@ -322,7 +318,7 @@ def generate_output_csv(
                 if t == arrival:
                     ts["drivers_shift_durations"].append(shift_durations)
                     ts["drivers_total_lengths"].append(route_length)
-                    ts["drivers_total_durations"].append(idle_durations)
+                    ts["drivers_idle_durations"].append(idle_durations)
                     ts["drivers_occupied_distance"].append(occupied_distance)
                     ts["drivers_occupied_durations"].append(occupied_durations)
         else:
@@ -399,7 +395,6 @@ def generate_output_csv(
         if rideservices is not None:
             ts["taxis_dispatched"] = int(float(rideservices.find("dispatched_taxis").text))
             ts["offers_generated"] = int(float(rideservices.find("generated_offers").text))
-            ts["offers_timeout"] = int(float(rideservices.find("timeout_offers").text))
             ts["partial_acceptances"] = int(float(rideservices.find("partial_acceptances").text))
             ts["rides_not_served"] = int(float(rideservices.find("requests_not_served").text))
 
@@ -419,7 +414,7 @@ def generate_output_csv(
             "passengers_cancel": stats["passengers_cancel"],
             "drivers_shift_duration_avg": sum(stats["drivers_shift_durations"]) / len(stats["drivers_shift_durations"]) if stats["drivers_shift_durations"] else 0,
             "drivers_total_length_avg": sum(stats["drivers_total_lengths"]) / len(stats["drivers_total_lengths"]) if stats["drivers_total_lengths"] else 0,
-            "drivers_total_duration_avg": sum(stats["drivers_total_durations"]) / len(stats["drivers_total_durations"]) if stats["drivers_total_durations"] else 0,
+            "drivers_idle_duration_avg": sum(stats["drivers_idle_durations"]) / len(stats["drivers_idle_durations"]) if stats["drivers_idle_durations"] else 0,
             "drivers_occupied_distance_avg": sum(stats["drivers_occupied_distance"]) / len(stats["drivers_occupied_distance"]) if stats["drivers_occupied_distance"] else 0,
             "drivers_occupied_duration_avg": sum(stats["drivers_occupied_durations"]) / len(stats["drivers_occupied_durations"]) if stats["drivers_occupied_durations"] else 0,
             "drivers_passengers_served": stats["drivers_passengers_served"],
@@ -438,17 +433,16 @@ def generate_output_csv(
             "rides_partial_acceptances": stats["partial_acceptances"],
             "rides_not_served": stats["rides_not_served"],
             "rides_offers_generated": stats["offers_generated"],
-            "rides_offers_timeout": stats["offers_timeout"],
             "rides_offers_radius_avg": stats["offers_radius"],
             "rides_offers_price_avg": stats["offers_price"],
             "rides_offers_surge_multiplier_avg": stats["offers_surge_multiplier"],
             "traffic_vehicles": stats["traffic_vehicles"],
             "traffic_duration_avg": sum(stats["traffic_durations"]) / len(stats["traffic_durations"]) if stats["traffic_durations"] else 0,
             "traffic_length_avg": sum(stats["traffic_lengths"]) / len(stats["traffic_lengths"]) if stats["traffic_lengths"] else 0,
-            "speed_avg": stats["avg_speed"],
-            "speed_relative_avg": stats["avg_relative_speed"],
-            "queuing_duration_avg": stats["avg_queuing_durations"],
-            "queuing_length_avg": stats["avg_queuing_length"]
+            "traffic_speed_avg": stats["avg_speed"],
+            "traffic_speed_relative_avg": stats["avg_relative_speed"],
+            "traffic_queuing_duration_avg": stats["avg_queuing_durations"],
+            "traffic_queuing_length_avg": stats["avg_queuing_length"]
         })
 
     # Create DataFrame and save to CSV

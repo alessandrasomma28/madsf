@@ -77,7 +77,6 @@ class Logger:
             timestamp: int,
             dispatched_taxis: int,
             generated_offers: int,
-            timeout_offers: int,
             partial_acceptances: int,
             requests_not_served: int
             ) -> None:
@@ -85,7 +84,6 @@ class Logger:
         rideservices_el = ET.SubElement(entry, "rideservices")
         ET.SubElement(rideservices_el, "dispatched_taxis").text = str(dispatched_taxis)
         ET.SubElement(rideservices_el, "generated_offers").text = str(generated_offers)
-        ET.SubElement(rideservices_el, "timeout_offers").text = str(timeout_offers)
         ET.SubElement(rideservices_el, "partial_acceptances").text = str(partial_acceptances)
         ET.SubElement(rideservices_el, "requests_not_served").text = str(requests_not_served)
         self.__write()
