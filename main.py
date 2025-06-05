@@ -1,11 +1,12 @@
 import os
 from datetime import datetime
+from pathlib import Path
 from classes.simulator import Simulator
 from constants.data_constants import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
                                       SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_TAZ_COORDINATES_PATH)
 from constants.sumoenv_constants import (SUMO_NET_PATH, SUMO_SCENARIOS_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH)
-from libraries.io_utils import get_valid_date, get_valid_hour, get_valid_int, get_valid_scenario, get_valid_str, \
-    generate_output_csv, get_or_prompt, load_env, save_to_env, get_valid_mode
+from libraries.io_utils import get_valid_date, get_valid_hour, get_valid_scenario, get_valid_str, get_or_prompt, \
+    generate_output_csv, load_env, save_to_env, get_valid_mode
 from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_data, check_import_traffic
 from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generation, sf_traffic_routes_generation, \
     export_taz_coords, map_coords_to_sumo_edges, get_strongly_connected_edges, generate_matched_drt_requests, \
@@ -14,6 +15,10 @@ from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generati
 
 
 # 0. Set initial variables and initialize Simulator class
+if not os.path.exists(Path(".env")):
+    for var in ["START_DATE", "END_DATE", "START_TIME", "END_TIME", "SCENARIO", "MODE", "ACTIVE_GUI", "VERBOSE"]:
+        if var in os.environ:
+            del os.environ[var]
 print("\n✨ Welcome to the SF Ride-Hailing Digital Mirror Setup! ✨\n")
 load_env(override=True)
 start_date = get_or_prompt("START_DATE", lambda: get_valid_date("⚙️  Enter simulation start date (MM-DD, between 01-01 and 12-30): "))
