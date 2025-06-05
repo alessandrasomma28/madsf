@@ -463,7 +463,7 @@ def sf_traffic_routes_generation(
     traffic_counter = 0
 
     for _, row in df.iterrows():
-        if random.random() >= 0.75:   # 25% of trips are TNC
+        if random.random() >= 0.64:   # 36% of trips are TNC
             continue
         if pd.notna(row['origin_edge_id']):
             depart = int((row['origin_starting_time'] - sim_start).total_seconds())
@@ -471,14 +471,12 @@ def sf_traffic_routes_generation(
                 "id": str(row['vehicle_id']),
                 "depart": str(depart),
                 "from": row['origin_edge_id'],
-                "to": row['destination_edge_id']
+                "to": row['destination_edge_id'],
+                "departLane": "best"
             })
             traffic_counter += 1
-        else:
-            if pd.isna(row['origin_edge_id']):
-                print(f"Skipping vehicle {row['vehicle_id']} due to missing origin edge ID(s).")
-            else:
-                print(f"Skipping vehicle {row['vehicle_id']} due to missing destination edge ID(s).")
+        elif pd.isna(row['origin_edge_id']):
+            print(f"Skipping vehicle {row['vehicle_id']} due to missing origin edge ID(s).")
 
     # Format parts for folder structure and filename
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -1077,7 +1075,7 @@ def generate_drt_vehicle_instances_from_lanes(
                     })
                     # ➔ Dummy initial route = just the edge where the vehicle is starting
                     ET.SubElement(vehicle, "route", {"edges": edge_id})
-                    ET.SubElement(vehicle, "param", key="device.taxi.end", value=str(generate_work_duration()))
+                    ET.SubElement(vehicle, "param", key="device.taxi.end", value=str(depart_seconds+generate_work_duration()))
                 elif idle_mechanism == "stop":
                     trip = ET.SubElement(root, "trip", {
                         "id": f"taxi_{vehicle_counter}",
@@ -1087,7 +1085,7 @@ def generate_drt_vehicle_instances_from_lanes(
                     })
                     # Lane where the vehicle is starting
                     ET.SubElement(trip, "stop", {"lane": lane_id, "triggered": "person"})
-                    ET.SubElement(trip, "param", key="device.taxi.end", value=str(generate_work_duration()))
+                    ET.SubElement(trip, "param", key="device.taxi.end", value=str(depart_seconds+generate_work_duration()))
                 else:
                     raise ValueError("Invalid idle mechanism, please choose 'stop' or 'randomCircling'")
                 vehicle_counter += 1
@@ -1400,9 +1398,9 @@ def filter_polygon_lanes(
 def generate_work_duration(starting: bool = False) -> int:
     """
     Generates a taxi work duration (in hours) based on the following distribution:
-    - 51% work between 30 minutes and 2 hours
-    - 30% work between 2 and 5 hours
-    - 12% work between 5 and 7 hours
+    - 51% work between 30 minutes and 1.5 hours
+    - 30% work between 1.5 and 4 hours
+    - 12% work between 4 and 7 hours
     - 7% work between 7 and 8 hours
 
     Parameters:
@@ -1418,17 +1416,17 @@ def generate_work_duration(starting: bool = False) -> int:
     r = random.random()
     if starting:
         if r < 0.58:
-            return round(random.uniform(1200, 3600))
-        elif r < 0.88:
-            return round(random.uniform(3601, 14400))
+            return round(random.uniform(1800, 3600))
+        elif 0.58 <= r < 0.88:
+            return round(random.uniform(3601, 7200))
         else:
-            return round(random.uniform(14401, 21600))
+            return round(random.uniform(7201, 14400))
     else:
         if r < 0.51:
-            return round(random.uniform(1200, 5400))
-        elif r < 0.81:
-            return round(random.uniform(5401, 18000))
-        elif r < 0.93:
-            return round(random.uniform(18001, 25200))
+            return round(random.uniform(1800, 5400))
+        elif 0.51 <= r < 0.81:
+            return round(random.uniform(5401, 14400))
+        elif 0.81 <= r < 0.93:
+            return round(random.uniform(14401, 25200))
         else:
             return round(random.uniform(25201, 28800))
