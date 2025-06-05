@@ -1106,9 +1106,9 @@ def generate_drt_vehicle_instances_from_lanes(
             raw_prev_allocations.append((frac, taz, hour, base))
     # Distribute leftover vehicles to largest fractional parts
     allocated_prev = sum(base for (_, _, _, base) in raw_prev_allocations)
-    leftover = total_prev_vehicles - allocated_prev
+    remaining = total_prev_vehicles - allocated_prev
     raw_prev_allocations.sort(reverse=True)
-    for i in range(leftover):
+    for i in range(remaining):
         frac, taz, hour, base = raw_prev_allocations[i]
         raw_prev_allocations[i] = (frac, taz, hour, base + 1)
     # Generate starting vehicles at time 0
@@ -1150,11 +1150,7 @@ def generate_drt_vehicle_instances_from_lanes(
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
 
     # Create full folder path: root/timeslot/
-    start_d = start_date.replace("-", "")
-    end_d = end_date.replace("-", "")
-    start_h = start_hour.replace(":", "")
-    end_h = end_hour.replace(":", "")
-    timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
+    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
     full_folder_path = os.path.join(sf_tnc_fleet_folder_path, timeslot)
     os.makedirs(full_folder_path, exist_ok=True)
 
@@ -1355,12 +1351,7 @@ def generate_matched_drt_requests(
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
 
     # Create full folder path: root/timeslot/
-    start_d = start_date.replace("-", "")
-    end_d = end_date.replace("-", "")
-    start_h = start_hour.replace(":", "")
-    end_h = end_hour.replace(":", "")
-    timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
-
+    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
     full_folder_path = os.path.join(sf_requests_folder_path, timeslot)
     os.makedirs(full_folder_path, exist_ok=True)
 
@@ -1398,9 +1389,9 @@ def filter_polygon_lanes(
 def generate_work_duration(starting: bool = False) -> int:
     """
     Generates a taxi work duration (in hours) based on the following distribution:
-    - 51% work between 30 minutes and 1.5 hours
-    - 30% work between 1.5 and 4 hours
-    - 12% work between 4 and 7 hours
+    - 51% work between 10 minutes and 2 hours
+    - 30% work between 2 and 5 hours
+    - 12% work between 5 and 7 hours
     - 7% work between 7 and 8 hours
 
     Parameters:
@@ -1416,17 +1407,17 @@ def generate_work_duration(starting: bool = False) -> int:
     r = random.random()
     if starting:
         if r < 0.58:
-            return round(random.uniform(1800, 3600))
+            return round(random.uniform(600, 3600))
         elif 0.58 <= r < 0.88:
             return round(random.uniform(3601, 7200))
         else:
-            return round(random.uniform(7201, 14400))
+            return round(random.uniform(7201, 18000))
     else:
         if r < 0.51:
-            return round(random.uniform(1800, 5400))
+            return round(random.uniform(600, 7200))
         elif 0.51 <= r < 0.81:
-            return round(random.uniform(5401, 14400))
+            return round(random.uniform(7201, 18000))
         elif 0.81 <= r < 0.93:
-            return round(random.uniform(14401, 25200))
+            return round(random.uniform(18001, 25200))
         else:
             return round(random.uniform(25201, 28800))

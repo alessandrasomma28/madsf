@@ -37,7 +37,7 @@ This repo is composed of 7 folders, a *main.py*, and a *requirements.txt* file.
 7. Inspect output folder `sumoenv/scenario/{scenario_name}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the `HTML` interactive line plot visualization `sf_final_metrics_visualization.html`.
 
 
-## Evolvability
+## Extensibility
 
 The project is designed to be easily extensible and adaptable to different scenarios. The multi-agent model can be easily modified to include new features, without acting directly on the agents. One can simply modify the `.json` files in the `config/` folder to change the parameters of the agents (such as different acceptance probability distribution) or add other components (such as other different ride-hailing providers).
 

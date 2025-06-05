@@ -98,13 +98,12 @@ class Drivers:
         # Iterate over grouped offers
         accept = 0
         reject = 0
-        available_drivers = len(self.__idle_drivers)
-        total_requests = self.model.rideservices.get_number_unassigned_requests()
+        total_requests = len(traci.person.getTaxiReservations(3))
         total_requests_scaled = total_requests / self.model.ratio_requests_vehicles
-        if total_requests_scaled - available_drivers > 0:
+        if total_requests_scaled - len(self.__idle_drivers) > 0:
             # Dynamic greediness adjustment
-            greediness = (total_requests_scaled - available_drivers) / available_drivers if available_drivers > 0 else total_requests_scaled
-            #print(f"Total requests scaled: {total_requests_scaled}, Available drivers: {available_drivers}, Greediness: {greediness}")
+            greediness = (total_requests_scaled - len(self.__idle_drivers)) / len(self.__idle_drivers) if len(self.__idle_drivers) > 0 else total_requests_scaled
+            #print(f"Total requests scaled: {total_requests_scaled}, Available drivers: {len(self.__idle_drivers)}, Greediness: {greediness}")
         else:
             greediness = 0
         for driver_id, offers in offers_by_driver.items():
@@ -177,7 +176,6 @@ class Drivers:
         # Iterate over grouped offers
         accept = 0
         reject = 0
-        self.__tot_offers = sum(len(offers) for offers in offers_by_driver.values())
         for driver_id, offers in offers_by_driver.items():
             # Choose the closest passenger (min radius)
             best_res_id, _ = min(offers, key=lambda x: x[1]["radius"])

@@ -15,6 +15,7 @@ It supports the following operations:
     (vii) updating the logger with the current state of passengers.
 2. step_no_social_groups: Similar to step, but does not consider social groups and acceptance probabilities.
 3. get_unassigned_requests: Returns the set of unassigned requests.
+4. get_canceled_requests: Returns the set of canceled requests.
 """
 
 
@@ -51,6 +52,7 @@ class Passengers:
         self.logger = logger
         self.__unassigned_requests = set()
         self.__passengers_with_personality = {}  # Maps reservation IDs to personalities
+        self.__canceled = set()  # Set to keep track of canceled requests
 
 
     def step(self) -> None:
@@ -59,12 +61,14 @@ class Passengers:
         logged_assigned = len(reservations_status[4])
         logged_pickup = len(reservations_status[8])
         # Remove requests if timeout
-        canceled = 0
         now = int(self.model.time)
+        acceptances = self.model.rideservices.get_acceptances()
+        if self.model.time % (300 + self.model.agents_interval) == 0:
+            self.__canceled = set()
         for res in reservations_status[3]:
-            if now - int(res.reservationTime) >= self.__timeout:
+            if now - int(res.reservationTime) >= self.__timeout and all(res.id != key[0] for key in acceptances):
                 traci.person.remove(res.persons[0])
-                canceled += 1
+                self.__canceled.add(res)
         # Get the set of unassigned reservations from TraCI
         self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
         # Get ID from each reservation object
@@ -145,7 +149,7 @@ class Passengers:
         if self.model.verbose:
             print(f"✅ {accept} offers accepted by passengers")
             print(f"📵 {reject} offers rejected by passengers")
-            print(f"❌ {canceled} requests canceled by passengers")
+            print(f"❌ {len(self.__canceled)} requests canceled by passengers")
 
         # Update the logger
         self.logger.update_passengers(
@@ -155,7 +159,7 @@ class Passengers:
             pickup_requests = logged_pickup,
             accepted_requests = accept,
             rejected_requests = reject,
-            canceled_requests = canceled
+            canceled_requests = len(self.__canceled)
         )
 
 
@@ -165,12 +169,14 @@ class Passengers:
         logged_assigned = len(reservations_status[4])
         logged_pickup = len(reservations_status[8])
         # Remove requests if timeout
-        canceled = 0
         now = int(self.model.time)
-        for res in traci.person.getTaxiReservations(3):
-            if now - int(res.reservationTime) >= self.__timeout:
+        acceptances = self.model.rideservices.get_acceptances()
+        if self.model.time % (300 + self.model.agents_interval) == 0:
+            self.__canceled = set()
+        for res in reservations_status[3]:
+            if now - int(res.reservationTime) >= self.__timeout and all(res.id != key[0] for key in acceptances):
                 traci.person.remove(res.persons[0])
-                canceled += 1
+                self.__canceled.add(res)
         # Get the set of unassigned reservations from TraCI
         self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
         # Get ID from each reservation object
@@ -216,7 +222,7 @@ class Passengers:
         if self.model.verbose:
             print(f"✅ {accept} offers accepted by passengers")
             print(f"📵 {reject} offers rejected by passengers")
-            print(f"❌ {canceled} requests canceled by passengers")
+            print(f"❌ {len(self.__canceled)} requests canceled by passengers")
 
         # Update the logger
         self.logger.update_passengers(
@@ -226,7 +232,7 @@ class Passengers:
             pickup_requests = logged_pickup,
             accepted_requests = accept,
             rejected_requests = reject,
-            canceled_requests = canceled
+            canceled_requests = len(self.__canceled)
         )
 
 
@@ -240,3 +246,15 @@ class Passengers:
             A set containing all the unassigned requests.
         """
         return self.__unassigned_requests
+    
+
+    def get_canceled_requests(self) -> set:
+        """
+        Gets the set of canceled requests.
+
+        Returns:
+        -------
+        set
+            A set containing all the canceled requests.
+        """
+        return self.__canceled

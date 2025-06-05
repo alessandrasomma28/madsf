@@ -17,9 +17,8 @@ It supports the following operations:
 10. get_offers_for_passengers: Returns offers relevant to the given list of passenger reservation IDs.
 11. remove_offer: Removes an offer from the offers dict.
 12. is_passenger_accepted: Returns True if the passenger has accepted a specific offer.
-13. is_driver_accepted: Returns True if the driver has accepted a specific offer.
+13. get_acceptances: Returns the dictionary of all acceptances.
 14. remove_acceptance: Removes an acceptance from the acceptances dict.
-15. get_number_unassigned_requests: Returns the number of unassigned passenger requests.
 """
 
 
@@ -44,12 +43,10 @@ class RideServices:
             model: "Model",
             providers: dict,
             logger: "Logger",
-            verbose: bool = False
         ):
         self.model = model
         self.__providers = providers
         self.logger = logger
-        self.__expired_offers = 0
         self.__expired_acceptances_p = 0
         self.__expired_acceptances_d = 0
         self.__rides_not_served = 0
@@ -62,7 +59,7 @@ class RideServices:
         self.__radius_square = self.__miles_radius_max ** 2
 
 
-    def step(self):
+    def step(self) -> None:
         self.__generate_offers()
         self.__check_matches()
 
@@ -91,12 +88,13 @@ class RideServices:
         now = int(self.model.time)
         idle_taxis = self.model.drivers.get_idle_drivers()
         unassigned = sorted(self.model.passengers.get_unassigned_requests(), key=lambda r: r.reservationTime)
+        unassigned_surge = traci.person.getTaxiReservations(3)
+        canceled = self.model.passengers.get_canceled_requests()
         idle_by_provider = self.model.drivers.get_idle_drivers_by_provider()
 
         self.__expired_acceptances_p = 0
         self.__expired_acceptances_d = 0
         self.__rides_not_served = 0
-        self.__expired_offers = 0
         self.__offers = {}
         self.__generated_offers = 0
 
@@ -111,7 +109,7 @@ class RideServices:
             # Map provider -> share probability
             shares = dict(zip(provider_names, provider_probs))
             for provider in self.__providers:
-                requests_share = int(len(unassigned) * shares[provider])
+                requests_share = int((len(unassigned_surge) + len(canceled)) * shares[provider])
                 idle_count = len(idle_by_provider.get(provider, set()))
                 self.__providers[provider]["surge_multiplier"] = self.__compute_surge_multiplier(
                     requests_share, idle_count, provider
@@ -200,8 +198,8 @@ class RideServices:
                 self.__offers[offer_key] = {
                     "timestamp": now,
                     "radius": radius,
-                    "time": travel_time,
-                    "route_length": route_length,
+                    "time": travel_time * 60,
+                    "route_length": route_length * 1000,
                     "surge": surge_multiplier,
                     "price": price,
                     "provider": provider
@@ -276,7 +274,6 @@ class RideServices:
             timestamp = self.model.time,
             dispatched_taxis = len(matched_keys),
             generated_offers = self.__generated_offers,
-            timeout_offers = self.__expired_offers,
             partial_acceptances = self.__partial_acceptances,
             requests_not_served = self.__rides_not_served + self.__expired_acceptances_p
         )
@@ -349,17 +346,19 @@ class RideServices:
             Number of passengers pending requests.
         - idle_drivers: int
             Number of available drivers.
+        - provider: str
+            Provider of the ride service.
 
         Returns
         -------
-        surge : float
+        surge: float
             Surge price multiplier.
         """
         config = self.__providers[provider]
         if idle_drivers == 0:
             # Max surge if no drivers available
             return config["max_surge"]
-        ratio = (pending_requests / self.model.ratio_requests_vehicles) / idle_drivers
+        ratio = pending_requests / idle_drivers
         surge = min(config["max_surge"], max(1, ratio))
         if self.model.verbose:
             print(f"💵 New surge multiplier value for {provider}: {round(surge, 2)} (pending requests: {pending_requests}, available drivers: {idle_drivers})")
@@ -508,27 +507,19 @@ class RideServices:
         key = (res_id, driver_id)
         return "passenger" in self.__acceptances.get(key, ({}, 0))[0]
     
-    
-    def is_driver_accepted(self,
-            res_id: str,
-            driver_id: str
-        ) -> bool:
-        """
-        Returns True if the driver has accepted the offer for (res_id, driver_id).
 
-        Parameters:
-        ----------
-        - res_id: str
-            Unique ID of the passenger reservation
-        - driver_id: str
-            Unique ID of the driver
+    def get_acceptances(
+            self
+        ) -> dict:
+        """
+        Gets the dictionary of acceptances.
 
         Returns:
         -------
-        bool
+        dict
+            A dictionary containing all acceptances.
         """
-        key = (res_id, driver_id)
-        return "driver" in self.__acceptances.get(key, ({}, 0))[0]
+        return self.__acceptances
 
     
     def remove_acceptance(
@@ -548,17 +539,3 @@ class RideServices:
         None
         """
         self.__acceptances.pop(key, None)
-
-    
-    def get_number_unassigned_requests(
-            self
-        ) -> set:
-        """
-        Gets the set of unassigned passenger requests.
-
-        Returns:
-        -------
-        set
-            A set containing all unassigned passenger requests.
-        """
-        return len(self.model.passengers.get_unassigned_requests())
