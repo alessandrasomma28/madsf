@@ -60,6 +60,7 @@ class Passengers:
         logged_unassigned = len(reservations_status[3])
         logged_assigned = len(reservations_status[4])
         logged_pickup = len(reservations_status[8])
+        canceled = 0
         # Remove requests if timeout
         now = int(self.model.time)
         acceptances = self.model.rideservices.get_acceptances()
@@ -69,6 +70,7 @@ class Passengers:
             if now - int(res.reservationTime) >= self.__timeout and all(res.id != key[0] for key in acceptances):
                 traci.person.remove(res.persons[0])
                 self.__canceled.add(res)
+                canceled += 1
         # Get the set of unassigned reservations from TraCI
         self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
         # Get ID from each reservation object
@@ -149,7 +151,7 @@ class Passengers:
         if self.model.verbose:
             print(f"✅ {accept} offers accepted by passengers")
             print(f"📵 {reject} offers rejected by passengers")
-            print(f"❌ {len(self.__canceled)} requests canceled by passengers")
+            print(f"❌ {canceled} requests canceled by passengers")
 
         # Update the logger
         self.logger.update_passengers(
@@ -159,7 +161,7 @@ class Passengers:
             pickup_requests = logged_pickup,
             accepted_requests = accept,
             rejected_requests = reject,
-            canceled_requests = len(self.__canceled)
+            canceled_requests = canceled
         )
 
 
@@ -168,6 +170,7 @@ class Passengers:
         logged_unassigned = len(reservations_status[3])
         logged_assigned = len(reservations_status[4])
         logged_pickup = len(reservations_status[8])
+        canceled = 0
         # Remove requests if timeout
         now = int(self.model.time)
         acceptances = self.model.rideservices.get_acceptances()
@@ -177,6 +180,7 @@ class Passengers:
             if now - int(res.reservationTime) >= self.__timeout and all(res.id != key[0] for key in acceptances):
                 traci.person.remove(res.persons[0])
                 self.__canceled.add(res)
+                canceled += 1
         # Get the set of unassigned reservations from TraCI
         self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
         # Get ID from each reservation object
@@ -222,7 +226,7 @@ class Passengers:
         if self.model.verbose:
             print(f"✅ {accept} offers accepted by passengers")
             print(f"📵 {reject} offers rejected by passengers")
-            print(f"❌ {len(self.__canceled)} requests canceled by passengers")
+            print(f"❌ {canceled} requests canceled by passengers")
 
         # Update the logger
         self.logger.update_passengers(
@@ -232,7 +236,7 @@ class Passengers:
             pickup_requests = logged_pickup,
             accepted_requests = accept,
             rejected_requests = reject,
-            canceled_requests = len(self.__canceled)
+            canceled_requests = canceled
         )
 
 

@@ -249,6 +249,7 @@ def generate_output_csv(
         "drivers_busy": 0,
         "drivers_accept": 0,
         "drivers_reject": 0,
+        "drivers_removed": 0,
 
         # Rides and providers metrics
         "rides_in_progress": 0,
@@ -386,6 +387,7 @@ def generate_output_csv(
             ts["drivers_busy"] = int(float(drivers.find("busy_drivers").text))
             ts["drivers_accept"] = int(float(drivers.find("accepted_requests").text))
             ts["drivers_reject"] = int(float(drivers.find("rejected_requests").text))
+            ts["drivers_removed"] = int(float(drivers.find("removed_drivers").text))
         if offers is not None:
             ts["expected_rides_durations"] = float(offers.find("avg_expected_time").text)
             ts["expected_rides_lengths"] = float(offers.find("avg_expected_length").text)
@@ -423,6 +425,7 @@ def generate_output_csv(
             "drivers_busy": stats["drivers_busy"],
             "drivers_accept": stats["drivers_accept"],
             "drivers_reject": stats["drivers_reject"],
+            "drivers_removed": stats["drivers_removed"],
             "rides_in_progress": stats["rides_in_progress"],
             "rides_waiting_duration_avg": sum(stats["rides_waiting_durations"]) / len(stats["rides_waiting_durations"]) if stats["rides_waiting_durations"] else 0,
             "rides_duration_avg": sum(stats["rides_durations"]) / len(stats["rides_durations"]) if stats["rides_durations"] else 0,

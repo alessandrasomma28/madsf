@@ -56,6 +56,8 @@ class Drivers:
         self.__idle_drivers = set()
         self.__drivers_with_provider = {}  # Maps drivers to providers
         self.__drivers_with_personality = {}  # Maps drivers to personalities
+        self.__driver_idle_time = {}  # Track how long each driver has been idle
+        self.__driver_removal_prob = {}  # Track removal probability for each driver
 
 
     def step(self) -> None:
@@ -67,6 +69,10 @@ class Drivers:
         self.__idle_drivers = fleet_status[0]
         if self.model.verbose:
             print(f"🚕 {len(self.__idle_drivers)} idle drivers")
+        # Update idle times
+        for driver_id in self.__idle_drivers:
+            self.__driver_idle_time[driver_id] = self.__driver_idle_time.get(driver_id, 0) + self.model.agents_interval
+
         # Assign providers and personalities
         provider_counts = {provider: 0 for provider in self.__providers}
         for driver_id in self.__idle_drivers:
@@ -98,12 +104,11 @@ class Drivers:
         # Iterate over grouped offers
         accept = 0
         reject = 0
+        removed = 0
         total_requests = len(traci.person.getTaxiReservations(3))
-        total_requests_scaled = total_requests / self.model.ratio_requests_vehicles
-        if total_requests_scaled - len(self.__idle_drivers) > 0:
+        if total_requests - len(self.__idle_drivers) > 0:
             # Dynamic greediness adjustment
-            greediness = (total_requests_scaled - len(self.__idle_drivers)) / len(self.__idle_drivers) if len(self.__idle_drivers) > 0 else total_requests_scaled
-            #print(f"Total requests scaled: {total_requests_scaled}, Available drivers: {len(self.__idle_drivers)}, Greediness: {greediness}")
+            greediness = (total_requests - len(self.__idle_drivers)) / len(self.__idle_drivers) if len(self.__idle_drivers) > 0 else total_requests
         else:
             greediness = 0
         for driver_id, offers in offers_by_driver.items():
@@ -119,17 +124,33 @@ class Drivers:
             dynamic_acceptance = max(0, min(1, acceptance - greediness))
             if random.random() > dynamic_acceptance:
                 self.model.rideservices.reject_offer(key)
-                reject+=1
+                reject += 1
+                # Increment removal probability
+                if self.__driver_idle_time[driver_id] >= self.__timeout:
+                    self.__driver_removal_prob[driver_id] = self.__driver_removal_prob.get(driver_id, 0.0) + 0.1
+                    removal_chance = self.__driver_removal_prob[driver_id]
+                    if random.random() < removal_chance:
+                        traci.vehicle.remove(driver_id)
+                        self.__driver_idle_time.pop(driver_id, None)
+                        self.__driver_removal_prob.pop(driver_id, None)
+                        self.__drivers_with_provider.pop(driver_id, None)
+                        self.__drivers_with_personality.pop(driver_id, None)
+                        self.__idle_drivers.discard(driver_id)
+                        removed += 1
+                        continue
                 self.__idle_drivers.discard(driver_id)
                 continue
             # Accept the offer
             self.model.rideservices.accept_offer(key, "driver")
             accept+=1
             self.__idle_drivers.discard(driver_id)
+            # Reset removal state on successful match
+            self.__driver_removal_prob[driver_id] = 0.0
 
         if self.model.verbose:
             print(f"✅ {accept} offers accepted by drivers")
             print(f"📵 {reject} offers rejected by drivers")
+            print(f"❌ {removed} drivers removed due to inactivity")
 
         # Update the logger
         self.logger.update_drivers(
@@ -138,7 +159,8 @@ class Drivers:
             pickup_drivers = logged_pickup,
             busy_drivers = logged_busy,
             accepted_requests = accept,
-            rejected_requests = reject
+            rejected_requests = reject,
+            removed_drivers = removed
         )
 
 
@@ -151,6 +173,7 @@ class Drivers:
         self.__idle_drivers = fleet_status[0]
         if self.model.verbose:
             print(f"🚕 {len(self.__idle_drivers)} idle drivers")
+            
         # Assign providers
         provider_counts = {provider: 0 for provider in self.__providers}
         for driver_id in self.__idle_drivers:
@@ -176,6 +199,7 @@ class Drivers:
         # Iterate over grouped offers
         accept = 0
         reject = 0
+        removed = 0
         for driver_id, offers in offers_by_driver.items():
             # Choose the closest passenger (min radius)
             best_res_id, _ = min(offers, key=lambda x: x[1]["radius"])
@@ -188,6 +212,7 @@ class Drivers:
         if self.model.verbose:
             print(f"✅ {accept} offers accepted by drivers")
             print(f"📵 {reject} offers rejected by drivers")
+            print(f"❌ {removed} drivers removed due to inactivity")
 
         # Update the logger
         self.logger.update_drivers(
@@ -196,7 +221,8 @@ class Drivers:
             pickup_drivers = logged_pickup,
             busy_drivers = logged_busy,
             accepted_requests = accept,
-            rejected_requests = reject
+            rejected_requests = reject,
+            removed_drivers = removed
         )
 
 

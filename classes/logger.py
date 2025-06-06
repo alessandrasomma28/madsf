@@ -60,7 +60,8 @@ class Logger:
             pickup_drivers: int,
             busy_drivers: int,
             accepted_requests: int,
-            rejected_requests: int
+            rejected_requests: int,
+            removed_drivers: int
             ) -> None:
         entry = ET.SubElement(self.root, "step", timestamp=str(timestamp))
         drivers_el = ET.SubElement(entry, "drivers")
@@ -69,6 +70,7 @@ class Logger:
         ET.SubElement(drivers_el, "busy_drivers").text = str(busy_drivers)
         ET.SubElement(drivers_el, "accepted_requests").text = str(accepted_requests)
         ET.SubElement(drivers_el, "rejected_requests").text = str(rejected_requests)
+        ET.SubElement(drivers_el, "removed_drivers").text = str(removed_drivers)
         self.__write()
 
 

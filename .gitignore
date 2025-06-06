@@ -10,3 +10,5 @@ check_traffic.py
 clean.sh
 .env
 sumoenv/sf_old.net.xml
+*.pdf
+*.key
