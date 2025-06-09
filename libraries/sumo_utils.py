@@ -214,13 +214,11 @@ def sf_traffic_map_matching(
         axis=1
     )
 
-    # Build output paths using pathlib
+    # Build output paths
     output_base = Path(output_folder_path)
     output_base.mkdir(parents=True, exist_ok=True)
-
     date_subfolder = output_base / date_str
     date_subfolder.mkdir(parents=True, exist_ok=True)
-
     input_filename = Path(sf_real_traffic_data_path).stem
     output_csv_path = date_subfolder / f"{input_filename}_edges.csv"
 
@@ -308,7 +306,6 @@ def sf_traffic_od_generation(
                     'origin_starting_time': origin_row['timestamp']
                 })
                 vehicle_id += 1
-
     od_df = pd.DataFrame(od_data)
 
     # Format date and time parts
@@ -380,7 +377,6 @@ def add_sf_traffic_taz_matching(
     # Convert to GeoDataFrame
     geometry = [Point(lon, lat) for lon, lat in zip(df[lon_col], df[lat_col])]
     od_gdf = gpd.GeoDataFrame(df, geometry=geometry, crs="EPSG:4326")
-
     zones_gdf = gpd.read_file(shapefile_path).to_crs("EPSG:4326")
     if zone_id_field not in zones_gdf.columns:
         raise ValueError(f"Zone ID field '{zone_id_field}' not found in the shapefile.")
@@ -461,7 +457,6 @@ def sf_traffic_routes_generation(
     root = ET.Element("routes")
 
     traffic_counter = 0
-
     for _, row in df.iterrows():
         if random.random() >= 0.64:   # 36% of trips are TNC
             continue

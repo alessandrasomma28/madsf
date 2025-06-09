@@ -33,8 +33,8 @@ This repo is composed of 7 folders, a *main.py*, and a *requirements.txt* file.
     - **ACTIVE_GUI**: `True` to run the simulation with the *SUMO* GUI, `False` otherwise.
     - **VERBOSE**: `True` to print detailed information about the simulation, `False` otherwise.
     
-    Options will be saved in the `.env` file in the root folder of the project.
-7. Inspect output folder `sumoenv/scenario/{scenario_name}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the `HTML` interactive line plot visualization `sf_final_metrics_visualization.html`.
+    Options will be saved in the `.env` file in the root folder of the project. If you want to change the options, you can edit the `.env` file directly or run *main.py* again after deleting the `.env` file.
+7. Inspect output folder `sumoenv/scenario/{scenario_name}/{timeslot}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the `HTML` interactive line plot visualization `sf_final_metrics_visualization.html`.
 
 
 ## Extensibility
@@ -77,10 +77,10 @@ For each step of the multi-agent logic, *SUMO* logic stops. `Passengers` and `Dr
 2. `Drivers` receives the ride request and returns the list of available drivers to `RideServices`.
 3. `RideServices` receives the list of available drivers and selects the 8 closest drivers to the passenger. Then, it generates a ride offer for each driver, containing information about the ride (e.g., time, distance, price, etc.) and sends these 8 offers to `Passengers`.
 4. `Passengers` receives the ride offers and selects the best one according to the acceptance probability distribution of the social group the passenger belongs to. 
-    - If the passenger rejects all the offers, the request is rejected. If the request has exceeded the maximum waiting time, the passenger is removed from the simulation, otherwise the request is kept in the list of unassigned requests. 
+    - If the passenger rejects all the offers, the request is marked as rejected. If the request has exceeded the maximum waiting time, the passenger is removed from the simulation, otherwise the request is kept in the list of unassigned requests. 
     - If the passenger accepts an offer, `Passengers` notifies `RideServices`, which forwards the acceptance to `Drivers`.
-5. `Drivers` receives the accepted offer and accepts/rejects it according to the acceptance probability distribution of the social group the driver belongs to. 
-    - If the driver rejects the offer, the request is rejected and the driver is marked as unavailable until the next step of the multi-agent logic. The request is kept in the list of unassigned requests.
+5. `Drivers` receives the accepted offer and accepts/rejects it according to the acceptance probability distribution of the social group the driver belongs to.
+    - If the driver rejects the offer, the request is rejected and the driver is marked as unavailable until the next step of the multi-agent logic. The request is kept in the list of unassigned requests. After 30 minutes, each request rejection increases a driver's probability of stopping due to inactivity by 10%.
     - If the driver accepts the offer, `Drivers` notifies `RideServices`, which finally dispatches the ride using the *TraCI* method `dispatchTaxi(request_id, driver_id)`.
 
 When all the requests are processed, the *SUMO* logic is resumed, until the next step of the multi-agent logic.

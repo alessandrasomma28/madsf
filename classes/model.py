@@ -91,6 +91,10 @@ class Model:
         self.time = 0
         self.agents_interval = 0
         self.mode = mode
+        if self.mode == "social_groups":
+            self.use_social_groups = True
+        else:
+            self.use_social_groups = False
 
 
     def run(
@@ -101,7 +105,7 @@ class Model:
         Runs the simulation with the sumocfg previously generated.
 
         This function:
-        - Perform simulation steps.
+        - Performs simulation steps.
         - Handles ride hailing agents every {agents_interval} timestamps.
         - Stops when there are no active persons and vehicles available.
 
@@ -115,39 +119,20 @@ class Model:
         None
         """
         self.agents_interval = agents_interval
-        if self.mode == "social_groups":
-            while len(traci.person.getTaxiReservations(3)) > 0 or traci.simulation.getMinExpectedNumber() > 0:
-                traci.simulationStep()
-                self.time = int(traci.simulation.getTime())
-                if int(traci.simulation.getTime()) % agents_interval == 0:
-                    print(f"Simulation time: {self.time} seconds\n")
-                    start = time.time()
-                    self.passengers.step()
-                    end = time.time()
-                    print(f"⏱️  Passengers step computed in {round((end - start), 2)} seconds\n")
-                    start = time.time()
-                    self.drivers.step()
-                    end = time.time()
-                    print(f"⏱️  Drivers step computed in {round((end - start), 2)} seconds\n")
-                    start = time.time()
-                    self.rideservices.step()
-                    end = time.time()
-                    print(f"⏱️  RideServices step computed in {round((end - start), 2)} seconds\n")
-        elif self.mode == "multi_agent":
-            while len(traci.person.getTaxiReservations(3)) > 0 or traci.simulation.getMinExpectedNumber() > 0:
-                traci.simulationStep()
-                self.time = int(traci.simulation.getTime())
-                if int(traci.simulation.getTime()) % agents_interval == 0:
-                    print(f"Simulation time: {self.time} seconds\n")
-                    start = time.time()
-                    self.passengers.step_no_social_groups()
-                    end = time.time()
-                    print(f"⏱️  Passengers step computed in {round((end - start), 2)} seconds\n")
-                    start = time.time()
-                    self.drivers.step_no_social_groups()
-                    end = time.time()
-                    print(f"⏱️  Drivers step computed in {round((end - start), 2)} seconds\n")
-                    start = time.time()
-                    self.rideservices.step()
-                    end = time.time()
-                    print(f"⏱️  RideServices step computed in {round((end - start), 2)} seconds\n")
+        while (len(traci.person.getTaxiReservations(3)) > 0 or traci.simulation.getMinExpectedNumber() > 0) and traci.simulation.getTime() < self.end_time + 1800:
+            traci.simulationStep()
+            self.time = int(traci.simulation.getTime())
+            if self.time % agents_interval == 0:
+                print(f"Simulation time: {self.time} seconds\n")
+                start = time.time()
+                self.passengers.step()
+                end = time.time()
+                print(f"⏱️  Passengers step computed in {round((end - start), 2)} seconds\n")
+                start = time.time()
+                self.drivers.step()
+                end = time.time()
+                print(f"⏱️  Drivers step computed in {round((end - start), 2)} seconds\n")
+                start = time.time()
+                self.rideservices.step()
+                end = time.time()
+                print(f"⏱️  RideServices step computed in {round((end - start), 2)} seconds\n")

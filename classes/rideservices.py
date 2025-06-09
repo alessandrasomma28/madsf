@@ -4,7 +4,7 @@ rideservices.py
 This module defines the RideServices class, which manages ride offers and acceptances between passengers and drivers.
 It supports the following operations:
 
-1. step: Advances the ride service logic by generating new offers and checking for matches.
+1. step: Advances the ride services logic by generating new offers and checking for matches.
 2. __generate_offers: Internal method to create offers for unassigned reservations and nearby idle taxis.
 3. __check_matches: Internal method to dispatch taxis when both driver and passenger have accepted an offer.
 4. __compute_offer: Computes travel time, route length, and price of a reservation.

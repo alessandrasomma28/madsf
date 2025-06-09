@@ -106,12 +106,7 @@ class Simulator:
         end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
 
         # Compute the absolute folder path
-        start_d = start_date.replace("-", "")
-        end_d = end_date.replace("-", "")
-        start_h = start_hour.replace(":", "")
-        end_h = end_hour.replace(":", "")
-        timeslot = f"{start_d}{start_h}_{end_d}{end_h}"
-
+        timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
         full_folder_path = Path(sf_routes_folder_path, timeslot).absolute()
 
         # Set internal state
@@ -234,6 +229,8 @@ class Simulator:
             Runs the simulation with the custom multi-agent logic if "traci" is specified
         - ratio_requests_vehicles: float
             Ratio of requests to vehicles, used in the surge multiplier computation.
+        - mode: str
+            Mode of the simulation, can be "sumo", "multi_agent" or "social_groups.
 
         Returns:
         -------
@@ -256,9 +253,12 @@ class Simulator:
         sumo_binary = checkBinary("sumo-gui" if activeGui else "sumo")
 
         # Start SUMO with TraCI
-        traci.start([sumo_binary, "-c", str(self.sumocfg_file_path)])
+        if activeGui:
+            traci.start([sumo_binary, "-c", str(self.sumocfg_file_path)], "--start")
+        else:
+            traci.start([sumo_binary, "-c", str(self.sumocfg_file_path)])
         if dispatch_algorithm == "traci":
-            print("Simulation started with MAB logic...")
+            print("Simulation started with custom Multi-Agent logic...")
             try:
                 start_time = time.time()
                 # Initialize multi-agent model
@@ -276,19 +276,19 @@ class Simulator:
                 traci.close()
                 end_time = time.time()
                 elapsed = end_time - start_time
-                print("Simulation finished!")
+                print("✅ Simulation finished!")
                 print(f"⏱️  Total computation time: {elapsed:.2f} seconds\n")
         else:
             print("Simulation started with standard logic...")
             try:
                 start_time = time.time()
-                while len(traci.person.getTaxiReservations(3)) > 0 or traci.simulation.getMinExpectedNumber() > 0:
-                    if traci.simulation.getTime() % 1000 == 0:
+                while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time + 1800:
+                    traci.simulationStep()
+                    if traci.simulation.getTime() % 60 == 0:
                         print(f"Simulation time: {int(traci.simulation.getTime())} seconds\n")
-                        traci.simulationStep()
             finally:
                 traci.close()
                 end_time = time.time()
                 elapsed = end_time - start_time
-                print("Simulation finished!")
+                print("✅ Simulation finished!")
                 print(f"⏱️  Total computation time: {elapsed:.2f} seconds\n")

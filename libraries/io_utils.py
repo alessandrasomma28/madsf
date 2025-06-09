@@ -155,6 +155,7 @@ def generate_output_csv(
         end_date_str: str,
         start_time_str: str,
         end_time_str: str,
+        mode: str = "social_groups",
         scenario: str = "normal",
     ) -> None:
     """
@@ -184,6 +185,8 @@ def generate_output_csv(
         Start time in 'HH:MM' format (e.g., '08:00').
     - end_time_str : str
         End time in 'HH:MM' format (e.g., '10:00').
+    - mode: str
+        Simulation mode, can be 'sumo', 'multi_agent', or 'social_groups'.
     - scenario: str
         Scenario name (default is 'normal').
 
@@ -220,9 +223,10 @@ def generate_output_csv(
     summary = os.path.join(output_path, "summary.xml")
     if not os.path.exists(summary):
         raise FileNotFoundError(f"File not found: {summary}")
-    agents = os.path.join(output_path, "multi_agent_infos.xml")
-    if not os.path.exists(agents):
-        raise FileNotFoundError(f"File not found: {agents}")
+    if mode in ["multi_agent", "social_groups"]:
+        agents = os.path.join(output_path, "multi_agent_infos.xml")
+        if not os.path.exists(agents):
+            raise FileNotFoundError(f"File not found: {agents}")
 
     # Dictionary to hold timestamps and their corresponding metrics
     timestamps = defaultdict(lambda: {
@@ -300,7 +304,7 @@ def generate_output_csv(
                     ts["rides_waiting_durations"].append(waiting_durations)
                     ts["rides_durations"].append(duration)
                     ts["rides_lengths"].append(route_length)
-    # <tripinfo> - traffic and taxis
+    # <tripinfo> - traffic and drivers
     for trip in root.findall("tripinfo"):
         if "taxi" in trip.attrib.get("id"):
             depart = int(float(trip.attrib.get("depart")))
@@ -364,41 +368,70 @@ def generate_output_csv(
         ts["avg_queuing_length"] = avg_length
 
     # Process multi_agent_infos.xml
-    print("Processing multi_agent_infos.xml...")
-    tree = ET.parse(agents)
-    root = tree.getroot()
-    for step in root.findall("step"):
-        timestep = int(float(step.attrib.get("timestamp")))
-        passengers = step.find("passengers")
-        drivers = step.find("drivers")
-        offers = step.find("offers")
-        rideservices = step.find("rideservices")
-        ts = timestamps[timestep]
-        if passengers is not None:
-            ts["passengers_unassigned"] = int(float(passengers.find("unassigned_requests").text))
-            ts["passengers_assigned"] = int(float(passengers.find("assigned_requests").text))
-            ts["passengers_pickup"] = int(float(passengers.find("pickup_requests").text))
-            ts["passengers_accept"] = int(float(passengers.find("accepted_requests").text))
-            ts["passengers_reject"] = int(float(passengers.find("rejected_requests").text))
-            ts["passengers_cancel"] = int(float(passengers.find("canceled_requests").text))
-        if drivers is not None:
-            ts["drivers_idle"] = int(float(drivers.find("idle_drivers").text))
-            ts["drivers_pickup"] = int(float(drivers.find("pickup_drivers").text))
-            ts["drivers_busy"] = int(float(drivers.find("busy_drivers").text))
-            ts["drivers_accept"] = int(float(drivers.find("accepted_requests").text))
-            ts["drivers_reject"] = int(float(drivers.find("rejected_requests").text))
-            ts["drivers_removed"] = int(float(drivers.find("removed_drivers").text))
-        if offers is not None:
-            ts["expected_rides_durations"] = float(offers.find("avg_expected_time").text)
-            ts["expected_rides_lengths"] = float(offers.find("avg_expected_length").text)
-            ts["offers_radius"] = float(offers.find("avg_radius").text)
-            ts["offers_price"] = float(offers.find("avg_price").text)
-            ts["offers_surge_multiplier"] = float(offers.find("avg_surge_multiplier").text)
-        if rideservices is not None:
-            ts["taxis_dispatched"] = int(float(rideservices.find("dispatched_taxis").text))
-            ts["offers_generated"] = int(float(rideservices.find("generated_offers").text))
-            ts["partial_acceptances"] = int(float(rideservices.find("partial_acceptances").text))
-            ts["rides_not_served"] = int(float(rideservices.find("requests_not_served").text))
+    if mode in ["multi_agent", "social_groups"]:
+        print("Processing multi_agent_infos.xml...")
+        tree = ET.parse(agents)
+        root = tree.getroot()
+        for step in root.findall("step"):
+            timestep = int(float(step.attrib.get("timestamp")))
+            passengers = step.find("passengers")
+            drivers = step.find("drivers")
+            offers = step.find("offers")
+            rideservices = step.find("rideservices")
+            ts = timestamps[timestep]
+            if passengers is not None:
+                ts["passengers_unassigned"] = int(float(passengers.find("unassigned_requests").text))
+                ts["passengers_assigned"] = int(float(passengers.find("assigned_requests").text))
+                ts["passengers_pickup"] = int(float(passengers.find("pickup_requests").text))
+                ts["passengers_accept"] = int(float(passengers.find("accepted_requests").text))
+                ts["passengers_reject"] = int(float(passengers.find("rejected_requests").text))
+                ts["passengers_cancel"] = int(float(passengers.find("canceled_requests").text))
+            if drivers is not None:
+                ts["drivers_idle"] = int(float(drivers.find("idle_drivers").text))
+                ts["drivers_pickup"] = int(float(drivers.find("pickup_drivers").text))
+                ts["drivers_busy"] = int(float(drivers.find("busy_drivers").text))
+                ts["drivers_accept"] = int(float(drivers.find("accepted_requests").text))
+                ts["drivers_reject"] = int(float(drivers.find("rejected_requests").text))
+                ts["drivers_removed"] = int(float(drivers.find("removed_drivers").text))
+            if offers is not None:
+                ts["expected_rides_durations"] = float(offers.find("avg_expected_time").text)
+                ts["expected_rides_lengths"] = float(offers.find("avg_expected_length").text)
+                ts["offers_radius"] = float(offers.find("avg_radius").text)
+                ts["offers_price"] = float(offers.find("avg_price").text)
+                ts["offers_surge_multiplier"] = float(offers.find("avg_surge_multiplier").text)
+            if rideservices is not None:
+                ts["taxis_dispatched"] = int(float(rideservices.find("dispatched_taxis").text))
+                ts["offers_generated"] = int(float(rideservices.find("generated_offers").text))
+                ts["partial_acceptances"] = int(float(rideservices.find("partial_acceptances").text))
+                ts["rides_not_served"] = int(float(rideservices.find("requests_not_served").text))
+    else:
+        # Set default values for metrics not available in sumo mode
+        sim_start_dt = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
+        sim_end_dt = datetime.strptime(f"{end_date_str} {end_time_str}", "%Y-%m-%d %H:%M")
+        end_time = int((sim_end_dt - sim_start_dt).total_seconds())
+        for timestep in range(0, end_time + 1, 60):
+            ts = timestamps[timestep]
+            ts["passengers_unassigned"] = 0
+            ts["passengers_assigned"] = 0
+            ts["passengers_pickup"] = 0
+            ts["passengers_accept"] = 0
+            ts["passengers_reject"] = 0
+            ts["passengers_cancel"] = 0
+            ts["drivers_idle"] = 0
+            ts["drivers_pickup"] = 0
+            ts["drivers_busy"] = 0
+            ts["drivers_accept"] = 0
+            ts["drivers_reject"] = 0
+            ts["drivers_removed"] = 0
+            ts["expected_rides_durations"] = 0
+            ts["expected_rides_lengths"] = 0
+            ts["offers_radius"] = 0
+            ts["offers_price"] = 0
+            ts["offers_surge_multiplier"] = 0
+            ts["taxis_dispatched"] = 0
+            ts["offers_generated"] = 0
+            ts["partial_acceptances"] = 0
+            ts["rides_not_served"] = 0
 
     # Format results into a DataFrame
     data = []
@@ -456,7 +489,7 @@ def generate_output_csv(
 
     # Create interactive line plot of the metrics
     df.set_index("timestamp", inplace=True)
-    title = f"Simulation indicators time series: interactive line plot <br><sup>City: San Francisco, Scenario: {scenario}, From: {start_date_str} {start_time_str} To: {end_date_str} {end_time_str}</sup>"
+    title = f"Simulation indicators time series: interactive line plot <br><sup>City: San Francisco, Mode: {mode}, Scenario: {scenario}, From: {start_date_str} {start_time_str} To: {end_date_str} {end_time_str}</sup>"
     output_html_path = os.path.join(output_path, "sf_final_metrics_visualization.html")
     fig = px.line(df, x=df.index, y=df.columns, title=title)
     fig.update_layout(legend_title_text="Simulation metrics")

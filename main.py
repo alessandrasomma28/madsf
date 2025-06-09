@@ -49,10 +49,11 @@ radius = 200                        # Radius (meters) for map matching
 n_start_lanes = 10                  # Number of possible start lanes for taxis in each TAZ
 peak_vehicles = 5700                # Peak number of DRT vehicles in a day
 max_vehicles = 45000                # Maximum number of drivers available in one day
-if mode in ["multi_agent", "social_groups"]:   # Dispatch algorithm to use (e.g., "traci", "greedy")
+# Dispatch algorithm to use (e.g., "traci", "greedy")
+if mode in ["multi_agent", "social_groups"]:   
     dispatch_algorithm = "traci"
-else:
-    dispatch_algorithm = "greedy"        
+elif mode == "sumo":
+    dispatch_algorithm = "greedy"      
 idle_mechanism = "randomCircling"   # Idle mechanism to use (e.g., "randomCircling", "stop")
 sumoSimulator = Simulator(
     net_file_path=SUMO_NET_PATH, 
@@ -223,5 +224,6 @@ generate_output_csv(
     end_date_str=end_date,
     start_time_str=start_time,
     end_time_str=end_time,
+    mode=mode,
     scenario=scenario
     )
