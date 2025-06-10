@@ -25,6 +25,7 @@ It supports the following operations:
 import math
 import heapq
 import traci
+from traci.constants import ROUTING_MODE_AGGREGATED
 from collections import defaultdict
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -193,25 +194,25 @@ class RideServices:
                     try:
                         travel_time, route_length, price = self.__compute_offer(from_edge, to_edge, surge_multiplier, provider)
                         cached_offer_by_provider[provider] = (travel_time, route_length, price)
+                        # Update statistics
+                        offer_stats["radius"] += radius
+                        offer_stats["time"] += travel_time
+                        offer_stats["length"] += route_length
+                        offer_stats["surge"] += surge_multiplier
+                        offer_stats["price"] += price
                     except traci.TraCIException as e:
                         print(f"⚠️ Failed to compute route for offer {offer_key}: {e}")
                         continue
                 self.__offers[offer_key] = {
                     "timestamp": now,
                     "radius": radius,
-                    "time": travel_time * 60,
-                    "route_length": route_length * 1000,
+                    "time": travel_time,
+                    "route_length": route_length,
                     "surge": surge_multiplier,
                     "price": price,
                     "provider": provider
                 }
-                # Update statistics
                 self.__generated_offers += 1
-                offer_stats["radius"] += radius
-                offer_stats["price"] += price
-                offer_stats["time"] += travel_time
-                offer_stats["length"] += route_length
-                offer_stats["surge"] += surge_multiplier
                 
         if self.model.verbose:
             print(f"📋 {len(self.__offers)} pending offers for {tot_res} reservations")
@@ -219,9 +220,9 @@ class RideServices:
         # Compute average metrics and update the logger
         self.logger.update_offer_metrics(
             timestamp=self.model.time,
+            avg_radius=round(offer_stats["radius"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
             avg_expected_time=round(offer_stats["time"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
             avg_expected_length=round(offer_stats["length"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
-            avg_radius=round(offer_stats["radius"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
             avg_price=round(offer_stats["price"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
             avg_surge_multiplier=round(offer_stats["surge"] / self.__generated_offers, 2) if self.__generated_offers else 0.0
         )
@@ -311,11 +312,11 @@ class RideServices:
             Computed price for the ride.
         """
         # Find route and get travel distance (miles) and travel time (seconds)
-        route = traci.simulation.findRoute(from_edge, to_edge)
-        travel_time = int(route.travelTime)
+        route = traci.simulation.findRoute(from_edge, to_edge, routingMode=ROUTING_MODE_AGGREGATED)
+        travel_time = route.travelTime
         route_length = route.length
         # Convert units
-        travel_min = travel_time / 60
+        travel_min = round(travel_time / 60, 3)
         route_km = round(route_length / 1000, 3)
         # Provider-specific pricing table
         config = self.__providers[provider]
