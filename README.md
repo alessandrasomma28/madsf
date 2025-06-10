@@ -23,7 +23,7 @@ This repo is composed of 7 folders, a *main.py*, and a *requirements.txt* file.
 3. If needed, change paths indicated in `constants/sumoenv_constants.py`.
 4. Install requirements from *requirements.txt* file (`pip install -r requirements.txt`).
 5. Run simulation by simply executing *main.py*.
-6. Follow the instructions printed in the command line to initialize the simulation:
+6. Follow the instructions in the terminal to initialize the simulation:
     - **START_DATE**: the date of the first day of the simulation in the format `YYYY-MM-DD`.
     - **END_DATE**: the date of the last day of the simulation in the format `YYYY-MM-DD`.
     - **START_TIME**: the time of the first day of the simulation in the format `HH:MM`.

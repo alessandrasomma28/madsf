@@ -217,7 +217,7 @@ class Simulator:
         ):
         """
         Runs the SUMO simulation using the generated configuration file,
-        and integrates the multi-agent system if "traci" is specified.
+        and integrates the multi-agent logic if "traci" is specified.
 
         Parameters:
         -----------
@@ -226,7 +226,7 @@ class Simulator:
         - agents_interval: int
             Interval (timestamps) for agents execution.
         - dispatch_algorithm: str
-            Runs the simulation with the custom multi-agent logic if "traci" is specified
+            Runs the simulation with the custom multi-agent logic if "traci" is specified.
         - ratio_requests_vehicles: float
             Ratio of requests to vehicles, used in the surge multiplier computation.
         - mode: str
@@ -247,7 +247,7 @@ class Simulator:
         try:
             from sumolib import checkBinary
         except ImportError:
-            raise ImportError("SUMO Python tools not found, install with: 'pip install eclipse-sumo'")
+            raise ImportError("SUMO Python tools not found, install with: 'pip install eclipse-sumo' or using Homebrew (macOS)")
 
         # Choose GUI or headless mode
         sumo_binary = checkBinary("sumo-gui" if activeGui else "sumo")
@@ -276,13 +276,12 @@ class Simulator:
                 traci.close()
                 end_time = time.time()
                 elapsed = end_time - start_time
-                print("✅ Simulation finished!")
                 print(f"⏱️  Total computation time: {elapsed:.2f} seconds\n")
         else:
             print("Simulation started with standard logic...")
             try:
                 start_time = time.time()
-                while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time + 1800:
+                while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time + 3600:
                     traci.simulationStep()
                     if traci.simulation.getTime() % 60 == 0:
                         print(f"Simulation time: {int(traci.simulation.getTime())} seconds\n")

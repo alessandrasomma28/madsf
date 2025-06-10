@@ -107,7 +107,7 @@ class Model:
         This function:
         - Performs simulation steps.
         - Handles ride hailing agents every {agents_interval} timestamps.
-        - Stops when there are no active persons and vehicles available.
+        - Stops when there are no active persons and vehicles available or when the simulation time exceeds end time plus one hour.
 
         Parameters:
         ----------
@@ -119,10 +119,17 @@ class Model:
         None
         """
         self.agents_interval = agents_interval
-        while (len(traci.person.getTaxiReservations(3)) > 0 or traci.simulation.getMinExpectedNumber() > 0) and traci.simulation.getTime() < self.end_time + 1800:
+        self.sumo_time = 0
+        self.agents_time = 0
+        while (len(traci.person.getTaxiReservations(3)) > 0 or traci.simulation.getMinExpectedNumber() > 0) and traci.simulation.getTime() < self.end_time + 3600:
+            start_sumo = time.time()
             traci.simulationStep()
             self.time = int(traci.simulation.getTime())
+            end_sumo = time.time()
+            self.sumo_time += (end_sumo - start_sumo)
             if self.time % agents_interval == 0:
+                start_agents = time.time()
+                self.agents_time 
                 print(f"Simulation time: {self.time} seconds\n")
                 start = time.time()
                 self.passengers.step()
@@ -136,3 +143,8 @@ class Model:
                 self.rideservices.step()
                 end = time.time()
                 print(f"⏱️  RideServices step computed in {round((end - start), 2)} seconds\n")
+                end_agents = time.time()
+                self.agents_time += (end_agents - start_agents)
+        print("✅ Simulation finished!")
+        print(f"⏱️  Total SUMO time: {self.sumo_time:.2f} seconds")
+        print(f"⏱️  Total agents time: {self.agents_time:.2f} seconds")

@@ -323,7 +323,7 @@ def sf_traffic_od_generation(
 
     # Save to file (overwrite if exists)
     od_df.to_csv(full_path, sep=";", index=False)
-    print(f"✅ Origin-Destination traffic file saved to {full_path}")
+    print(f"✅ Origin-Destination traffic file saved to: {full_path}")
 
     return full_path
 
@@ -471,7 +471,7 @@ def sf_traffic_routes_generation(
             })
             traffic_counter += 1
         elif pd.isna(row['origin_edge_id']):
-            print(f"Skipping vehicle {row['vehicle_id']} due to missing origin edge ID(s).")
+            print(f"Skipping vehicle {row['vehicle_id']} due to missing origin edge ID(s)")
 
     # Format parts for folder structure and filename
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -559,7 +559,7 @@ def convert_shapefile_to_sumo_poly_with_polyconvert(
         print("Polyconvert failed!")
         print(f"Command: {' '.join(command)}")
         print(f"Return code: {e.returncode}")
-        raise RuntimeError(f"There was a problem with polyconvert.")
+        raise RuntimeError(f"There was a problem with polyconvert")
 
     return output_path
 
@@ -1208,7 +1208,7 @@ def get_valid_taxi_edges(
                 valid_edges.add(edge.getID())
                 break  # No need to check other lanes once we find one good
 
-    print(f"✅ Found {len(valid_edges)} valid taxi edges.")
+    print(f"✅ Found {len(valid_edges)} valid taxi edges")
 
     return valid_edges
 
@@ -1384,10 +1384,10 @@ def filter_polygon_lanes(
 def generate_work_duration(starting: bool = False) -> int:
     """
     Generates a taxi work duration (in hours) based on the following distribution:
-    - 51% work between 10 minutes and 2 hours
-    - 30% work between 2 and 5 hours
-    - 12% work between 5 and 7 hours
-    - 7% work between 7 and 8 hours
+    - 51% work between 10 minutes and 2 hours.
+    - 30% work between 2 and 5 hours.
+    - 12% work between 5 and 7 hours.
+    - 7% work between 7 and 8 hours.
 
     Parameters:
     ----------

@@ -136,7 +136,7 @@ def check_import_traffic(
     # Write response to CSV file
     with open(sf_traffic_file_path, "w", encoding="utf-8") as f:
         f.write(response.text)
-    print(f"✅ CSV saved to: {sf_traffic_file_path}")
+    print(f"✅ CSV traffic saved to: {sf_traffic_file_path}")
 
     return Path(sf_traffic_file_path)
 
@@ -300,7 +300,7 @@ def extract_sf_traffic_timeslot(
 
     # Save file, overwrite if exists
     filtered_df.to_csv(output_csv_path, sep=";", index=False)
-    print(f"✅ Filtered traffic data saved to {output_csv_path}")
+    print(f"✅ Filtered traffic data saved to: {output_csv_path}")
 
     return output_csv_path
 

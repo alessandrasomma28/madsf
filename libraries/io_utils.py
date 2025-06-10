@@ -485,7 +485,7 @@ def generate_output_csv(
     df = pd.DataFrame(data)
     output_csv_path = os.path.join(output_path, "sf_final_metrics.csv")
     df.to_csv(output_csv_path, index=False)
-    print(f"✅ Computed {len(df.columns)-1} metrics, CSV file saved to {output_csv_path}")
+    print(f"✅ Computed {len(df.columns)-1} metrics, CSV file saved to: {output_csv_path}")
 
     # Create interactive line plot of the metrics
     df.set_index("timestamp", inplace=True)
@@ -494,4 +494,4 @@ def generate_output_csv(
     fig = px.line(df, x=df.index, y=df.columns, title=title)
     fig.update_layout(legend_title_text="Simulation metrics")
     fig.write_html(output_html_path)
-    print(f"✅ Interactive line plot saved to {output_html_path}")
+    print(f"✅ Interactive line plot saved to: {output_html_path}")

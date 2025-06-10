@@ -12,3 +12,5 @@ clean.sh
 sumoenv/sf_old.net.xml
 *.pdf
 *.key
+*.png
+analyze_output.py
