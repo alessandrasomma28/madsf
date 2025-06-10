@@ -45,7 +45,7 @@ activeGui = get_or_prompt("ACTIVE_GUI", lambda: get_valid_str("⚙️  Do you wa
 verboseMode = get_or_prompt("VERBOSE", lambda: get_valid_str("⚙️  Do you want to run the simulation in verbose mode? (yes/no) ")) == "yes"
 SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}"
 os.makedirs(SCENARIO_PATH, exist_ok=True)
-radius = 200                        # Radius (meters) for map matching
+radius = 200                        # Radius (meters))for map matching
 n_start_lanes = 10                  # Number of possible start lanes for taxis in each TAZ
 peak_vehicles = 5700                # Peak number of DRT vehicles in a day
 max_vehicles = 45000                # Maximum number of drivers available in one day

@@ -52,8 +52,8 @@ class RideServices:
         self.__rides_not_served = 0
         self.__generated_offers = 0
         self.__partial_acceptances = 0
-        self.__offers = {}  # key: (res_id, driver_id), value: dict with travel time, route length, price
-        self.__acceptances = {}  # key: (res_id, driver_id), value: (set of agents, timestamp)
+        self.__offers = {}          # key: (res_id, driver_id), value: dict with travel time, route length, price
+        self.__acceptances = {}     # key: (res_id, driver_id), value: (set of agents, timestamp)
         self.__miles_radius_max = 16093
         self.__max_offers_per_reservation = 8
         self.__radius_square = self.__miles_radius_max ** 2
@@ -92,6 +92,7 @@ class RideServices:
         canceled = self.model.passengers.get_canceled_requests()
         idle_by_provider = self.model.drivers.get_idle_drivers_by_provider()
 
+        # Reset statistics
         self.__expired_acceptances_p = 0
         self.__expired_acceptances_d = 0
         self.__rides_not_served = 0

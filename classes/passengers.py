@@ -47,8 +47,8 @@ class Passengers:
         self.__timeout = timeout
         self.__personality_distribution = personality_distribution
         self.__acceptance_distribution = acceptance_distribution
-        self.__passengers_with_personality = {} # Maps passengers to personalities
-        self.__canceled = set()  # Set of canceled requests for surge multiplier computation
+        self.__passengers_with_personality = {}     # Maps passengers to personalities
+        self.__canceled = set()                     # Set of canceled requests for surge multiplier computation
         self.logger = logger
 
 

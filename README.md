@@ -11,7 +11,7 @@ This repo is composed of 7 folders, a *main.py*, and a *requirements.txt* file.
 - `constants/`: contains paths for better readability.
 - `data/`: contains all input data for the simulator.
 - `libraries/`: contains all the utility functions to generate the input for the simulation.
-- `sumoenv/`: contains the output folder, the SF net files, and the `sumocfg` file, which is automatically generated in *main.py*.
+- `sumoenv/`: contains the folder with input and output files, the SF net file, and the `sumocfg` file, which is automatically generated in *main.py*.
 - `config/`: contains `.json` files to configurate providers, personalities and acceptances.
 - `doc/`: contains additional documentation of the project. It also contains the list of the days with no traffic data available from SFMTA.
 

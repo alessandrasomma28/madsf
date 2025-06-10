@@ -50,10 +50,10 @@ class Drivers:
         self.__personality_distribution = personality_distribution
         self.__acceptance_distribution = acceptance_distribution
         self.__providers = providers
-        self.__drivers_with_provider = {}  # Maps drivers to providers
-        self.__drivers_with_personality = {}  # Maps drivers to personalities
-        self.__driver_idle_time = {}  # Track how long each driver has been idle
-        self.__driver_removal_prob = {}  # Track removal probability for each driver
+        self.__drivers_with_provider = {}       # Maps drivers to providers
+        self.__drivers_with_personality = {}    # Maps drivers to personalities
+        self.__driver_idle_time = {}            # Track how long each driver has been idle
+        self.__driver_removal_prob = {}         # Track removal probability for each driver
         self.logger = logger
 
 
