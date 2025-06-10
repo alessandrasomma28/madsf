@@ -211,7 +211,7 @@ def generate_output_csv(
 
     # Prepare directory and filename
     timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
-    output_path = os.path.join(SUMO_SCENARIOS_PATH, scenario, timeslot)
+    output_path = os.path.join(SUMO_SCENARIOS_PATH, scenario, mode, timeslot)
             
     # Load XML data
     tripinfos = os.path.join(output_path, "tripinfos.xml")

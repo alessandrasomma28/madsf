@@ -258,7 +258,7 @@ class Simulator:
         else:
             traci.start([sumo_binary, "-c", str(self.sumocfg_file_path)])
         if dispatch_algorithm == "traci":
-            print("Simulation started with custom Multi-Agent logic...")
+            print("\nStarting simulation with custom Multi-Agent logic...\n")
             try:
                 start_time = time.time()
                 # Initialize multi-agent model
@@ -278,7 +278,7 @@ class Simulator:
                 elapsed = end_time - start_time
                 print(f"⏱️  Total computation time: {elapsed:.2f} seconds\n")
         else:
-            print("Simulation started with standard logic...")
+            print("\nStarting simulation with standard SUMO logic...\n")
             try:
                 start_time = time.time()
                 while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time + 3600:
