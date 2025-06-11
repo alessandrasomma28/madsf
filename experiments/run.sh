@@ -1,7 +1,8 @@
 #!/bin/bash
 
+# Dates: median (wed, fri, sun), max (wed, fri, sun), min (wed, fri, sun)
+BASE_DATES=('2021-11-10' '2021-11-12' '2021-11-14' '2021-10-06' '2021-10-08' '2021-10-10' '2021-06-23' '2021-06-25' '2021-06-27')
 # Fixed parameters and paths
-BASE_DATE='2021-01-14'
 SCENARIO='normal'
 ACTIVE_GUI='no'
 VERBOSE='no'
@@ -24,20 +25,22 @@ minutes_to_time() {
   printf "%02d:%02d" $h $m
 }
 
-# Add 1 day to a date
+# Add 1 day to a date (macOS-compatible)
 next_day() {
   date -j -f "%Y-%m-%d" "$1" -v+1d "+%Y-%m-%d"
 }
 
-for DURATION in "${DURATIONS[@]}"; do
+# Loop over all base dates
+for BASE_DATE in "${BASE_DATES[@]}"; do
+  for DURATION in "${DURATIONS[@]}"; do
 
-  # === DAY SHIFT (8AM - 8PM) ===
-  for START_MIN in $(seq $(time_to_minutes 08:00) 60 $(time_to_minutes 19:00)); do
-    END_MIN=$((START_MIN + DURATION))
-    if [ $END_MIN -gt $(time_to_minutes 20:00) ]; then continue; fi
-    START_TIME=$(minutes_to_time $START_MIN)
-    END_TIME=$(minutes_to_time $END_MIN)
-    cat <<EOF > "$ENV_PATH"
+    # === DAY SHIFT (8AM - 8PM) ===
+    for START_MIN in $(seq $(time_to_minutes 08:00) 60 $(time_to_minutes 19:00)); do
+      END_MIN=$((START_MIN + DURATION))
+      if [ $END_MIN -gt $(time_to_minutes 20:00) ]; then continue; fi
+      START_TIME=$(minutes_to_time $START_MIN)
+      END_TIME=$(minutes_to_time $END_MIN)
+      cat <<EOF > "$ENV_PATH"
 START_DATE=${BASE_DATE}
 END_DATE=${BASE_DATE}
 START_TIME=${START_TIME}
@@ -47,25 +50,25 @@ MODE=${MODE}
 ACTIVE_GUI=${ACTIVE_GUI}
 VERBOSE=${VERBOSE}
 EOF
-    echo "▶️  DAY [$MODE] $START_TIME-$END_TIME (${DURATION} min)"
-    export $(grep -v '^#' "$ENV_PATH" | xargs)
-    python "${ROOT_DIR}/main.py"
-  done
+      echo "▶️  DAY [$MODE] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
+      export $(grep -v '^#' "$ENV_PATH" | xargs)
+      python "${ROOT_DIR}/main.py"
+    done
 
-  # === NIGHT SHIFT (8PM - 8AM) ===
-  LIMIT_MIN=$(( $(time_to_minutes 08:00) + 1440 ))
-  for START_MIN in $(seq $(time_to_minutes 20:00) 60 $(time_to_minutes 23:00)); do
-    END_MIN=$((START_MIN + DURATION))
-    if [ $END_MIN -gt $LIMIT_MIN ]; then continue; fi
-    START_TIME=$(minutes_to_time $START_MIN)
-    if [ $END_MIN -lt 1440 ]; then
-      END_TIME=$(minutes_to_time $END_MIN)
-      END_DATE=$BASE_DATE
-    else
-      END_TIME=$(minutes_to_time $((END_MIN % 1440)))
-      END_DATE=$(next_day "$BASE_DATE")
-    fi
-    cat <<EOF > "$ENV_PATH"
+    # === NIGHT SHIFT (8PM - 8AM) ===
+    LIMIT_MIN=$(( $(time_to_minutes 08:00) + 1440 ))
+    for START_MIN in $(seq $(time_to_minutes 20:00) 60 $(time_to_minutes 23:00)); do
+      END_MIN=$((START_MIN + DURATION))
+      if [ $END_MIN -gt $LIMIT_MIN ]; then continue; fi
+      START_TIME=$(minutes_to_time $START_MIN)
+      if [ $END_MIN -lt 1440 ]; then
+        END_TIME=$(minutes_to_time $END_MIN)
+        END_DATE=$BASE_DATE
+      else
+        END_TIME=$(minutes_to_time $((END_MIN % 1440)))
+        END_DATE=$(next_day "$BASE_DATE")
+      fi
+      cat <<EOF > "$ENV_PATH"
 START_DATE=${BASE_DATE}
 END_DATE=${END_DATE}
 START_TIME=${START_TIME}
@@ -75,8 +78,9 @@ MODE=${MODE}
 ACTIVE_GUI=${ACTIVE_GUI}
 VERBOSE=${VERBOSE}
 EOF
-    echo "▶️  NIGHT [$MODE] $START_TIME-$END_TIME (${DURATION} min)"
-    export $(grep -v '^#' "$ENV_PATH" | xargs)
-    python "${ROOT_DIR}/main.py"
+      echo "▶️  NIGHT [$MODE] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
+      export $(grep -v '^#' "$ENV_PATH" | xargs)
+      python "${ROOT_DIR}/main.py"
+    done
   done
 done
