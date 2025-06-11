@@ -261,7 +261,6 @@ class Simulator:
         if dispatch_algorithm == "traci":
             print("\nStarting simulation with custom Multi-Agent logic...\n")
             try:
-                start_time = time.time()
                 # Initialize multi-agent model
                 drt_model = Model(
                     sumocfg_path=str(self.sumocfg_file_path),
@@ -271,6 +270,7 @@ class Simulator:
                     ratio_requests_vehicles=ratio_requests_vehicles,
                     mode=mode
                 )
+                start_time = time.time()
                 # Delegates control to custom multi-agent logic
                 sumo_time, agents_time = drt_model.run(agents_interval)
             finally:
