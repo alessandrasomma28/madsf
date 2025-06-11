@@ -5,7 +5,7 @@ This is a work-in-progress project, feel free to report any inconsistency or bug
 
 ## Description
 
-This repo is composed of 7 folders, a *main.py*, and a *requirements.txt* file.
+This repo is composed of 7 folders, a *main.py*, a *clean.sh* script to clean `.env` file and output directories, and a *requirements.txt* file.
 
 - `classes/`: contains simulation and multi-agent logic.
 - `constants/`: contains paths for better readability.
@@ -34,7 +34,7 @@ This repo is composed of 7 folders, a *main.py*, and a *requirements.txt* file.
     - **VERBOSE**: `True` to print detailed information about the simulation, `False` otherwise.
     
     Options will be saved in the `.env` file in the root folder of the project. If you want to change the options, you can edit the `.env` file directly or run *main.py* again after deleting the `.env` file.
-7. Inspect output folder `sumoenv/scenario/{scenario_name}/{timeslot}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the `HTML` interactive line plot visualization `sf_final_metrics_visualization.html`.
+7. Inspect output folder `sumoenv/scenario/{scenario_name}/{mode}/{timeslot}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the `HTML` interactive line plot visualization `sf_final_metrics_visualization.html`.
 
 
 ## Extensibility

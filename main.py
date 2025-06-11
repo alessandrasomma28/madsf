@@ -40,7 +40,7 @@ else:
     end_time = get_or_prompt("END_TIME", lambda: get_valid_hour("⚙️  Enter simulation end hour (1-23): ", end_hour_check=True))
 scenario = get_or_prompt("SCENARIO", lambda: get_valid_scenario("⚙️  Enter scenario name (normal): "))
 mode = get_or_prompt("MODE", lambda: get_valid_mode("⚙️  Enter simulation mode (sumo, multi_agent, social_groups): "))
-agents_interval = 60  # Default agents interval
+agents_interval = 60    # Default agents interval
 activeGui = get_or_prompt("ACTIVE_GUI", lambda: get_valid_str("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")) == "yes"
 verboseMode = get_or_prompt("VERBOSE", lambda: get_valid_str("⚙️  Do you want to run the simulation in verbose mode? (yes/no) ")) == "yes"
 SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}/{mode}"
