@@ -5,15 +5,16 @@ This is a work-in-progress project, feel free to report any inconsistency or bug
 
 ## Description
 
-This repo is composed of 7 folders, a *main.py*, a *clean.sh* script to clean `.env` file and output directories, and a *requirements.txt* file.
+This repo is composed of 8 folders, a *main.py*, a *clean.sh* script to clean `.env` file and output directories, and a *requirements.txt* file.
 
 - `classes/`: contains simulation and multi-agent logic.
+- `config/`: contains `.json` files to configurate providers, personalities and acceptances.
 - `constants/`: contains paths for better readability.
 - `data/`: contains all input data for the simulator.
+- `doc/`: contains additional documentation of the project. It also contains the list of the days with no traffic data available from [SFMTA](https://data.sfgov.org/Transportation/SFMTA-Transit-Vehicle-Location-History-2021-/9722-grnf/data_preview).
+- `experiments/`: contains the results of the experiments regarding fidelity and efficiency.
 - `libraries/`: contains all the utility functions to generate the input for the simulation.
 - `sumoenv/`: contains the folder with input and output files, the SF net file, and the `sumocfg` file, which is automatically generated in *main.py*.
-- `config/`: contains `.json` files to configurate providers, personalities and acceptances.
-- `doc/`: contains additional documentation of the project. It also contains the list of the days with no traffic data available from SFMTA.
 
 
 ## How-to-run instructions
@@ -35,6 +36,11 @@ This repo is composed of 7 folders, a *main.py*, a *clean.sh* script to clean `.
     
     Options will be saved in the `.env` file in the root folder of the project. If you want to change the options, you can edit the `.env` file directly or run *main.py* again after deleting the `.env` file.
 7. Inspect output folder `sumoenv/scenario/{scenario_name}/{mode}/{timeslot}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the `HTML` interactive line plot visualization `sf_final_metrics_visualization.html`.
+
+
+### Running experiments in batch
+
+To run experiments in batch, you can use the `run.sh` bash script. This script will run the simulation for all the specified durations (both during 'day' shift and 'night' shift), modes and days. To change settings, simply modify the parameters list at the beginning of the script. **NOTE: Be sure to run the script from the project root folder to effectively load the `.env` file (i.e., `./experiments/run.sh`).**
 
 
 ## Extensibility

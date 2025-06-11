@@ -80,7 +80,7 @@ class RideServices:
         - Skips requests if no taxis are available.
         - Updates the logger with average metrics for each provider.
         
-        Returns:
+        Returns
         -------
         None
         """
@@ -237,11 +237,11 @@ class RideServices:
         - Removes all related acceptances to prevent conflicts.
         - Updates the logger with the number of dispatched taxis and other metrics.
 
-        Returns:
+        Returns
         -------
         None
 
-        Notes:
+        Notes
         A match is considered fully accepted if both the driver and passenger have accepted.
         """
         # Get fully-accepted matches
@@ -291,7 +291,7 @@ class RideServices:
         """
         Computes travel time, distance, and price for a specific offer.
 
-        Parameters:
+        Parameters
         ----------
         - from_edge: str
             Departure edge ID of the reservation.
@@ -302,7 +302,7 @@ class RideServices:
         - provider: str
             Provider of the ride service.
 
-        Returns:
+        Returns
         -------
         - travel_time: int
             Estimated travel time in seconds.
@@ -342,7 +342,7 @@ class RideServices:
         to available idle drivers. The multiplier ranges from 1.0 (normal conditions)
         to max_surge for each provider.
 
-        Parameters:
+        Parameters
         ----------
         - pending_requests: int
             Number of passengers pending requests.
@@ -376,14 +376,14 @@ class RideServices:
         Accepts an offer for a ride by recording the agent's acceptance.
         If both agents associated with the offer have accepted, the offer is removed.
 
-        Parameters:
+        Parameters
         ----------
         - key: tuple 
             The unique identifier for the offer.
         - agent: str
             The agent accepting the offer.
 
-        Returns:
+        Returns
         -------
         None
         """
@@ -402,12 +402,12 @@ class RideServices:
         """
         Rejects an offer for a ride by removing it from offers.
 
-        Parameters:
+        Parameters
         ----------
         key: tuple 
             Key (res_id, driver_id) of the offer to remove.
 
-        Returns:
+        Returns
         -------
         None
         """
@@ -421,7 +421,7 @@ class RideServices:
         """
         Gets the dictionary of offers.
 
-        Returns:
+        Returns
         -------
         dict
             A dictionary containing all offers.
@@ -436,12 +436,12 @@ class RideServices:
         """
         Gets the dictionary of offers for the specified drivers.
 
-        Parameters:
+        Parameters
         ----------
         drivers: set
             The set of driver identifiers to filter offers by.
 
-        Returns:
+        Returns
         -------
         dict
             A dictionary containing offers where the driver identifier (k[1]) is in the provided drivers list.
@@ -456,12 +456,12 @@ class RideServices:
         """
         Gets the dictionary of offers for the specified passengers.
 
-        Parameters:
+        Parameters
         ----------
         passengers: set
             The set of passenger identifiers to filter offers by.
 
-        Returns:
+        Returns
         -------
         dict
             A dictionary containing offers where the passenger identifier (k[0]) is in the provided passengers list.
@@ -476,12 +476,12 @@ class RideServices:
         """
         Removes a specified offer from offers dictionary.
 
-        Parameters:
+        Parameters
         ----------
         key: tuple
             Key (res_id, offer) of the offer to remove.
 
-        Returns:
+        Returns
         -------
         None
         """
@@ -495,14 +495,14 @@ class RideServices:
         """
         Returns True if the passenger has accepted the offer for (res_id, driver_id).
 
-        Parameters:
+        Parameters
         ----------
         - res_id: str
             Unique ID of the passenger reservation
         - driver_id: str
             Unique ID of the driver
 
-        Returns:
+        Returns
         -------
         bool
         """
@@ -516,7 +516,7 @@ class RideServices:
         """
         Gets the dictionary of acceptances.
 
-        Returns:
+        Returns
         -------
         dict
             A dictionary containing all acceptances.
@@ -531,12 +531,12 @@ class RideServices:
         """
         Removes a specified acceptance from acceptance dictionary.
 
-        Parameters:
+        Parameters
         ----------
         key: tuple
             Key (res_id, driver_id) of the acceptance to remove.
 
-        Returns:
+        Returns
         -------
         None
         """

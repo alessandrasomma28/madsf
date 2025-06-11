@@ -55,17 +55,17 @@ def get_strongly_connected_edges(sf_map_file_path: str) -> set:
     - Identifies strongly connected edges using depth-first search (DFS).
     - Returns a set of edge IDs that are strongly connected.
 
-    Parameters:
+    Parameters
     ----------
     sf_map_file_path : str
         Path to the SUMO network XML file.
 
-    Returns:
+    Returns
     -------
     set
         A set of edge IDs (str) strongly connected.
     
-    Notes:
+    Notes
     Strongly connected edges are those that can be reached from each other in both directions.
     """
     # Load the SUMO network
@@ -129,7 +129,7 @@ def get_nearest_edge(
     - Searches for neighboring edges within a specified radius.
     - Returns the ID of the nearest edge if found, otherwise None.
 
-    Parameters:
+    Parameters
     ----------
     - network : sumolib.net.Net
         The loaded SUMO network.
@@ -143,7 +143,7 @@ def get_nearest_edge(
         Set of edge IDs to consider as valid (e.g., strongly connected edges).
         If None, all edges are considered.
 
-    Returns:
+    Returns
     -------
     str or None
         The ID of the nearest edge if found, otherwise None.
@@ -181,7 +181,7 @@ def sf_traffic_map_matching(
     - Creates output directories if they do not exist.
     - Overwrites the output CSV if it already exists.
 
-    Parameters:
+    Parameters
     ----------
     - sf_map_file_path: str
         Path to the SUMO network XML file.
@@ -197,7 +197,7 @@ def sf_traffic_map_matching(
         Set of edge IDs to consider as valid (e.g., strongly connected edges).
         If None, all edges are considered.
 
-    Returns:
+    Returns
     -------
     Path
         Path to the saved output CSV file with edge IDs.
@@ -245,7 +245,7 @@ def sf_traffic_od_generation(
     - Pairs each row's origin edge to a destination edge whose TAZ is within ±3 of the origin TAZ.
     - Saves the resulting OD data in a structured folder format (sf_traffic_od_{YYMMDD}_{HHHH}.csv).
 
-    Parameters:
+    Parameters
     ----------
     - sf_real_traffic_edge_path : str
         Path to the input CSV containing traffic data with edge IDs.
@@ -260,7 +260,7 @@ def sf_traffic_od_generation(
     - end_time_str : str
         End time in 'HH:MM' format (e.g., '10:00').
 
-    Returns:
+    Returns
     -------
     Path
         Full path to the saved OD CSV file.
@@ -346,7 +346,7 @@ def add_sf_traffic_taz_matching(
     - If a point is not contained in any polygon, assigns the nearest TAZ centroid.
     - Saves the updated CSV with a new TAZ column.
 
-    Parameters:
+    Parameters
     ----------
     - edge_file_path: str
         CSV with columns latitude and longitude.
@@ -361,11 +361,11 @@ def add_sf_traffic_taz_matching(
     - zone_id_field: str
         Field name in shapefile for TAZ ID.
 
-    Returns:
+    Returns
     -------
     None
 
-    Raises:
+    Raises
     ------
     - ValueError: If lat_col or lon_col are missing in edge_file_path.
     - ValueError: If zone_id_field is not found in shapefile_path.
@@ -425,7 +425,7 @@ def sf_traffic_routes_generation(
     - Origin edge
     - Destination edge
     
-    Parameters:
+    Parameters
     ----------
     - sf_traffic_od_path: str
         Path to the OD CSV file.
@@ -440,7 +440,7 @@ def sf_traffic_routes_generation(
     - end_time_str: str
         End time in 'HH:MM' format (e.g., '10:00').
 
-    Returns:
+    Returns
     -------
     Path
         Full path to the saved XML file.
@@ -507,7 +507,7 @@ def convert_shapefile_to_sumo_poly_with_polyconvert(
     """
     This function uses the polyconvert tool to convert a shapefile into a SUMO polygon file.
 
-    Parameters:
+    Parameters
     ----------
     - net_file: str
         Path to the SUMO network file (.net.xml).
@@ -522,12 +522,12 @@ def convert_shapefile_to_sumo_poly_with_polyconvert(
     - output_filename: str
         Name of the resulting .poly.xml file.
 
-    Returns:
+    Returns
     -------
     Path
         Full path to the generated .poly.xml file.
 
-    Raises:
+    Raises
     ------
     RuntimeError: If polyconvert fails.
     """
@@ -576,18 +576,18 @@ def export_taz_coords(
     - Extracts the polygon coordinates and centroid coordinates.
     - Saves the data to a CSV file with columns: TAZ, polygon_coords, centroid_coords.
 
-    Parameters:
+    Parameters
     ----------
     - shapefile_path: str
         Full path to the input TAZ shapefile (.shp).
     - output_csv_path: str
         Path where the output CSV will be saved. If the file exists, it will be overwritten.
 
-    Returns:
+    Returns
     -------
     None
 
-    Notes:
+    Notes
     - Assumes the shapefile has a column named 'TAZ' for unique zone IDs.
     - If a geometry is empty or invalid, centroid_coords will be None.
     """
@@ -642,7 +642,7 @@ def map_coords_to_sumo_edges(
         - 'centroid_edge_id': Edge ID mapped to the centroid.
         - 'centroid_lane_id': Lane ID mapped to the centroid.
 
-    Parameters:
+    Parameters
     ----------
     - taz_csv_path: str
         Path to the TAZ CSV file with 'polygon_coords' and 'centroid_coords'.
@@ -651,7 +651,7 @@ def map_coords_to_sumo_edges(
     - output_csv_path: str
         Path to save the output CSV with mappings.
 
-    Returns:
+    Returns
     -------
     None
     """
@@ -728,7 +728,7 @@ def map_taz_to_edges(
     - Filters out entries with empty edge and lane lists.
     - If safe_edge_ids is provided, only includes edges in that set.
 
-    Parameters:
+    Parameters
     ----------
     - taz_csv_path: str
         Path to the TAZ CSV file with 'polygon_edge_ids' and 'centroid_edge_id'.
@@ -736,7 +736,7 @@ def map_taz_to_edges(
         Set of edge IDs to consider as valid (e.g., strongly connected edges).
         If None, all edges are considered.
 
-    Returns:
+    Returns
     -------
     dict
         Dictionary mapping TAZ IDs to their corresponding edge and lane IDs.
@@ -785,7 +785,7 @@ def generate_vehicle_start_lanes_from_taz_polygons(
     - Returns a list of lane IDs where vehicles should be placed for each TAZ.
     - If safe_edge_ids is provided, only considers edges in that set.
 
-    Parameters:
+    Parameters
     ----------
     - shapefile_path: str
         Path to TAZ polygon shapefile.
@@ -797,7 +797,7 @@ def generate_vehicle_start_lanes_from_taz_polygons(
         Set of edge IDs to consider as valid (e.g., strongly connected edges).
         If None, all edges are considered.
 
-    Returns:
+    Returns
     -------
     dict
         Dictionary mapping TAZ IDs to lists of lane IDs where vehicles should be placed.
@@ -856,7 +856,7 @@ def compute_requests_vehicles_ratio(
     - Groups the data by hour and computes the average pickups across all TAZs and days.
     - Computes the final requests to drivers ratio for each hour.
 
-    Parameters:
+    Parameters
     ----------
     - sf_tnc_fleet_folder_path: str
         Path to the CSV file containing hourly pickup requests.
@@ -865,7 +865,7 @@ def compute_requests_vehicles_ratio(
     - max_total_drivers: int
         Maximum number of drivers available across all hours for one day.
 
-    Returns:
+    Returns
     -------
     float
         The requests to drivers ratio.
@@ -912,7 +912,7 @@ def generate_drt_vehicle_instances_from_lanes(
     - Generates 50% of drivers from the previous hour at simulation start.
     - Creates a SUMO .rou.xml file with <vehicle> entries for each allocated vehicle.
 
-    Parameters:
+    Parameters
     ----------
     - start_lanes_by_taz: dict
         Dictionary mapping TAZ IDs to lists of start lane IDs where vehicles should be placed.
@@ -935,12 +935,12 @@ def generate_drt_vehicle_instances_from_lanes(
     - idle_mechanism: str
         Idling mechanism for taxis ("stop" or "randomCircling").
 
-    Returns:
+    Returns
     -------
     Path
         Full path to the saved XML file.
 
-    Raises:
+    Raises
     ------
     ValueError: If idle_mechanism is not "stop" or "randomCircling".
     """
@@ -1176,7 +1176,7 @@ def get_valid_taxi_edges(
     - Filters out edges that are internal, dead-end, or not strongly connected.
     - Returns a set of valid edge IDs.
 
-    Parameters:
+    Parameters
     ----------
     - net_file: str
         Path to the SUMO .net.xml file.
@@ -1184,7 +1184,7 @@ def get_valid_taxi_edges(
         Set of edge IDs to consider as valid (e.g., strongly connected edges).
         If None, all edges are considered.
 
-    Returns:
+    Returns
     -------
     set
         Set of valid edge IDs.
@@ -1235,7 +1235,7 @@ def generate_matched_drt_requests(
     - Each person is assigned a departure time and a ride from pickup to dropoff.
     - The output is saved to the specified path.
 
-    Parameters:
+    Parameters
     ----------
     - tnc_data: dict
         Nested dictionary of Uber pickups and dropoffs per TAZ and hour.
@@ -1254,7 +1254,7 @@ def generate_matched_drt_requests(
     - valid_edge_ids: set
         Set of SUMO edge IDs validated for taxi routing (connected, non-junction, drivable).
 
-    Returns:
+    Returns
     -------
     Path
         Full path to the saved XML file.
@@ -1389,12 +1389,12 @@ def generate_work_duration(starting: bool = False) -> int:
     - 12% work between 5 and 7 hours.
     - 7% work between 7 and 8 hours.
 
-    Parameters:
+    Parameters
     ----------
     - starting: bool
         If True, the duration is generated for the vehicles at the simulation start.
 
-    Returns:
+    Returns
     ------ 
     int
         Duration in seconds.

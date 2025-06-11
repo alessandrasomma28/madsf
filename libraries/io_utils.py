@@ -38,8 +38,6 @@ def load_env(override: bool = False) -> bool:
             dotenv_path=ENV_PATH,
             override=override
         )
-        return True
-    return False
 
 
 def save_to_env(
@@ -175,7 +173,7 @@ def generate_output_csv(
     - Saves the DataFrame to a CSV file.
     - Creates an interactive line plot of the metrics and saves it as an HTML file.
 
-    Parameters:
+    Parameters
     ----------
     - start_date_str: str
         Start date in 'YYYY-MM-DD' format (e.g., '2021-03-25').
@@ -190,11 +188,11 @@ def generate_output_csv(
     - scenario: str
         Scenario name (default is 'normal').
 
-    Returns:
+    Returns
     -------
     None
 
-    Raises:
+    Raises
     ------
     FileNotFoundError: If the specified SUMO scenarios path does not exist or if any of the required XML files are missing.
     """

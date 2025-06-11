@@ -14,6 +14,7 @@ It supports the following operations:
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
+import pandas as pd
 import time
 import traci
 import sumolib
@@ -76,7 +77,7 @@ class Simulator:
         - Sets the route file paths for traffic, taxi, and passenger data.
         - Sets the simulation end time in seconds.
 
-        Parameters:
+        Parameters
         -----------
         - sf_routes_folder_path: str 
             Scenario root folder.
@@ -95,7 +96,7 @@ class Simulator:
         - end_time_str: str
             End time in 'HH:MM' format (e.g., '10:00').
 
-        Returns:
+        Returns
         --------
         Path 
             Path to the generated directory
@@ -147,18 +148,18 @@ class Simulator:
             - {output_dir}
             - {end_time}
 
-        Parameters:
+        Parameters
         ----------
         - dispatch_algorithm: str
             Dispatch algorithm for taxis. Can be "greedy", "greedyClosest" or "traci".
         - idle_mechanism: str
             Idling mechanism for taxis ("stop" or "randomCircling").
 
-        Returns:
+        Returns
         -------
         None
 
-        Raises:
+        Raises
         -------
         - ValueError: If output_dir_path is not set before calling this method.
         - ValueError: If route_file_path is not set before calling this method.
@@ -219,7 +220,7 @@ class Simulator:
         Runs the SUMO simulation using the generated configuration file,
         and integrates the multi-agent logic if "traci" is specified.
 
-        Parameters:
+        Parameters
         -----------
         - activeGui: bool 
             If True, runs with SUMO-GUI. If False, runs headless.
@@ -232,11 +233,11 @@ class Simulator:
         - mode: str
             Mode of the simulation, can be "sumo", "multi_agent" or "social_groups.
 
-        Returns:
+        Returns
         -------
         None
 
-        Raises:
+        Raises
         -------
         - FileNotFoundError: If the SUMO config file is not generated.
         - ImportError: If traci or libsumo is not installed or SUMO_HOME is not set.
@@ -271,12 +272,21 @@ class Simulator:
                     mode=mode
                 )
                 # Delegates control to custom multi-agent logic
-                drt_model.run(agents_interval)
+                sumo_time, agents_time = drt_model.run(agents_interval)
             finally:
                 traci.close()
                 end_time = time.time()
                 elapsed = end_time - start_time
                 print(f"⏱️  Total computation time: {elapsed:.2f} seconds\n")
+                summary_path = self.output_dir_path / "simulation_summary.csv"
+                summary_data = {
+                    "sumo_time": round(sumo_time, 2),
+                    "agents_time": round(agents_time, 2),
+                    "total_elapsed_seconds": round(elapsed, 2)
+                }
+                summary_df = pd.DataFrame([summary_data])
+                summary_df.to_csv(summary_path, index=False)
+                print(f"📝  Saved simulation time summary to: {summary_path}")
         else:
             print("\nStarting simulation with standard SUMO logic...\n")
             try:
@@ -291,3 +301,10 @@ class Simulator:
                 elapsed = end_time - start_time
                 print("✅ Simulation finished!")
                 print(f"⏱️  Total computation time: {elapsed:.2f} seconds\n")
+                summary_path = self.output_dir_path / "simulation_summary.csv"
+                summary_data = {
+                    "total_elapsed_seconds": round(elapsed, 2)
+                }
+                summary_df = pd.DataFrame([summary_data])
+                summary_df.to_csv(summary_path, index=False)
+                print(f"📝  Saved simulation time summary to: {summary_path}")

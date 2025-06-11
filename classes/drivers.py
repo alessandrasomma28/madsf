@@ -168,7 +168,7 @@ class Drivers:
         """
         Gets the set of idle drivers.
 
-        Returns:
+        Returns
         -------
         set
             The set of driver IDs that are currently idle.
@@ -179,7 +179,7 @@ class Drivers:
         """
         Gets a dictionary of idle drivers grouped by their providers.
 
-        Returns:
+        Returns
         -------
         dict
             A dictionary where keys are provider names and values are sets of driver IDs that are idle under that provider.
@@ -195,12 +195,12 @@ class Drivers:
         """
         Gets the provider of a specific driver.
 
-        Parameters:
+        Parameters
         ----------
         driver_id : str
             The ID of the driver whose provider is to be retrieved.
 
-        Returns:
+        Returns
         -------
         str
             The provider of the specified driver, or None if the driver is not found.

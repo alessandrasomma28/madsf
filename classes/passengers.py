@@ -188,7 +188,7 @@ class Passengers:
         """
         Gets the set of unassigned requests.
         
-        Returns:
+        Returns
         -------
         set
             The set of unassigned requests.
@@ -199,7 +199,7 @@ class Passengers:
         """
         Gets the set of canceled requests.
 
-        Returns:
+        Returns
         -------
         set
             The set of canceled requests.

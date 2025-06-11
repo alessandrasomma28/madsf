@@ -40,7 +40,7 @@ def check_import_traffic(
     - Constructs a query to fetch vehicle position data within a specified time range.
     - Saves the data to a CSV file in a designated folder, with the format: sf_traffic_data_{YYMMDDHH}_{YYMMDDHH}.csv.
 
-    Parameters:
+    Parameters
     ----------
     - start_date_str: str
         Start date in 'YYYY-MM-DD' format (e.g., '2021-03-25').
@@ -53,12 +53,12 @@ def check_import_traffic(
     - limit: int
         Maximum number of records to fetch.
 
-    Returns:
+    Returns
     -------
     Path
         Full path to the saved CSV file containing the traffic data.
 
-    Raises:
+    Raises
     ------
     - Exception
         If the request to the SFMTA API fails or if the response status code is not 200.
@@ -151,12 +151,12 @@ def read_sf_traffic_data(file_path: str) -> pd.DataFrame:
     - Filters out vehicles that never moved (i.e., always speed == 0).
     - Computes relative time from the first timestamp in seconds.
 
-    Parameters:
+    Parameters
     ----------
     file_path : str
         Path to the input CSV file.
 
-    Returns:
+    Returns
     -------
     pandas.DataFrame
         Cleaned DataFrame with the following columns:
@@ -194,14 +194,14 @@ def convert_sf_traffic_csv_format(
     - Converts decimal separators from '.' to ',' for European locale.
     - Writes the reformatted data to a new file with semicolon delimiter.
 
-    Parameters:
+    Parameters
     ----------
     - input_csv_path : str
         Path to the original CSV file using comma as decimal separator.
     - output_csv_path : str
         Path where the reformatted CSV will be saved.
 
-    Returns:
+    Returns
     -------
     None
     """
@@ -241,7 +241,7 @@ def extract_sf_traffic_timeslot(
     - The file is named using the format: sf_vehicle_{YYMMDDYYMMDD}_{HHHH}.csv.
     - Overwrites the file if it already exists.
 
-    Parameters:
+    Parameters
     ----------
     - input_csv_path : str
         Path to the input CSV file with semicolon delimiter.
@@ -256,7 +256,7 @@ def extract_sf_traffic_timeslot(
     - output_csv_folder : str
         Path to the root output folder where the dated folder and file will be saved.
 
-    Returns:
+    Returns
     -------
     Path
         Full path to the saved CSV file containing the filtered data.
@@ -322,7 +322,7 @@ def read_tnc_stats_data(
     - Returns two nested dictionary with TAZ as keys and hour data as values, one for current hour
       data and one for previous hour data. The latter is useful to compute starting drivers in the simulation.
 
-    Parameters:
+    Parameters
     ----------
     - sf_rides_stats_path (str): 
         Path to the CSV file with columns: 'taz', 'day_of_week', 'hour', 'pickups', 'dropoffs'.
@@ -335,7 +335,7 @@ def read_tnc_stats_data(
     - end_time_str : str
         End time in 'HH:MM' format (e.g., '10:00'). Can wrap around midnight.
 
-    Returns:
+    Returns
     -------
     tuple[dict, dict]
         Nested dictionaries {taz: {hour: {'pickups': x, 'dropoffs': y}}} where `hour` is in standard 0-23 format.

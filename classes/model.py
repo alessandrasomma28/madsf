@@ -109,12 +109,12 @@ class Model:
         - Handles ride hailing agents every {agents_interval} timestamps.
         - Stops when there are no active persons and vehicles available or when the simulation time exceeds end time plus one hour.
 
-        Parameters:
+        Parameters
         ----------
         agents_interval: int
             Interval (timestamps) for agents execution.
 
-        Returns:
+        Returns
         -------
         None
         """
@@ -148,3 +148,4 @@ class Model:
         print("✅ Simulation finished!")
         print(f"⏱️  Total SUMO time: {self.sumo_time:.2f} seconds")
         print(f"⏱️  Total agents time: {self.agents_time:.2f} seconds")
+        return (self.sumo_time, self.agents_time)
