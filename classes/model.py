@@ -124,7 +124,7 @@ class Model:
         self.agents_interval = agents_interval
         self.sumo_time = 0
         self.agents_time = 0
-        while (len(traci.person.getTaxiReservations(15)) > 0 and traci.simulation.getMinExpectedNumber() > 0) or traci.simulation.getTime() < self.end_time + 3600:
+        while (len(traci.person.getTaxiReservations(0)) > 0 and traci.simulation.getMinExpectedNumber() > 0) or traci.simulation.getTime() < self.end_time + 3600:
             start_sumo = time.time()
             traci.simulationStep()
             self.time = int(traci.simulation.getTime())
