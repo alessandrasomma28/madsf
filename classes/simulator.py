@@ -287,7 +287,7 @@ class Simulator:
                 }
                 summary_df = pd.DataFrame([summary_data])
                 summary_df.to_csv(summary_path, index=False)
-                print(f"📝  Saved simulation time summary to: {summary_path}")
+                print(f"✅ Saved simulation time summary to: {summary_path}")
         else:
             print("\nStarting simulation with standard SUMO logic...\n")
             try:

@@ -498,10 +498,10 @@ def generate_output_csv(
             "traffic_queuing_duration_avg": stats["avg_queuing_durations"],
             "traffic_queuing_length_avg": stats["avg_queuing_length"]
         }
-    data.append(row)
-    offers_by_provider = stats.get("offers_by_provider", {})
-    for provider in all_providers:
-        row[f"offers_{provider}"] = offers_by_provider.get(provider, 0)
+        data.append(row)
+        offers_by_provider = stats.get("offers_by_provider", {})
+        for provider in all_providers:
+            row[f"offers_{provider}"] = offers_by_provider.get(provider, 0)
 
     # Create DataFrame and save to CSV
     df = pd.DataFrame(data)

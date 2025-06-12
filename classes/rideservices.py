@@ -71,7 +71,6 @@ class RideServices:
 
         This function:
         - Compute the surge multiplier according to unassigned requests and available drivers for all providers.
-        - Cleans up partial acceptances that have timed out for either passengers or drivers.
         - Iterates over all unassigned passenger ride requests.
         - Attempts to retrieve the passenger's current position; skips the request if unsuccessful.
         - Calculates the radius from each idle taxi to the passenger's position, skipping taxis with unavailable positions or farther than 10 miles.
@@ -94,8 +93,6 @@ class RideServices:
         idle_by_provider = self.model.drivers.get_idle_drivers_by_provider()
 
         # Reset statistics
-        self.__expired_acceptances_p = 0
-        self.__expired_acceptances_d = 0
         self.__rides_not_served = 0
         self.__offers = {}
         self.__generated_offers = 0
@@ -119,21 +116,6 @@ class RideServices:
         if self.model.verbose:
             for provider, conf in self.__providers.items():
                 print(f"💵 Surge multiplier value for {provider}: {conf['surge_multiplier']}")
-
-        # Clean up partial acceptances if timeout
-        to_remove = []
-        for key, (agents, timestamp) in self.__acceptances.items():
-            if len(agents) == 1:
-                if "passenger" in agents and now - timestamp >= self.model.agents_interval:
-                    self.__expired_acceptances_p += 1
-                    to_remove.append(key)
-                elif "driver" in agents and now - timestamp >= self.model.agents_interval:
-                    to_remove.append(key)
-                    self.__expired_acceptances_d += 1
-        for key in to_remove:
-            self.remove_acceptance(key)
-        if self.model.verbose:
-            print(f"⌛️ Timeout: {self.__expired_acceptances_p} passengers, {self.__expired_acceptances_d} drivers")
 
         # Pre-compute and cache positions of all idle taxis
         taxi_positions = {}
@@ -271,14 +253,9 @@ class RideServices:
                 print(f"❌ DispatchTaxi failed: {e} — driver: {driver_id}, res_id: {res_id}")
             except Exception as e:
                 print(f"❌ Unknown error during dispatch: {e}")
-            finally:
-                # Remove all offers and acceptances involving the same reservation or driver
-                to_remove = [
-                    key for key in self.__acceptances
-                    if key[0] == res_id or key[1] == driver_id
-                ]
-                for key in to_remove:
-                    self.remove_acceptance(key)
+
+        # Reset acceptances
+        self.__acceptances = {}
         
         # Update the logger
         self.logger.update_rideservices(
@@ -286,7 +263,7 @@ class RideServices:
             dispatched_taxis = len(matched_keys),
             generated_offers = self.__generated_offers,
             partial_acceptances = self.__partial_acceptances,
-            requests_not_served = self.__rides_not_served + self.__expired_acceptances_p
+            requests_not_served = self.__rides_not_served
         )
 
 
