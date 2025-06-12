@@ -20,7 +20,7 @@ This repo is composed of 8 folders, a *main.py*, a *clean.sh* script to clean `.
 ## How-to-run instructions
 
 1. Install [*SUMO*](https://sumo.dlr.de/docs/Downloads.php) and set [*SUMO_HOME*](https://sumo.dlr.de/docs/Basics/Basic_Computer_Skills.html#sumo_home) environment variable. For MacOS users, prefer installation via **Homebrew**. To run the simulation with the GUI, install *SUMO* following the instructions [here](https://github.com/DLR-TS/homebrew-sumo), then run [*XQuartz*](https://www.xquartz.org/) in background (MacOS users).
-2. Open project (`cd/path/to/this/project`), create a virtual environment with Python >=3.10 (`python3.10 -m venv venv`) and activate it (`source venv/bin/activate`).
+2. Open project (`cd/path/to/this/project`), create a virtual environment with Python >=3.10 (`python3.10 -m venv .venv`) and activate it (`source .venv/bin/activate`).
 3. If needed, change paths indicated in `constants/sumoenv_constants.py`.
 4. Install requirements from *requirements.txt* file (`pip install -r requirements.txt`).
 5. Run simulation by simply executing *main.py*.
