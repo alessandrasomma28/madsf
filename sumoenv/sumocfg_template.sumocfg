@@ -31,9 +31,13 @@
       <no-warnings value="true"/>
    </report>
 
-    <taxi_device>
+   <routing>
+      <routing-algorithm value="astar"/>
+   </routing>
+
+   <taxi_device>
       <device.taxi.dispatch-algorithm value="{dispatch_algorithm}"/>
       <device.taxi.idle-algorithm value="{idle_mechanism}"/>
-    </taxi_device>
+   </taxi_device>
 </configuration>
 
