@@ -293,7 +293,7 @@ class Simulator:
             try:
                 start_time = time.time()
                 sumo_time = 0
-                while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time + 3600:
+                while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time + 1800:
                     start_sumo = time.time()
                     traci.simulationStep()
                     end_sumo = time.time()
