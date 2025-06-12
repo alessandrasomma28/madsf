@@ -267,6 +267,7 @@ def generate_output_csv(
         "offers_radius": 0.0,
         "offers_price": 0.0,
         "offers_surge_multiplier": 0.0,
+        "offers_by_provider": {},
 
         # Traffic metrics
         "traffic_in_progress": 0,
@@ -401,6 +402,14 @@ def generate_output_csv(
                 ts["offers_radius"] = float(offers.find("avg_radius").text)
                 ts["offers_price"] = float(offers.find("avg_price").text)
                 ts["offers_surge_multiplier"] = float(offers.find("avg_surge_multiplier").text)
+                offers_by_provider_el = offers.find("offers_by_provider")
+                if offers_by_provider_el is not None:
+                    ts["offers_by_provider"] = {
+                        provider.attrib["name"]: int(provider.attrib["count"])
+                        for provider in offers_by_provider_el.findall("provider")
+                    }
+                else:
+                    ts["offers_by_provider"] = {}
             if rideservices is not None:
                 ts["taxis_dispatched"] = int(float(rideservices.find("dispatched_taxis").text))
                 ts["offers_generated"] = int(float(rideservices.find("generated_offers").text))
@@ -436,9 +445,14 @@ def generate_output_csv(
             ts["rides_not_served"] = 0
 
     # Format results into a DataFrame
+    all_providers = set()
+    for stats in timestamps.values():
+        if "offers_by_provider" in stats:
+            all_providers.update(stats["offers_by_provider"].keys())
+    all_providers = sorted(all_providers)
     data = []
     for t, stats in sorted(timestamps.items()):
-        data.append({
+        row = {
             "timestamp": t,
             "passengers_new": stats["passengers_new"],
             "passengers_departures": stats["passengers_departures"],
@@ -483,7 +497,11 @@ def generate_output_csv(
             "traffic_speed_relative_avg": stats["avg_relative_speed"],
             "traffic_queuing_duration_avg": stats["avg_queuing_durations"],
             "traffic_queuing_length_avg": stats["avg_queuing_length"]
-        })
+        }
+    data.append(row)
+    offers_by_provider = stats.get("offers_by_provider", {})
+    for provider in all_providers:
+        row[f"offers_{provider}"] = offers_by_provider.get(provider, 0)
 
     # Create DataFrame and save to CSV
     df = pd.DataFrame(data)

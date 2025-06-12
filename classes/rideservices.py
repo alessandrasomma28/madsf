@@ -26,7 +26,7 @@ import math
 import heapq
 import traci
 from traci.constants import ROUTING_MODE_AGGREGATED
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from classes.model import Model
@@ -144,6 +144,7 @@ class RideServices:
                 print(f"⚠️ Failed to get position for taxi {taxi_id}")
 
         offer_stats = defaultdict(float)
+        provider_offer_counts = Counter()
         tot_res = 0
         # Iterate over all passenger requests
         for reservation in unassigned:
@@ -190,6 +191,12 @@ class RideServices:
                 # Check if the offer with the same provider already exists in cache
                 if provider in cached_offer_by_provider:
                     travel_time, route_length, price = cached_offer_by_provider[provider]
+                    # Update statistics
+                    offer_stats["radius"] += radius
+                    offer_stats["time"] += travel_time
+                    offer_stats["length"] += route_length
+                    offer_stats["surge"] += surge_multiplier
+                    offer_stats["price"] += price
                 else:
                     try:
                         travel_time, route_length, price = self.__compute_offer(from_edge, to_edge, surge_multiplier, provider)
@@ -213,6 +220,7 @@ class RideServices:
                     "provider": provider
                 }
                 self.__generated_offers += 1
+                provider_offer_counts[provider] += 1
                 
         if self.model.verbose:
             print(f"📋 {len(self.__offers)} pending offers for {tot_res} reservations")
@@ -224,7 +232,8 @@ class RideServices:
             avg_expected_time=round(offer_stats["time"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
             avg_expected_length=round(offer_stats["length"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
             avg_price=round(offer_stats["price"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
-            avg_surge_multiplier=round(offer_stats["surge"] / self.__generated_offers, 2) if self.__generated_offers else 0.0
+            avg_surge_multiplier=round(offer_stats["surge"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
+            offers_by_provider=dict(provider_offer_counts)
         )
 
 

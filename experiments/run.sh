@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Base dates
+# Dates for the runs
 BASE_DATES=('2021-11-10' '2021-11-12' '2021-11-14' '2021-10-06' '2021-10-08' '2021-10-10' '2021-06-23' '2021-06-25' '2021-06-27')
 SCENARIO='normal'
 ACTIVE_GUI='no'
@@ -9,7 +9,6 @@ MODE='social_groups'
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_PATH="${ROOT_DIR}/.env"
 
-# Helpers
 time_to_minutes() {
   IFS=':' read -r h m <<< "$1"
   echo $((10#$h * 60 + 10#$m))

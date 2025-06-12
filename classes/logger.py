@@ -98,7 +98,8 @@ class Logger:
             avg_expected_length: float,
             avg_radius: float,
             avg_price: float,
-            avg_surge_multiplier: float
+            avg_surge_multiplier: float,
+            offers_by_provider: dict = None
         ) -> None:
         entry = ET.SubElement(self.root, "step", timestamp=str(timestamp))
         offers_el = ET.SubElement(entry, "offers")
@@ -107,6 +108,10 @@ class Logger:
         ET.SubElement(offers_el, "avg_radius").text = str(avg_radius)
         ET.SubElement(offers_el, "avg_price").text = str(avg_price)
         ET.SubElement(offers_el, "avg_surge_multiplier").text = str(avg_surge_multiplier)
+        if offers_by_provider:
+            providers_el = ET.SubElement(offers_el, "offers_by_provider")
+            for provider, count in offers_by_provider.items():
+                ET.SubElement(providers_el, "provider", name=provider, count=str(count))
         self.__write()
 
 
