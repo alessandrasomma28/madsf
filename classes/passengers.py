@@ -19,6 +19,9 @@ It supports the following operations:
 
 import random
 from collections import defaultdict
+import os
+import sys
+sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
 import traci
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -54,10 +57,12 @@ class Passengers:
 
     def step(self) -> None:
         # --- Initialize step ---
-        self.__reservations_status = {s: set(traci.person.getTaxiReservations(s)) for s in [3, 4, 8]}
-        self.__logged_unassigned = len(self.__reservations_status[3])
-        self.__logged_assigned = len(self.__reservations_status[4])
-        self.__logged_pickup = len(self.__reservations_status[8])
+        self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
+        self.__assigned_requests = set(traci.person.getTaxiReservations(4))
+        self.__pickup_requests = set(traci.person.getTaxiReservations(8))
+        self.__logged_unassigned = len(self.__unassigned_requests)
+        self.__logged_assigned = len(self.__assigned_requests)
+        self.__logged_pickup = len(self.__pickup_requests)
         self.__canceled_number = 0
         self.__accept = self.__reject = 0
         # Reset the canceled requests 60 seconds after the surge multiplier computation
@@ -67,7 +72,7 @@ class Passengers:
         # --- Remove timed-out requests ---
         now = int(self.model.time)
         acceptances = self.model.rideservices.get_acceptances()
-        for res in self.__reservations_status[3]:
+        for res in self.__unassigned_requests:
             if now - int(res.reservationTime) >= self.__timeout and all(res.id != key[0] for key in acceptances):
                 traci.person.remove(res.persons[0])
                 # Add to canceled set for surge multiplier computation

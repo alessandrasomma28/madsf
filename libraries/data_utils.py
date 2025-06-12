@@ -24,7 +24,7 @@ from urllib.parse import quote
 import certifi
 import threading
 import pandas as pd
-from constants.data_constants import (SF_TRAFFIC_FOLDER_PATH, SF_TRAFFIC_BASE_URL)
+from paths.data import (SF_TRAFFIC_FOLDER_PATH, SF_TRAFFIC_BASE_URL)
 
 
 def check_import_traffic(

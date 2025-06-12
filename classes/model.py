@@ -9,13 +9,16 @@ It initializes and computes steps for the agents: Drivers, Passengers, and RideS
 from pathlib import Path
 import time
 import json
+import os
+import sys
+sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
 import traci
 from classes.rideservices import RideServices
 from classes.passengers import Passengers
 from classes.drivers import Drivers
 from classes.logger import Logger
-from constants.config_constants import (DRIVERS_PERSONALITY, DRIVERS_ACCEPTANCE, PASSENGERS_PERSONALITY,
-                                        PASSENGERS_ACCEPTANCE, PROVIDERS_CONFIG, TIMEOUT_CONFIG)
+from paths.config import (DRIVERS_PERSONALITY, DRIVERS_ACCEPTANCE, PASSENGERS_PERSONALITY,
+                          PASSENGERS_ACCEPTANCE, PROVIDERS_CONFIG, TIMEOUT_CONFIG)
 
 class Model:
     sumocfg_path: str
@@ -121,7 +124,7 @@ class Model:
         self.agents_interval = agents_interval
         self.sumo_time = 0
         self.agents_time = 0
-        while (len(traci.person.getTaxiReservations(3)) > 0 and traci.simulation.getMinExpectedNumber() > 0) or traci.simulation.getTime() < self.end_time + 1800:
+        while (len(traci.person.getTaxiReservations(15)) > 0 and traci.simulation.getMinExpectedNumber() > 0) or traci.simulation.getTime() < self.end_time + 3600:
             start_sumo = time.time()
             traci.simulationStep()
             self.time = int(traci.simulation.getTime())

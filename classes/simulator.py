@@ -16,12 +16,15 @@ from datetime import datetime
 from typing import Optional
 import pandas as pd
 import time
+import os
+import sys
+sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
 import traci
 import sumolib
-from constants.sumoenv_constants import SUMOENV_PATH
-from constants.data_constants import SF_TAZ_SHAPEFILE_PATH
+from paths.data import SF_TAZ_SHAPEFILE_PATH
+from paths.sumoenv import SUMOENV_PATH
 from libraries.sumo_utils import convert_shapefile_to_sumo_poly_with_polyconvert
-from classes.model import Model  # Import multi-agent model
+from classes.model import Model     # Import multi-agent model
 
 
 class Simulator:
@@ -293,7 +296,7 @@ class Simulator:
             try:
                 start_time = time.time()
                 sumo_time = 0
-                while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time + 1800:
+                while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time + 3600:
                     start_sumo = time.time()
                     traci.simulationStep()
                     end_sumo = time.time()

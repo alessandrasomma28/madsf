@@ -6,8 +6,9 @@ path = Path(os.path.abspath(__file__))
 projectPath = str(path.parent.parent.absolute())
 
 # Path to be changed with the local path containing Eclipse SUMO
-SUMO_TOOLS_LOCAL_PATH = "/opt/homebrew/opt/sumo/share/sumo/tools"
-SUMO_BIN_PATH = "/opt/homebrew/opt/sumo/share/sumo/bin"
+SUMO_HOME_PATH = "/opt/homebrew/opt/sumo/share/sumo"
+SUMO_TOOLS_LOCAL_PATH = SUMO_HOME_PATH + "/tools"
+SUMO_BIN_PATH = SUMO_HOME_PATH + "/bin"
 
 SUMOENV_PATH = projectPath + "/sumoenv"
 

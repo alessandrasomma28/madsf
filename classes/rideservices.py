@@ -24,6 +24,9 @@ It supports the following operations:
 
 import math
 import heapq
+import os
+import sys
+sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
 import traci
 from traci.constants import ROUTING_MODE_AGGREGATED
 from collections import defaultdict, Counter
@@ -48,8 +51,6 @@ class RideServices:
         self.model = model
         self.__providers = providers
         self.logger = logger
-        self.__expired_acceptances_p = 0
-        self.__expired_acceptances_d = 0
         self.__rides_not_served = 0
         self.__generated_offers = 0
         self.__partial_acceptances = 0

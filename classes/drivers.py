@@ -19,6 +19,9 @@ It supports the following operations:
 
 import random
 from collections import defaultdict
+import os
+import sys
+sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
 import traci
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -59,11 +62,12 @@ class Drivers:
 
     def step(self) -> None:
         # --- Initialize step ---
-        fleet_status = {s: set(traci.vehicle.getTaxiFleet(s)) for s in [0, 1, 2]}
-        self.__logged_idle = len(fleet_status[0])
-        self.__logged_pickup = len(fleet_status[1])
-        self.__logged_busy = len(fleet_status[2])
-        self.__idle_drivers = fleet_status[0]
+        self.__idle_drivers = set(traci.vehicle.getTaxiFleet(0))
+        self.__pickup_drivers = set(traci.vehicle.getTaxiFleet(1))
+        self.__busy_drivers = set(traci.vehicle.getTaxiFleet(2))
+        self.__logged_idle = len(self.__idle_drivers)
+        self.__logged_pickup = len(self.__pickup_drivers)
+        self.__logged_busy = len(self.__busy_drivers)
         self.__accept = 0
         self.__reject = 0
         self.__removed = 0

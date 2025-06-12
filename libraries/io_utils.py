@@ -26,7 +26,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 import pandas as pd
 import plotly.express as px
-from constants.sumoenv_constants import SUMO_SCENARIOS_PATH
+from paths.sumoenv import SUMO_SCENARIOS_PATH
 
 
 ENV_PATH = Path(".env")

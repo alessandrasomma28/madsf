@@ -40,8 +40,7 @@ import geopandas as gpd
 from shapely.geometry import Point, MultiPolygon, Polygon
 from scipy.spatial import cKDTree
 from sumolib import net
-import traci
-from constants.sumoenv_constants import SUMO_BIN_PATH
+from paths.sumoenv import SUMO_BIN_PATH
 from libraries.data_utils import read_sf_traffic_data
 
 
