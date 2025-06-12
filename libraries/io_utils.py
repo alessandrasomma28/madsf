@@ -498,4 +498,4 @@ def generate_output_csv(
     fig = px.line(df, x=df.index, y=df.columns, title=title)
     fig.update_layout(legend_title_text="Simulation metrics")
     fig.write_html(output_html_path)
-    print(f"✅ Interactive line plot saved to: {output_html_path}")
+    print(f"✅ Interactive line plot saved to: {output_html_path}\n")

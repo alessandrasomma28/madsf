@@ -1,2 +1,2 @@
-mode,date,elapsed_seconds,sumo_time,agents_time
-social_groups,21111008_21111009,378.63,156.52,194.8
+mode,date,elapsed_seconds,elapsed_minutes,sumo_time,sumo_minutes,agents_time,agents_minutes
+social_groups,21111008_21111009,423.73,7.06,182.93,3.05,213.84,3.56
