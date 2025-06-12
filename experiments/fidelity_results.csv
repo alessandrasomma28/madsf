@@ -1,2 +1,1 @@
-mode,date,traffic_input,pickup_input,dropoff_input,traffic_output,pickup_output,dropoff_output,traffic_error,pickup_error,dropoff_error,canceled_rides,pickup_scaled_error,dropoff_scaled_error
-social_groups,21111008_21111009,55863,9660,9662,0,0,1,100.0,100.0,99.99,0,0,0
+

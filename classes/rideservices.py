@@ -127,6 +127,7 @@ class RideServices:
 
         offer_stats = defaultdict(float)
         provider_offer_counts = Counter()
+        provider_surge_totals = defaultdict(float)
         tot_res = 0
         # Iterate over all passenger requests
         for reservation in unassigned:
@@ -203,11 +204,16 @@ class RideServices:
                 }
                 self.__generated_offers += 1
                 provider_offer_counts[provider] += 1
+                provider_surge_totals[provider] += surge_multiplier
                 
         if self.model.verbose:
             print(f"📋 {len(self.__offers)} pending offers for {tot_res} reservations")
 
         # Compute average metrics and update the logger
+        avg_surge_by_provider = {
+            provider: round(provider_surge_totals[provider] / count, 2)
+            for provider, count in provider_offer_counts.items() if count > 0
+        }
         self.logger.update_offer_metrics(
             timestamp=self.model.time,
             avg_radius=round(offer_stats["radius"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
@@ -215,7 +221,8 @@ class RideServices:
             avg_expected_length=round(offer_stats["length"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
             avg_price=round(offer_stats["price"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
             avg_surge_multiplier=round(offer_stats["surge"] / self.__generated_offers, 2) if self.__generated_offers else 0.0,
-            offers_by_provider=dict(provider_offer_counts)
+            offers_by_provider=dict(provider_offer_counts),
+            surge_by_provider=avg_surge_by_provider
         )
 
 

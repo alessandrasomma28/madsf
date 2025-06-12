@@ -467,7 +467,8 @@ def sf_traffic_routes_generation(
                 "depart": str(depart),
                 "from": row['origin_edge_id'],
                 "to": row['destination_edge_id'],
-                "departLane": "best"
+                "departLane": "best",
+                "departPos": "free"
             })
             traffic_counter += 1
         elif pd.isna(row['origin_edge_id']):

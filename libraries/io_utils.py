@@ -268,6 +268,7 @@ def generate_output_csv(
         "offers_price": 0.0,
         "offers_surge_multiplier": 0.0,
         "offers_by_provider": {},
+        "surge_by_provider": {},
 
         # Traffic metrics
         "traffic_in_progress": 0,
@@ -410,6 +411,14 @@ def generate_output_csv(
                     }
                 else:
                     ts["offers_by_provider"] = {}
+                surge_by_provider_el = offers.find("surge_by_provider")
+                if surge_by_provider_el is not None:
+                    ts["surge_by_provider"] = {
+                        provider.attrib["name"]: float(provider.attrib["avg_surge"])
+                        for provider in surge_by_provider_el.findall("provider")
+                    }
+                else:
+                    ts["surge_by_provider"] = {}
             if rideservices is not None:
                 ts["taxis_dispatched"] = int(float(rideservices.find("dispatched_taxis").text))
                 ts["offers_generated"] = int(float(rideservices.find("generated_offers").text))
@@ -487,7 +496,7 @@ def generate_output_csv(
             "rides_offers_generated": stats["offers_generated"],
             "rides_offers_radius_avg": stats["offers_radius"],
             "rides_offers_price_avg": stats["offers_price"],
-            "rides_offers_surge_multiplier_avg": stats["offers_surge_multiplier"],
+            "rides_offers_surge_avg": stats["offers_surge_multiplier"],
             "traffic_in_progress": stats["traffic_in_progress"],
             "traffic_departures": stats["traffic_departures"],
             "traffic_arrivals": stats["traffic_arrivals"],
@@ -501,7 +510,10 @@ def generate_output_csv(
         data.append(row)
         offers_by_provider = stats.get("offers_by_provider", {})
         for provider in all_providers:
-            row[f"offers_{provider}"] = offers_by_provider.get(provider, 0)
+            row[f"rides_offers_{str(provider).lower()}"] = offers_by_provider.get(provider, 0)
+        surge_by_provider = stats.get("surge_by_provider", {})
+        for provider in all_providers:
+            row[f"rides_offers_surge_{str(provider).lower()}_avg"] = surge_by_provider.get(provider, 0.0)
 
     # Create DataFrame and save to CSV
     df = pd.DataFrame(data)
