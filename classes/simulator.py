@@ -259,6 +259,7 @@ class Simulator:
         else:
             traci.start([sumo_binary, "-c", str(self.sumocfg_file_path)])
         if dispatch_algorithm == "traci":
+            sumo_time, agents_time = 0, 0
             print("\nStarting simulation with custom Multi-Agent logic...\n")
             try:
                 # Initialize multi-agent model
@@ -291,8 +292,12 @@ class Simulator:
             print("\nStarting simulation with standard SUMO logic...\n")
             try:
                 start_time = time.time()
+                sumo_time = 0
                 while traci.simulation.getMinExpectedNumber() > 0 and traci.simulation.getTime() < self.end_time + 3600:
+                    start_sumo = time.time()
                     traci.simulationStep()
+                    end_sumo = time.time()
+                    sumo_time += (end_sumo - start_sumo)
                     if traci.simulation.getTime() % 60 == 0:
                         print(f"Simulation time: {int(traci.simulation.getTime())} seconds\n")
             finally:
@@ -303,6 +308,7 @@ class Simulator:
                 print(f"⏱️  Total computation time: {elapsed:.2f} seconds\n")
                 summary_path = self.output_dir_path / "simulation_summary.csv"
                 summary_data = {
+                    "sumo_time": round(sumo_time, 2),
                     "total_elapsed_seconds": round(elapsed, 2)
                 }
                 summary_df = pd.DataFrame([summary_data])

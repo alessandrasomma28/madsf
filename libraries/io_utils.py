@@ -269,7 +269,9 @@ def generate_output_csv(
         "offers_surge_multiplier": 0.0,
 
         # Traffic metrics
-        "traffic_vehicles": 0,
+        "traffic_in_progress": 0,
+        "traffic_departures": 0,
+        "traffic_arrivals": 0,
         "traffic_durations": [],
         "traffic_lengths": [],
         "avg_speed": 0,
@@ -296,17 +298,19 @@ def generate_output_csv(
                 ts = timestamps[t]
                 ts["passengers_new"] += 1 if t == request else 0
                 ts["passengers_departures"] += 1 if t == depart else 0
-                ts["rides_in_progress"] += 1 if depart < t < arrival else 0
-                ts["passengers_arrivals"] += 1  if t == arrival else 0
-                if t == arrival and vehicle != "NULL":
-                    ts["rides_waiting_durations"].append(waiting_durations)
-                    ts["rides_durations"].append(duration)
-                    ts["rides_lengths"].append(route_length)
+                if vehicle != "NULL":
+                    ts["rides_in_progress"] += 1 if depart < t < arrival else 0
+                    if t == arrival:
+                        ts["passengers_arrivals"] += 1  if t == arrival else 0
+                        ts["rides_waiting_durations"].append(waiting_durations)
+                        ts["rides_durations"].append(duration)
+                        ts["rides_lengths"].append(route_length)
     # <tripinfo> - traffic and drivers
     for trip in root.findall("tripinfo"):
-        if "taxi" in trip.attrib.get("id"):
-            depart = int(float(trip.attrib.get("depart")))
-            arrival = int(float(trip.attrib.get("arrival")))
+        trip_id = trip.attrib.get("id")
+        depart = int(float(trip.attrib.get("depart")))
+        arrival = int(float(trip.attrib.get("arrival")))
+        if "taxi" in trip_id:
             shift_durations = float(trip.attrib.get("duration"))
             route_length = float(trip.attrib.get("routeLength"))
             idle_durations = float(trip.attrib.get("waitingTime"))
@@ -325,13 +329,13 @@ def generate_output_csv(
                     ts["drivers_occupied_distance"].append(occupied_distance)
                     ts["drivers_occupied_durations"].append(occupied_durations)
         else:
-            depart = int(float(trip.attrib.get("depart")))
-            arrival = int(float(trip.attrib.get("arrival")))
             duration = float(trip.attrib.get("duration"))
             route_length = float(trip.attrib.get("routeLength"))
+            timestamps[depart]["traffic_departures"] += 1
+            timestamps[arrival]["traffic_arrivals"] += 1
             for t in range(depart, arrival + 1):
                 ts = timestamps[t]
-                ts["traffic_vehicles"] += 1
+                ts["traffic_in_progress"] += 1
                 if t == arrival:
                     ts["traffic_durations"].append(duration)
                     ts["traffic_lengths"].append(route_length)
@@ -470,7 +474,9 @@ def generate_output_csv(
             "rides_offers_radius_avg": stats["offers_radius"],
             "rides_offers_price_avg": stats["offers_price"],
             "rides_offers_surge_multiplier_avg": stats["offers_surge_multiplier"],
-            "traffic_vehicles": stats["traffic_vehicles"],
+            "traffic_in_progress": stats["traffic_in_progress"],
+            "traffic_departures": stats["traffic_departures"],
+            "traffic_arrivals": stats["traffic_arrivals"],
             "traffic_duration_avg": sum(stats["traffic_durations"]) / len(stats["traffic_durations"]) if stats["traffic_durations"] else 0,
             "traffic_length_avg": sum(stats["traffic_lengths"]) / len(stats["traffic_lengths"]) if stats["traffic_lengths"] else 0,
             "traffic_speed_avg": stats["avg_speed"],
