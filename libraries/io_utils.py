@@ -234,7 +234,6 @@ def generate_output_csv(
         "passengers_arrivals": 0,
         "passengers_unassigned": 0,
         "passengers_assigned": 0,
-        "passengers_pickup": 0,
         "passengers_accept": 0,
         "passengers_reject": 0,
         "passengers_cancel": 0,
@@ -386,7 +385,6 @@ def generate_output_csv(
             if passengers is not None:
                 ts["passengers_unassigned"] = int(float(passengers.find("unassigned_requests").text))
                 ts["passengers_assigned"] = int(float(passengers.find("assigned_requests").text))
-                ts["passengers_pickup"] = int(float(passengers.find("pickup_requests").text))
                 ts["passengers_accept"] = int(float(passengers.find("accepted_requests").text))
                 ts["passengers_reject"] = int(float(passengers.find("rejected_requests").text))
                 ts["passengers_cancel"] = int(float(passengers.find("canceled_requests").text))
@@ -433,7 +431,6 @@ def generate_output_csv(
             ts = timestamps[timestep]
             ts["passengers_unassigned"] = 0
             ts["passengers_assigned"] = 0
-            ts["passengers_pickup"] = 0
             ts["passengers_accept"] = 0
             ts["passengers_reject"] = 0
             ts["passengers_cancel"] = 0
@@ -468,7 +465,6 @@ def generate_output_csv(
             "passengers_arrivals": stats["passengers_arrivals"],
             "passengers_unassigned": stats["passengers_unassigned"],
             "passengers_assigned": stats["passengers_assigned"],
-            "passengers_pickup": stats["passengers_pickup"],
             "passengers_accept": stats["passengers_accept"],
             "passengers_reject": stats["passengers_reject"],
             "passengers_cancel": stats["passengers_cancel"],

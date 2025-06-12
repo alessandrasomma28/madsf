@@ -37,7 +37,6 @@ class Logger:
             timestamp: int,
             unassigned_requests: int,
             assigned_requests: int,
-            pickup_requests: int,
             accepted_requests: int,
             rejected_requests: int,
             canceled_requests: int
@@ -46,7 +45,6 @@ class Logger:
         passengers_el = ET.SubElement(entry, "passengers")
         ET.SubElement(passengers_el, "unassigned_requests").text = str(unassigned_requests)
         ET.SubElement(passengers_el, "assigned_requests").text = str(assigned_requests)
-        ET.SubElement(passengers_el, "pickup_requests").text = str(pickup_requests)
         ET.SubElement(passengers_el, "accepted_requests").text = str(accepted_requests)
         ET.SubElement(passengers_el, "rejected_requests").text = str(rejected_requests)
         ET.SubElement(passengers_el, "canceled_requests").text = str(canceled_requests)

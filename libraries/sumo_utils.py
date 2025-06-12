@@ -753,7 +753,6 @@ def map_taz_to_edges(
         if safe_edge_ids is not None:
             polygon_edge_ids = [e for e in polygon_edge_ids if e in safe_edge_ids]
             polygon_lane_ids = [l for l in polygon_lane_ids if l.split('_')[0] in safe_edge_ids]
-
         taz_edge_mapping[taz_id] = {
             'polygon_edge_ids': polygon_edge_ids,
             'polygon_lane_ids': polygon_lane_ids,

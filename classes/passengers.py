@@ -59,10 +59,8 @@ class Passengers:
         # --- Initialize step ---
         self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
         self.__assigned_requests = set(traci.person.getTaxiReservations(4))
-        self.__pickup_requests = set(traci.person.getTaxiReservations(8))
         self.__logged_unassigned = len(self.__unassigned_requests)
         self.__logged_assigned = len(self.__assigned_requests)
-        self.__logged_pickup = len(self.__pickup_requests)
         self.__canceled_number = 0
         self.__accept = self.__reject = 0
         # Reset the canceled requests 60 seconds after the surge multiplier computation
@@ -182,11 +180,12 @@ class Passengers:
             timestamp=self.model.time,
             unassigned_requests=self.__logged_unassigned,
             assigned_requests=self.__logged_assigned,
-            pickup_requests=self.__logged_pickup,
             accepted_requests=self.__accept,
             rejected_requests=self.__reject,
             canceled_requests=self.__canceled_number,
         )
+    
+        return (self.__logged_unassigned + self.__logged_assigned)
 
 
     def get_unassigned_requests(self) -> set:
