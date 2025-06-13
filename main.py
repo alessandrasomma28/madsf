@@ -6,6 +6,7 @@ from classes.simulator import Simulator
 from paths.data import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
                         SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_TAZ_COORDINATES_PATH)
 from paths.sumoenv import (SUMO_NET_PATH, SUMO_SCENARIOS_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH, SUMO_HOME_PATH)
+from paths.config import ZIP_ZONES_CONFIG_PATH, SCENARIOS_CONFIG_PATH, PARAMETERS_CONFIG_PATH
 os.environ["SUMO_HOME"] = SUMO_HOME_PATH
 sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
 from libraries.io_utils import get_valid_date, get_valid_hour, get_valid_scenario, get_valid_str, get_or_prompt, \
@@ -193,7 +194,11 @@ SF_TNC_REQUESTS_PATH = generate_matched_drt_requests(
     sf_requests_folder_path=SCENARIO_PATH
     )
 
-# 14. Configure output directory and run simulation
+# 14. Check for scenario injection
+#if scenario != "normal":
+#    TODO: Implement scenario injection logic here
+
+# 15. Configure output directory and run simulation
 SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(
     sf_routes_folder_path=SCENARIO_PATH,
     sf_traffic_route_file_path=SF_TRAFFIC_ROUTE_PATH,
@@ -205,22 +210,23 @@ SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(
     end_time_str=end_time
     )
 
-# 15. Generate SUMO configuration file
+# 16. Generate SUMO configuration file
 sumoSimulator.generate_config(
     dispatch_algorithm=dispatch_algorithm,
     idle_mechanism=idle_mechanism
     )
 
-# 16. Run simulation
+# 17. Run simulation
 sumoSimulator.run_simulation(
     activeGui=activeGui,
     agents_interval=agents_interval,
     dispatch_algorithm=dispatch_algorithm,
     ratio_requests_vehicles=ratio_requests_vehicles,
-    mode=mode
+    mode=mode,
+    scenario=scenario
     )
 
-# 17. Generate output CSV file
+# 18. Generate output CSV file
 generate_output_csv(
     start_date_str=start_date,
     end_date_str=end_date,
