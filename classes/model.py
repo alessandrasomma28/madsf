@@ -31,7 +31,6 @@ class Model:
     time: int
     agents_interval: int
     providers: list
-    zone: list
     verbose: bool
     ratio_requests_vehicles: float
     mode: str
@@ -49,17 +48,17 @@ class Model:
         ):
         # Initialize the Model class with the configuration parameters.
         with open(Path(PARAMETERS_CONFIG_PATH), "r") as f:
-            parameters = json.load(f)
-            self.providers = parameters["providers"]
-            self.zone = parameters["location"]
-            drivers_personality_distribution = parameters["drivers_personality_distribution"]
-            drivers_personality_distribution = parameters["drivers_personality_distribution"]
-            drivers_acceptance_distribution = parameters["drivers_acceptance_distribution"] 
-            passengers_personality_distribution = parameters["passengers_personality_distribution"]
-            passengers_acceptance_distribution = parameters["passengers_acceptance_distribution"]
-            timeouts = parameters["timeouts"]
-            timeout_p = timeouts["passenger"]
-            timeout_d = timeouts["driver"]
+            self.default_config = json.load(f)
+            self.providers = self.default_config["providers"]
+            self.drivers_personality_distribution = self.default_config["drivers_personality_distribution"]
+            self.drivers_personality_distribution = self.default_config["drivers_personality_distribution"]
+            self.drivers_acceptance_distribution = self.default_config["drivers_acceptance_distribution"] 
+            self.passengers_personality_distribution = self.default_config["passengers_personality_distribution"]
+            self.passengers_acceptance_distribution = self.default_config["passengers_acceptance_distribution"]
+            self.drivers_stop_probability = self.default_config["drivers_stop_probability"]
+            timeouts = self.default_config["timeouts"]
+            self.timeout_p = timeouts["passenger"]
+            self.timeout_d = timeouts["driver"]
         self.sumocfg_path = sumocfg_path
         self.end_time = end_time
         self.output_dir_path = output_dir_path
@@ -71,22 +70,14 @@ class Model:
             )
         self.passengers = Passengers(
             self,
-            timeout=timeout_p,
-            personality_distribution=passengers_personality_distribution,
-            acceptance_distribution=passengers_acceptance_distribution,
             logger=self.logger
             )
         self.drivers = Drivers(
             self,
-            timeout=timeout_d,
-            personality_distribution=drivers_personality_distribution,
-            acceptance_distribution=drivers_acceptance_distribution,
-            providers=self.providers,
             logger=self.logger
             )
         self.rideservices = RideServices(
             self,
-            providers=self.providers,
             logger=self.logger
             )
         self.time = 0
@@ -96,6 +87,13 @@ class Model:
             self.use_social_groups = True
         else:
             self.use_social_groups = False
+        # Check for scenario injection
+        full_scenario_config_path = os.path.join(self.output_dir_path, "scenario_parameters_config.json")
+        if os.path.exists(full_scenario_config_path):
+            with open(Path(full_scenario_config_path), "r") as f:
+                self.scenario_config = json.load(f)
+        else:
+            self.scenario_config = None
 
 
     def run(
@@ -122,31 +120,105 @@ class Model:
         self.agents_interval = agents_interval
         self.sumo_time = 0
         self.agents_time = 0
-        while (len(traci.person.getTaxiReservations(3)) > 0 and traci.simulation.getMinExpectedNumber() > 0) or traci.simulation.getTime() < self.end_time + 3600:
-            start_sumo = time.time()
-            traci.simulationStep()
-            self.time = int(traci.simulation.getTime())
-            end_sumo = time.time()
-            self.sumo_time += (end_sumo - start_sumo)
-            if self.time % agents_interval == 0:
-                start_agents = time.time()
-                self.agents_time 
-                print(f"Simulation time: {self.time} seconds\n")
-                start = time.time()
-                self.passengers.step()
-                end = time.time()
-                print(f"⏱️  Passengers step computed in {round((end - start), 2)} seconds\n")
-                start = time.time()
-                self.drivers.step()
-                end = time.time()
-                print(f"⏱️  Drivers step computed in {round((end - start), 2)} seconds\n")
-                start = time.time()
-                self.rideservices.step()
-                end = time.time()
-                print(f"⏱️  RideServices step computed in {round((end - start), 2)} seconds\n")
-                end_agents = time.time()
-                self.agents_time += (end_agents - start_agents)
-        print("✅ Simulation finished!")
-        print(f"⏱️  Total SUMO time: {self.sumo_time:.2f} seconds")
-        print(f"⏱️  Total agents time: {self.agents_time:.2f} seconds")
-        return (self.sumo_time, self.agents_time)
+        # If scenario injection is enabled
+        if self.scenario_config:
+            self.scenario_start = self.scenario_config["trigger_time"]
+            self.duration_time = self.scenario_config["duration_time"]
+            self.scenario_end = self.scenario_config["trigger_time"] + self.scenario_config["duration_time"]
+            while (len(traci.person.getTaxiReservations(3)) > 0 and traci.simulation.getMinExpectedNumber() > 0) or traci.simulation.getTime() < self.end_time + 3600:
+                if self.time == self.scenario_start:
+                    # Change params
+                    self.update_scenario_parameters(self, self.scenario_config)
+                    print(f"🚨 Scenario activated! Time: {self.time} seconds")
+                if self.time == self.scenario_end:
+                    # Restore params
+                    self.update_scenario_parameters(self, self.default_config)
+                    print(f"🚨 Scenario ended! Time: {self.time} seconds")        
+                start_sumo = time.time()
+                traci.simulationStep()
+                self.time = int(traci.simulation.getTime())
+                end_sumo = time.time()
+                self.sumo_time += (end_sumo - start_sumo)
+                if self.time % agents_interval == 0:
+                    start_agents = time.time()
+                    self.agents_time 
+                    print(f"Simulation time: {self.time} seconds\n")
+                    start = time.time()
+                    self.passengers.step()
+                    end = time.time()
+                    print(f"⏱️  Passengers step computed in {round((end - start), 2)} seconds\n")
+                    start = time.time()
+                    self.drivers.step()
+                    end = time.time()
+                    print(f"⏱️  Drivers step computed in {round((end - start), 2)} seconds\n")
+                    start = time.time()
+                    self.rideservices.step()
+                    end = time.time()
+                    print(f"⏱️  RideServices step computed in {round((end - start), 2)} seconds\n")
+                    end_agents = time.time()
+                    self.agents_time += (end_agents - start_agents)
+            print("✅ Simulation finished!")
+            print(f"⏱️  Total SUMO time: {self.sumo_time:.2f} seconds")
+            print(f"⏱️  Total agents time: {self.agents_time:.2f} seconds")
+            return (self.sumo_time, self.agents_time)
+        else:
+            # If no scenario injection, run the simulation normally
+            while (len(traci.person.getTaxiReservations(3)) > 0 and traci.simulation.getMinExpectedNumber() > 0) or traci.simulation.getTime() < self.end_time + 3600:
+                start_sumo = time.time()
+                traci.simulationStep()
+                self.time = int(traci.simulation.getTime())
+                end_sumo = time.time()
+                self.sumo_time += (end_sumo - start_sumo)
+                if self.time % agents_interval == 0:
+                    start_agents = time.time()
+                    self.agents_time 
+                    print(f"Simulation time: {self.time} seconds\n")
+                    start = time.time()
+                    self.passengers.step()
+                    end = time.time()
+                    print(f"⏱️  Passengers step computed in {round((end - start), 2)} seconds\n")
+                    start = time.time()
+                    self.drivers.step()
+                    end = time.time()
+                    print(f"⏱️  Drivers step computed in {round((end - start), 2)} seconds\n")
+                    start = time.time()
+                    self.rideservices.step()
+                    end = time.time()
+                    print(f"⏱️  RideServices step computed in {round((end - start), 2)} seconds\n")
+                    end_agents = time.time()
+                    self.agents_time += (end_agents - start_agents)
+            print("✅ Simulation finished!")
+            print(f"⏱️  Total SUMO time: {self.sumo_time:.2f} seconds")
+            print(f"⏱️  Total agents time: {self.agents_time:.2f} seconds")
+            return (self.sumo_time, self.agents_time)
+    
+
+    def update_scenario_parameters(
+            self,
+            parameters_config: dict
+        ):
+        """
+        Updates the model parameters based on the provided configuration.
+
+        Parameters
+        ----------
+        parameters_config: dict
+            A dictionary containing the configuration parameters for the model.
+
+        Returns
+        -------
+        None
+        """
+        # Update the parameters based on the provided configuration
+        for provider in parameters_config["providers"]:
+            surge_multiplier = RideServices.get_surge_multiplier(provider)
+            parameters_config["providers"][provider]["surge_multiplier"] = surge_multiplier
+        self.providers = parameters_config["providers"]
+        self.drivers_personality_distribution = parameters_config["drivers_personality_distribution"]
+        self.drivers_acceptance_distribution = parameters_config["drivers_acceptance_distribution"]
+        self.passengers_personality_distribution = parameters_config["passengers_personality_distribution"]
+        self.passengers_acceptance_distribution = parameters_config["passengers_acceptance_distribution"]
+        self.drivers_stop_probability = parameters_config["drivers_stop_probability"]
+        self.timeout_p = parameters_config["timeouts"]["passenger"]
+        self.timeout_d = parameters_config["timeouts"]["driver"]
+        # TODO support for flash mob scenario

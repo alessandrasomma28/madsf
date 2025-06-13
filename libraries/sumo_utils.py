@@ -19,8 +19,9 @@ real traffic data using a SUMO network. It includes utilities for:
 13. generate_drt_vehicle_instances_from_lanes: Generating a DRT fleet file with <vType> and <vehicle> entries.
 14. get_valid_taxi_edges: Getting valid edges for taxi routes.
 15. generate_matched_drt_requests: Generating matched DRT requests based on TNC data and TAZ mapping.
-16. filter_polygon_edges: Filter edge list string, keeping only strongly connected edges
-17. filter_polygon_lanes: Filter lane list string, keeping only those lanes whose parent edge is in the strongly connected set.
+16. inject_scenario_params: Injecting a scenario (or modifying parameters) into the SUMO simulation environment.
+17. filter_polygon_edges: Filter edge list string, keeping only strongly connected edges
+18. filter_polygon_lanes: Filter lane list string, keeping only those lanes whose parent edge is in the strongly connected set.
 """
 
 
@@ -37,10 +38,12 @@ import pandas as pd
 import numpy as np
 import xml.etree.ElementTree as ET
 import geopandas as gpd
+import json
 from shapely.geometry import Point, MultiPolygon, Polygon
 from scipy.spatial import cKDTree
 from sumolib import net
-from paths.sumoenv import SUMO_BIN_PATH
+from paths.sumoenv import SUMO_BIN_PATH, SUMO_SCENARIOS_PATH
+from paths.config import SCENARIOS_CONFIG_PATH, PARAMETERS_CONFIG_PATH, ZIP_ZONES_CONFIG_PATH
 from libraries.data_utils import read_sf_traffic_data
 
 
@@ -479,7 +482,7 @@ def sf_traffic_routes_generation(
     start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
 
-    # Create full folder path: root/timeslot/
+    # Create full folder path
     timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
     full_folder_path = os.path.join(sf_traffic_routes_folder_path, timeslot)
     os.makedirs(full_folder_path, exist_ok=True)
@@ -1143,7 +1146,7 @@ def generate_drt_vehicle_instances_from_lanes(
     start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
 
-    # Create full folder path: root/timeslot/
+    # Create full folder path
     timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
     full_folder_path = os.path.join(sf_tnc_fleet_folder_path, timeslot)
     os.makedirs(full_folder_path, exist_ok=True)
@@ -1344,7 +1347,7 @@ def generate_matched_drt_requests(
     start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
 
-    # Create full folder path: root/timeslot/
+    # Create full folder path
     timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
     full_folder_path = os.path.join(sf_requests_folder_path, timeslot)
     os.makedirs(full_folder_path, exist_ok=True)
@@ -1360,6 +1363,69 @@ def generate_matched_drt_requests(
     print(f"✅ DRT passenger requests written to: {full_path} | Total requests generated: {person_id}")
 
     return full_path
+
+
+def inject_scenario_params(
+        scenario_name: str,
+        start_date_str: str,
+        end_date_str: str,
+        start_time_str: str,
+        end_time_str: str,
+        mode: str
+    ) -> None:
+    """
+    Injects a scenario (or modifies parameters) into the SUMO simulation environment by modifying
+    "parameters_config.json" and input files.
+
+    This function:
+    - Reads the current parameters from "parameters_config.json".
+    - Reads the scenario configuration from "scenarios_config.json".
+    - Updates the parameters with the scenario settings.
+    - Writes the updated parameters back to "parameters_config.json".
+    - Modifies input files based on the updated parameters.
+
+    Parameters
+    ----------
+    scenario_name: str
+        Name of the scenario to inject (e.g., "underground_alarm").
+    
+    Returns
+    -------
+    None
+    """
+    # Remove existing scenario file
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
+    start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
+    end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
+    timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
+    folder_path = os.path.join(SUMO_SCENARIOS_PATH, scenario_name, mode, timeslot)
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".json"):
+            file_path = os.path.join(folder_path, filename)
+            os.remove(file_path)
+    # Load parameters and scenario configuration
+    with open(Path(PARAMETERS_CONFIG_PATH), "r") as f:
+        params = json.load(f)
+    with open(Path(SCENARIOS_CONFIG_PATH), "r") as f:
+        scenarios = json.load(f)
+        scenario_config = scenarios[scenario_name]
+    # If scenario_config is None, use default parameters
+    if scenario_config:
+        print(f"🔧  Injecting scenario '{scenario_name}'")
+        # Create full file path
+        filename = "scenario_parameters_config.json"
+        full_file_path = os.path.join(folder_path, filename)
+        # Update parameters_config.json with scenario settings
+        deep_update(params, scenario_config)
+        with open(Path(full_file_path), "w") as f:
+            json.dump(params, f, indent=4)
+    # Modify input files based on parameters_config.json
+    # TODO
+    if scenario_config:
+        print(f"✅  Scenario '{scenario_name}' injected successfully. Parameters config saved to: {full_file_path}")
+    else:
+        print(f"✅  Applied default parameters configuration")
 
 
 def filter_polygon_edges(
@@ -1415,3 +1481,12 @@ def generate_work_duration(starting: bool = False) -> int:
             return round(random.uniform(18001, 25200))
         else:
             return round(random.uniform(25201, 28800))
+        
+        
+def deep_update(d, u):
+    """Helper to recursively update dictionary 'd' with values from dictionary 'u'."""
+    for k, v in u.items():
+        if isinstance(v, dict) and isinstance(d.get(k), dict):
+            deep_update(d[k], v)
+        else:
+            d[k] = v

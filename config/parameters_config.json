@@ -47,6 +47,7 @@
             "share": 1.0
         }
     },
+    "drivers_stop_probability": 0.1,
     "timeouts": {
         "passenger": 900,
         "driver": 600

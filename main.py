@@ -6,7 +6,6 @@ from classes.simulator import Simulator
 from paths.data import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
                         SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_TAZ_COORDINATES_PATH)
 from paths.sumoenv import (SUMO_NET_PATH, SUMO_SCENARIOS_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH, SUMO_HOME_PATH)
-from paths.config import ZIP_ZONES_CONFIG_PATH, SCENARIOS_CONFIG_PATH, PARAMETERS_CONFIG_PATH
 os.environ["SUMO_HOME"] = SUMO_HOME_PATH
 sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
 from libraries.io_utils import get_valid_date, get_valid_hour, get_valid_scenario, get_valid_str, get_or_prompt, \
@@ -15,7 +14,7 @@ from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_dat
 from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generation, sf_traffic_routes_generation, \
     export_taz_coords, map_coords_to_sumo_edges, get_strongly_connected_edges, generate_matched_drt_requests, \
     add_sf_traffic_taz_matching, generate_vehicle_start_lanes_from_taz_polygons, generate_drt_vehicle_instances_from_lanes, \
-    get_valid_taxi_edges, map_taz_to_edges, compute_requests_vehicles_ratio
+    get_valid_taxi_edges, map_taz_to_edges, compute_requests_vehicles_ratio, inject_scenario_params
 
 # 0. Set initial variables and initialize Simulator class
 if not os.path.exists(Path(".env")):
@@ -195,8 +194,16 @@ SF_TNC_REQUESTS_PATH = generate_matched_drt_requests(
     )
 
 # 14. Check for scenario injection
-#if scenario != "normal":
-#    TODO: Implement scenario injection logic here
+'''
+inject_scenario_params(
+    scenario=scenario,
+    start_date_str=start_date,
+    end_date_str=end_date,
+    start_time_str=start_time,
+    end_time_str=end_time,
+    mode=mode
+)
+'''
 
 # 15. Configure output directory and run simulation
 SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(

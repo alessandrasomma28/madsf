@@ -32,24 +32,14 @@ if TYPE_CHECKING:
 
 class Passengers:
     model: "Model"
-    unassigned_requests: set
-    timeout: int
-    personality_distribution: list
-    acceptance_distribution: list
     logger: "Logger"
 
     def __init__(
             self,
             model: "Model",
-            timeout: int,
-            personality_distribution: list,
-            acceptance_distribution: list,
             logger: "Logger"
         ):
         self.model = model
-        self.__timeout = timeout
-        self.__personality_distribution = personality_distribution
-        self.__acceptance_distribution = acceptance_distribution
         self.__passengers_with_personality = {}     # Maps passengers to personalities
         self.__canceled = set()                     # Set of canceled requests for surge multiplier computation
         self.logger = logger
@@ -57,6 +47,9 @@ class Passengers:
 
     def step(self) -> None:
         # --- Initialize step ---
+        self.__timeout = self.model.timeout_p
+        self.__personality_distribution = self.model.passengers_personality_distribution
+        self.__acceptance_distribution = self.model.passengers_acceptance_distribution
         self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
         self.__assigned_requests = set(traci.person.getTaxiReservations(4))
         self.__logged_unassigned = len(self.__unassigned_requests)

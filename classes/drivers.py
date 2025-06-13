@@ -32,27 +32,14 @@ if TYPE_CHECKING:
 
 class Drivers:
     model: "Model"
-    idle_drivers: set
-    timeout: int
-    personality_distribution: dict
-    acceptance_distribution: dict
-    providers: dict
     logger: "Logger"
 
     def __init__(
             self,
             model: "Model",
-            timeout: int,
-            personality_distribution: dict,
-            acceptance_distribution: dict,
-            providers: dict,
             logger: "Logger"
         ):
         self.model = model
-        self.__timeout = timeout
-        self.__personality_distribution = personality_distribution
-        self.__acceptance_distribution = acceptance_distribution
-        self.__providers = providers
         self.__drivers_with_provider = {}       # Maps drivers to providers
         self.__drivers_with_personality = {}    # Maps drivers to personalities
         self.__driver_idle_time = {}            # Track how long each driver has been idle
@@ -62,6 +49,11 @@ class Drivers:
 
     def step(self) -> None:
         # --- Initialize step ---
+        self.__timeout = self.model.timeout_d
+        self.__personality_distribution = self.model.drivers_personality_distribution
+        self.__acceptance_distribution = self.model.drivers_acceptance_distribution
+        self.__providers = self.model.providers
+        self.__stop_probability = self.model.drivers_stop_probability
         self.__idle_drivers = set(traci.vehicle.getTaxiFleet(0))
         self.__pickup_drivers = set(traci.vehicle.getTaxiFleet(1))
         self.__busy_drivers = set(traci.vehicle.getTaxiFleet(2))
@@ -139,7 +131,7 @@ class Drivers:
                 self.__reject += 1
                 if self.__driver_idle_time.get(driver_id, 0) >= self.__timeout:
                     # If the driver has been inactive for too long, increase removal probability
-                    self.__driver_removal_prob[driver_id] = self.__driver_removal_prob.get(driver_id, 0.0) + 0.1
+                    self.__driver_removal_prob[driver_id] = self.__driver_removal_prob.get(driver_id, 0.0) + self.__stop_probability
                     if random.random() < self.__driver_removal_prob[driver_id]:
                         traci.vehicle.remove(driver_id)
                         self.__driver_idle_time.pop(driver_id, None)
