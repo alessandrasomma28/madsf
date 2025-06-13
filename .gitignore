@@ -2,8 +2,8 @@ data/sf_traffic/
 sumoenv/scenarios/
 sumoenv/sf_old.net.xml
 data/ridehailing_stats/taz_coordinates_centroids.csv
-data/sf_traffic/daily_traffic/2021-01-14/sf_vehicle_210114_0910.csv
-data/sf_traffic/map_matched/2021-01-14/sf_vehicle_210114_0910_edges.csv
+data/sf_traffic/daily_traffic/
+data/sf_traffic/map_matched/
 check_traffic.py
 count_traffic.py
 analyze_output.py

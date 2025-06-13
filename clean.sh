@@ -1,17 +1,5 @@
 #!/bin/bash
 
-# Prompt user for confirmation
-while true; do
-    echo "⚠️ WARNING: This will erase the .env file, data in daily_traffic and map_matched directories, and all XML files in the scenarios directories"
-    read -p "Proceed anyway? [Y/n] " confirm
-    confirm=$(echo "$confirm" | tr '[:upper:]' '[:lower:]')
-    if [[ "$confirm" == "y" || "$confirm" == "yes" ]]; then
-        break
-    elif [[ "$confirm" == "n" || "$confirm" == "no" ]]; then
-        exit 1
-    fi
-done
-
 PROJECT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Target directories

@@ -17,6 +17,9 @@ SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH = SF_TRAFFIC_FOLDER_PATH + "/map_matched"
 
 SF_TAZ_FOLDER_PATH = DATA_FOLDER_PATH + "/sf_zones"
 SF_TAZ_SHAPEFILE_PATH = SF_TAZ_FOLDER_PATH + "/TAZ981.shp"
+SF_SFCTA_GEO_PATH = SF_TAZ_FOLDER_PATH + "/sf_sfcta_taz_boundary.geojson"
+SF_STANFORD_GEO_PATH = SF_TAZ_FOLDER_PATH + "/sf_stanford_taz_boundary.geojson"
+SF_SFCTA_STANFORD_MAPPING_PATH = SF_TAZ_FOLDER_PATH + "/sf_sfcta_stanford_mapping.json"
 
 SF_RIDE_FOLDER_PATH = DATA_FOLDER_PATH + "/ridehailing_stats"
 SF_RIDE_STATS_PATH = SF_RIDE_FOLDER_PATH + "/trip_stats_taz.csv"
