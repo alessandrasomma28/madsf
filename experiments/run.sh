@@ -21,10 +21,6 @@ minutes_to_time() {
   printf "%02d:%02d" $h $m
 }
 
-next_day() {
-  date -j -f "%Y-%m-%d" "$1" -v+1d "+%Y-%m-%d"
-}
-
 # Durations in minutes
 DAY_DURATIONS=(60 180 360 720)     # 8:00–9:00, 8:00-11:00, 8:00–14:00, 8:00–20:00
 NIGHT_DURATIONS=(60 180 360 720)   # 20:00–21:00, 20:00-23:00, 20:00–2:00, 20:00–8:00
@@ -38,6 +34,12 @@ for BASE_DATE in "${BASE_DATES[@]}"; do
     START_TIME=$(minutes_to_time $DAY_START_MIN)
     END_MIN=$((DAY_START_MIN + DURATION))
     END_TIME=$(minutes_to_time $END_MIN)
+    FOLDER_NAME="$(date -jf "%Y-%m-%d %H:%M" "${BASE_DATE} ${START_TIME}" "+%y%m%d%H")_$(date -jf "%Y-%m-%d %H:%M" "${BASE_DATE} ${END_TIME}" "+%y%m%d%H")"
+    FOLDER_PATH="${ROOT_DIR}/sumoenv/scenarios/${SCENARIO}/${MODE}/${FOLDER_NAME}"
+    if [ -d "$FOLDER_PATH" ]; then
+      echo "⏭️  Skipping existing DAY run: $FOLDER_NAME"
+      continue
+    fi
     cat <<EOF > "$ENV_PATH"
 START_DATE=${BASE_DATE}
 END_DATE=${BASE_DATE}
@@ -49,7 +51,9 @@ ACTIVE_GUI=${ACTIVE_GUI}
 VERBOSE=${VERBOSE}
 EOF
     echo "▶️  DAY [$MODE] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
-    export $(grep -v '^#' "$ENV_PATH" | xargs)
+    set -a
+    source "$ENV_PATH"
+    set +a
     python "${ROOT_DIR}/main.py"
   done
 
@@ -58,13 +62,17 @@ EOF
     START_TIME=$(minutes_to_time $NIGHT_START_MIN)
     END_MIN=$((NIGHT_START_MIN + DURATION))
     if [ $END_MIN -lt 1440 ]; then
-      # Ends same day
       END_DATE=$BASE_DATE
       END_TIME=$(minutes_to_time $END_MIN)
     else
-      # Ends next day
-      END_DATE=$(next_day "$BASE_DATE")
+      END_DATE=$(date -j -v+1d -f "%Y-%m-%d" "$BASE_DATE" "+%Y-%m-%d")
       END_TIME=$(minutes_to_time $((END_MIN % 1440)))
+    fi
+    FOLDER_NAME="$(date -jf "%Y-%m-%d %H:%M" "${BASE_DATE} ${START_TIME}" "+%y%m%d%H")_$(date -jf "%Y-%m-%d %H:%M" "${END_DATE} ${END_TIME}" "+%y%m%d%H")"
+    FOLDER_PATH="${ROOT_DIR}/sumoenv/scenarios/${SCENARIO}/${MODE}/${FOLDER_NAME}"
+    if [ -d "$FOLDER_PATH" ]; then
+      echo "⏭️  Skipping existing NIGHT run: $FOLDER_NAME"
+      continue
     fi
     cat <<EOF > "$ENV_PATH"
 START_DATE=${BASE_DATE}
@@ -77,7 +85,9 @@ ACTIVE_GUI=${ACTIVE_GUI}
 VERBOSE=${VERBOSE}
 EOF
     echo "▶️  NIGHT [$MODE] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
-    export $(grep -v '^#' "$ENV_PATH" | xargs)
+    set -a
+    source "$ENV_PATH"
+    set +a
     python "${ROOT_DIR}/main.py"
   done
 done

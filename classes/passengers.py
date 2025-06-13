@@ -184,8 +184,6 @@ class Passengers:
             rejected_requests=self.__reject,
             canceled_requests=self.__canceled_number,
         )
-    
-        return (self.__logged_unassigned + self.__logged_assigned)
 
 
     def get_unassigned_requests(self) -> set:
