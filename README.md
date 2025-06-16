@@ -51,7 +51,12 @@ The project is designed to be easily extensible and adaptable to different scena
 
 The project includes a set of predefined disruptive scenarios. These scenarios are defined in the `config/scenarios_config.json` file and can be easily modified or extended. The disruptive scenarios include:
 
-- `underground_alarm`: a scenario where an underground alarm is triggered, thus causing a peak in ride requests and traffic.
+- `Underground alarm`:  A sudden alarm in an underground station causes the evacuation of the station with an abrupt and chaotic explosion of ride requests in the area. The amount of new requests depends on the crowd in the station and the duration of the closure of the station.
+- `Flash mob`: An unexpected flash mob blocks the city center of the city with effects on the neighbor TAZs. The traffic worsen, and both pickup and drop-off intervals increase.
+- `Wildcat strike`: A sudden wildcat strike of drivers dramatically reduces the availability of drivers.
+- `Greedy drivers`: A sudden increase of ‘greedy drivers’, who decline ride requests also with standard fares, when perceiving an increasing number of ride requests, by following the experience that both Uber and Lyft increase fares when the number of pending requests increases.
+- `Boycott TNCs`: A sudden boycott of TNCs by drivers and passengers, who decide to use public transport instead.
+- `Budget passengers`: A sudden increase of budget passengers, who are more likely to reject ride offers and wait longer for a ride.
 
 These are predefined scenarios, but you can easily add your own by modifying the `config/scenarios_config.json` file or even by directly modifying the `config/parameters_config.json` general file. The system will automatically detect the new scenario and run it accordingly.
 
