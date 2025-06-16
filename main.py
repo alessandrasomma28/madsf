@@ -76,7 +76,19 @@ SF_TRAFFIC_FILE_PATH = check_import_traffic(
 # 2. Get safe edges (i.e., edges that are strongly connected)
 safe_edge_ids = get_strongly_connected_edges(sf_map_file_path=SUMO_NET_PATH)
 
-# 3. Read traffic vehicle data set
+# 3. Check for scenario injection
+'''
+scenario_params = inject_scenario_params(
+    scenario=scenario,
+    start_date_str=start_date,
+    end_date_str=end_date,
+    start_time_str=start_time,
+    end_time_str=end_time,
+    mode=mode
+)
+'''
+
+# 4. Read traffic vehicle data set
 SF_TRAFFIC_VEHICLE_DAILYHOUR_PATH = extract_sf_traffic_timeslot(
     input_csv_path=SF_TRAFFIC_FILE_PATH,
     start_date_str=start_date,
@@ -86,7 +98,7 @@ SF_TRAFFIC_VEHICLE_DAILYHOUR_PATH = extract_sf_traffic_timeslot(
     output_csv_folder=SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH
     )
 
-# 4. Map and TAZ matching - traffic
+# 5. Map and TAZ matching - traffic
 start = start_date.replace("-", "")
 end = end_date.replace("-", "")
 SF_TRAFFIC_EDGE_PATH = sf_traffic_map_matching(
@@ -102,7 +114,7 @@ add_sf_traffic_taz_matching(
     shapefile_path=SF_TAZ_SHAPEFILE_PATH
     )
 
-# 5. Generate OD (origin-destination) file for each vehicle
+# 6. Generate OD (origin-destination) file for each vehicle
 SF_TRAFFIC_0D_PATH = sf_traffic_od_generation(
     sf_real_traffic_edge_path=SF_TRAFFIC_EDGE_PATH,
     sf_traffic_od_folder_path=SCENARIO_PATH,
@@ -112,7 +124,7 @@ SF_TRAFFIC_0D_PATH = sf_traffic_od_generation(
     end_time_str=end_time
     )
 
-# 6. Generate routes file for traffic
+# 7. Generate routes file for traffic
 SF_TRAFFIC_ROUTE_PATH = sf_traffic_routes_generation(
     sf_traffic_od_path=SF_TRAFFIC_0D_PATH,
     sf_traffic_routes_folder_path=SCENARIO_PATH,
@@ -122,7 +134,7 @@ SF_TRAFFIC_ROUTE_PATH = sf_traffic_routes_generation(
     end_time_str=end_time
     )
 
-# 7. Map and TAZ matching - TNC
+# 8. Map and TAZ matching - TNC
 export_taz_coords(
     shapefile_path=SF_TAZ_SHAPEFILE_PATH, 
     output_csv_path=SF_TAZ_COORDINATES_PATH
@@ -137,7 +149,7 @@ taz_edge_mapping = map_taz_to_edges(
     safe_edge_ids=safe_edge_ids
     )
 
-# 8. Read TNC data
+# 9. Read TNC data
 data, previous_hour_data = read_tnc_stats_data(
     sf_rides_stats_path=SF_RIDE_STATS_PATH,
     start_date_str=start_date,
@@ -146,7 +158,7 @@ data, previous_hour_data = read_tnc_stats_data(
     end_time_str=end_time
     )
 
-# 9. Map TAZ polygons to lanes
+# 10. Map TAZ polygons to lanes
 start_lanes_by_taz = generate_vehicle_start_lanes_from_taz_polygons(
     shapefile_path=SF_TAZ_SHAPEFILE_PATH,
     net_file=SUMO_NET_PATH,
@@ -154,14 +166,14 @@ start_lanes_by_taz = generate_vehicle_start_lanes_from_taz_polygons(
     safe_edge_ids=safe_edge_ids
     )
 
-# 10. Compute ratio of TNC requests to traffic vehicles
+# 11. Compute ratio of TNC requests to traffic vehicles
 ratio_requests_vehicles = compute_requests_vehicles_ratio(
     sf_tnc_fleet_folder_path=SF_RIDE_STATS_PATH,
     peak_vehicles=peak_vehicles,
     max_total_drivers=max_vehicles
     )
 
-# 11. Generate taxi trips
+# 12. Generate taxi trips
 SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     start_lanes_by_taz=start_lanes_by_taz,
     ratio_requests_vehicles=ratio_requests_vehicles,
@@ -175,13 +187,13 @@ SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     idle_mechanism=idle_mechanism
     )
 
-# 12. Get valid edges for taxi routes
+# 13. Get valid edges for taxi routes
 valid_edge_ids = get_valid_taxi_edges(
     net_file=SUMO_NET_PATH, 
     safe_edge_ids=safe_edge_ids
     )
 
-# 13. Generate matched DRT requests
+# 14. Generate matched DRT requests
 SF_TNC_REQUESTS_PATH = generate_matched_drt_requests(
     tnc_data=data,
     taz_edge_mapping=taz_edge_mapping,
@@ -192,18 +204,6 @@ SF_TNC_REQUESTS_PATH = generate_matched_drt_requests(
     valid_edge_ids=valid_edge_ids,
     sf_requests_folder_path=SCENARIO_PATH
     )
-
-# 14. Check for scenario injection
-'''
-inject_scenario_params(
-    scenario=scenario,
-    start_date_str=start_date,
-    end_date_str=end_date,
-    start_time_str=start_time,
-    end_time_str=end_time,
-    mode=mode
-)
-'''
 
 # 15. Configure output directory and run simulation
 SF_OUTPUT_DIR_PATH = sumoSimulator.configure_output_dir(

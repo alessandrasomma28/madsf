@@ -1386,12 +1386,23 @@ def inject_scenario_params(
 
     Parameters
     ----------
-    scenario_name: str
+    - scenario_name: str
         Name of the scenario to inject (e.g., "underground_alarm").
+    - start_date_str: str
+        Start date in 'YYYY-MM-DD' format (e.g., '2021-03-25').
+    - end_date_str: str
+        End date in 'YYYY-MM-DD' format (e.g., '2021-03-26').
+    - start_time_str: str
+        Start time in 'HH:MM' format (e.g., '08:00').
+    - end_time_str: str
+        End time in 'HH:MM' format (e.g., '10:00').
+    - mode: str
+        Simulation mode (e.g., "sumo", "multi_agent", "social_groups").
     
     Returns
     -------
-    None
+    dict
+        Updated parameters dictionary after injecting the scenario.
     """
     # Remove existing scenario file
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -1420,12 +1431,12 @@ def inject_scenario_params(
         deep_update(params, scenario_config)
         with open(Path(full_file_path), "w") as f:
             json.dump(params, f, indent=4)
-    # Modify input files based on parameters_config.json
-    # TODO
     if scenario_config:
         print(f"✅  Scenario '{scenario_name}' injected successfully. Parameters config saved to: {full_file_path}")
+        return params
     else:
         print(f"✅  Applied default parameters configuration")
+        return params
 
 
 def filter_polygon_edges(
