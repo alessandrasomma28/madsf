@@ -29,7 +29,7 @@ This repo is composed of 8 folders, a *main.py*, a *clean.sh* script to clean `.
     - **END_DATE**: the date of the last day of the simulation in the format `YYYY-MM-DD`.
     - **START_TIME**: the time of the first day of the simulation in the format `HH:MM`.
     - **END_TIME**: the time of the last day of the simulation in the format `HH:MM`.
-    - **SCENARIO_NAME**: the name of the scenario to be created (e.g., `normal`, `underground_alarm`).
+    - **SCENARIO_NAME**: the name of the scenario to be created (e.g., `normal`, `underground_alarm`, `flash_mob`).
     - **MODE**: `sumo` to run the simulation with *SUMO* logic only, `multi-agent` to run the simulation with multi-agent logic, or `multi-agent-social-groups` to run the simulation with both multi-agent logic and acceptance probabilities of social groups.
     - **ACTIVE_GUI**: `True` to run the simulation with the *SUMO* GUI, `False` otherwise.
     - **VERBOSE**: `True` to print detailed information about the simulation, `False` otherwise.
