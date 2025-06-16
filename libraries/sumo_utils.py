@@ -40,13 +40,74 @@ import numpy as np
 import xml.etree.ElementTree as ET
 import geopandas as gpd
 import json
-from shapely.geometry import Point, MultiPolygon, Polygon
+import sumolib
+from shapely.geometry import Point, MultiPolygon, Polygon, LineString
 from scipy.spatial import cKDTree
 from sumolib import net
 from paths.data import SF_SFCTA_STANFORD_MAPPING_PATH
 from paths.sumoenv import SUMO_BIN_PATH, SUMO_SCENARIOS_PATH
 from paths.config import SCENARIOS_CONFIG_PATH, PARAMETERS_CONFIG_PATH, ZIP_ZONES_CONFIG_PATH
 from libraries.data_utils import read_sf_traffic_data
+
+
+def map_net_to_tazs(
+        net_file_path: str, 
+        taz_shapefile_path: str, 
+        output_folder_path: str
+    ) -> None:
+    """
+    Maps the SUMO network to TAZs (Traffic Analysis Zones) using the TAZs shapefile and the net file.
+
+    This function:
+    - Reads the SUMO network from the specified file.
+    - Reads the TAZs shapefile using GeoPandas.
+    - Maps each edge in the SUMO network to the TAZ it intersects with.
+    - Saves the mapping as a JSON file in the specified output folder.
+    
+    Parameters
+    ----------
+    net_file_path : str
+        Path to the SUMO network XML file.
+    taz_shapefile_path : str
+        Path to the TAZs shapefile.
+    output_folder_path : str
+        Path to the folder where the mapping JSON file will be saved.
+
+    Returns
+    -------
+    None
+    """
+    # Load the TAZs shapefile
+    taz_gdf = gpd.read_file(taz_shapefile_path).to_crs("EPSG:4326")
+    # Load the SUMO network
+    net = sumolib.net.readNet(net_file_path)
+    # Extract edges with geometries
+    edge_data = []
+    for edge in net.getEdges():
+        if edge.isSpecial():
+            continue
+        shape = edge.getShape()
+        if len(shape) < 2:
+            continue
+        linestring = LineString(shape)
+        edge_data.append({
+            "edge_id": edge.getID(),
+            "geometry": linestring
+        })
+    # Create GeoDataFrame with same CRS as TAZs
+    edge_gdf = gpd.GeoDataFrame(edge_data, geometry="geometry", crs="EPSG:32610")
+    edge_gdf = edge_gdf.to_crs(epsg=4326)
+    # Perform spatial join
+    joined = gpd.sjoin(edge_gdf, taz_gdf, predicate="intersects")
+    # Extract mapping
+    taz_column = "TAZ" if "TAZ" in taz_gdf.columns else taz_gdf.columns[0]
+    taz_to_edges = joined.groupby(taz_column)["edge_id"].apply(list).to_dict()
+    # Save the mapping as a JSON file
+    output_file_path = Path(output_folder_path) / "sf_taz_to_edges.json"
+    with open(output_file_path, 'w') as f:
+        json.dump(taz_to_edges, f, indent=4)
+
+    print(f"✅ Net edges to TAZ mapping saved to {output_file_path}")
 
 
 def get_strongly_connected_edges(sf_map_file_path: str) -> set:
@@ -1561,7 +1622,7 @@ def inject_scenario_params(
         params_update(params, scenario_config)
         with open(Path(full_file_path), "w") as f:
             json.dump(params, f, indent=4)
-    location = params["location"][0]
+    location = params["location"]
     tazs_involved = None
     if location in ["downtown", "midtown"]:
         with open(Path(ZIP_ZONES_CONFIG_PATH), "r") as f:

@@ -217,8 +217,7 @@ class Simulator:
             agents_interval: int = 60,
             dispatch_algorithm: str = "traci",
             ratio_requests_vehicles: float = 1.0,
-            mode: str = "social_groups",
-            scenario: str = "normal"
+            mode: str = "social_groups"
         ):
         """
         Runs the SUMO simulation using the generated configuration file,
@@ -236,8 +235,6 @@ class Simulator:
             Ratio of requests to vehicles, used in the surge multiplier computation.
         - mode: str
             Mode of the simulation, can be "sumo", "multi_agent" or "social_groups.
-        - scenario: str
-            Scenario to run in the simulation (e.g., "normal", "underground_alarm"). Default is "normal".
 
         Returns
         -------
@@ -261,7 +258,7 @@ class Simulator:
 
         # Start SUMO with TraCI
         if activeGui:
-            traci.start([sumo_binary, "-c", str(self.sumocfg_file_path)], "--start")
+            traci.start([sumo_binary, "-c", str(self.sumocfg_file_path), "--start"])
         else:
             traci.start([sumo_binary, "-c", str(self.sumocfg_file_path)])
         if dispatch_algorithm == "traci":
@@ -275,8 +272,7 @@ class Simulator:
                     output_dir_path=str(self.output_dir_path),
                     verbose=self.verbose,
                     ratio_requests_vehicles=ratio_requests_vehicles,
-                    mode=mode,
-                    scenario=scenario
+                    mode=mode
                 )
                 start_time = time.time()
                 # Delegates control to custom multi-agent logic

@@ -1,7 +1,7 @@
 {
     "underground_alarm": {
         "name": "Underground Alarm",
-        "location": ["downtown"],
+        "location": "downtown",
         "trigger_time": 5400,
         "duration_time": 2400,
         "requests_perc": 0.5,
@@ -10,7 +10,7 @@
 
     "wildcat_strike": {
         "name": "Wildcat Strike",
-        "location": ["all"],
+        "location": "all",
         "trigger_time": 5400,
         "duration_time": 3600,
         "drivers_perc": -0.5,
@@ -19,16 +19,16 @@
 
     "flash_mob": {
         "name": "Flash Mob",
-        "location": ["downtown", "midtown"],
-        "trigger_time": 5400,
-        "duration_time": 2400,
+        "location": "midtown",
+        "trigger_time": 900,
+        "duration_time": 900,
         "slow_down_perc": 0.9,
         "slow_mid_perc": 0.7
     },
 
     "greedy_drivers": {
         "name": "Greedy Drivers",
-        "location": ["all"],
+        "location": "all",
         "trigger_time": 5400,
         "duration_time": 3600,
         "drivers_personality_distribution": {
@@ -40,7 +40,7 @@
 
     "budget_passengers": {
         "name": "Budget Passengers",
-        "location": ["all"],
+        "location": "all",
         "trigger_time": 5400,
         "duration_time": 3600,
         "passengers_personality_distribution": {
@@ -52,7 +52,7 @@
 
     "boycott_tncs": {
         "name": "Boycott TNCs",
-        "location": ["all"],
+        "location": "all",
         "trigger_time": 5400,
         "duration_time": 3600,
         "requests_perc": -0.5

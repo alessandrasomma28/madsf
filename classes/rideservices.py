@@ -19,7 +19,6 @@ It supports the following operations:
 12. is_passenger_accepted: Returns True if the passenger has accepted a specific offer.
 13. get_acceptances: Returns the dictionary of all acceptances.
 14. remove_acceptance: Removes an acceptance from the acceptances dict.
-15. get_surge_multiplier: Returns the surge multiplier for a specific provider.
 """
 
 
@@ -482,7 +481,8 @@ class RideServices:
         self.__offers.pop(key, None)
 
 
-    def is_passenger_accepted(self,
+    def is_passenger_accepted(
+            self,
             res_id: str,
             driver_id: str
         ) -> bool:
@@ -535,23 +535,3 @@ class RideServices:
         None
         """
         self.__acceptances.pop(key, None)
-
-    
-    def get_surge_multiplier(
-            self,
-            provider: str
-        ) -> float:
-        """
-        Gets the surge multiplier for a specific provider.
-
-        Parameters
-        ----------
-        provider: str
-            The name of the provider.
-
-        Returns
-        -------
-        float
-            The surge multiplier for the specified provider.
-        """
-        return self.__providers[provider]["surge_multiplier"] if provider in self.__providers else 1.0

@@ -9,6 +9,7 @@ It initializes and computes steps for the agents: Drivers, Passengers, and RideS
 from pathlib import Path
 import time
 import json
+import numpy as np
 import os
 import sys
 sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
@@ -17,7 +18,10 @@ from classes.rideservices import RideServices
 from classes.passengers import Passengers
 from classes.drivers import Drivers
 from classes.logger import Logger
-from paths.config import PARAMETERS_CONFIG_PATH
+import xml.etree.ElementTree as ET
+from paths.data import SF_SFCTA_STANFORD_MAPPING_PATH, SF_TAZ_EDGE_MAPPING_PATH
+from paths.config import PARAMETERS_CONFIG_PATH, ZIP_ZONES_CONFIG_PATH
+from paths.sumoenv import SUMO_NET_PATH
 
 class Model:
     sumocfg_path: str
@@ -34,7 +38,6 @@ class Model:
     verbose: bool
     ratio_requests_vehicles: float
     mode: str
-    scenario: str
 
     def __init__(
             self,
@@ -43,8 +46,7 @@ class Model:
             output_dir_path: str,
             verbose: bool = False,
             ratio_requests_vehicles: float = 1.0,
-            mode: str = "social_groups",
-            scenario: str = "normal"
+            mode: str = "social_groups"
         ):
         # Initialize the Model class with the configuration parameters.
         with open(Path(PARAMETERS_CONFIG_PATH), "r") as f:
@@ -90,10 +92,55 @@ class Model:
         # Check for scenario injection
         full_scenario_config_path = os.path.join(self.output_dir_path, "scenario_parameters_config.json")
         if os.path.exists(full_scenario_config_path):
+            # Load edge speeds from the SUMO network file
+            edge_speeds = {}
+            tree = ET.parse(SUMO_NET_PATH)
+            root = tree.getroot()
+            for edge in root.findall('edge'):
+                if 'function' in edge.attrib and edge.attrib['function'] == 'internal':
+                    continue  # skip internal edges
+                for lane in edge.findall('lane'):
+                    edge_id = edge.attrib['id']
+                    speed = float(lane.attrib['speed'])
+                    edge_speeds[edge_id] = speed
+            self.original_edge_speeds = edge_speeds
+            # Load scenario parameters
             with open(Path(full_scenario_config_path), "r") as f:
                 self.scenario_config = json.load(f)
+                location = self.scenario_config["location"]
+                self.tazs_involved = None
+                # Check for location and
+                if location == "downtown":
+                    with open(Path(SF_TAZ_EDGE_MAPPING_PATH), "r") as f:
+                        self.taz_edge_mapping = json.load(f)
+                    with open(Path(ZIP_ZONES_CONFIG_PATH), "r") as f:
+                        zip_zones = json.load(f)
+                        self.tazs_involved = []
+                        with open(Path(SF_SFCTA_STANFORD_MAPPING_PATH), "r") as f:
+                            sfcta_mapping = json.load(f)
+                        for taz in zip_zones[location]:
+                            if taz in sfcta_mapping:
+                                self.tazs_involved.extend(sfcta_mapping[taz])
+                elif location == "midtown":
+                    with open(Path(SF_TAZ_EDGE_MAPPING_PATH), "r") as f:
+                        self.taz_edge_mapping = json.load(f)
+                    with open(Path(ZIP_ZONES_CONFIG_PATH), "r") as f:
+                        zip_zones = json.load(f)
+                        self.tazs_involved = []
+                        self.tazs_involved_less = []
+                        with open(Path(SF_SFCTA_STANFORD_MAPPING_PATH), "r") as f:
+                            sfcta_mapping = json.load(f)
+                        for taz in zip_zones[location]:
+                            if taz not in zip_zones["downtown"]:
+                                if taz in sfcta_mapping:
+                                    self.tazs_involved_less.extend(sfcta_mapping[taz])
+                            else:
+                                if taz in sfcta_mapping:
+                                    self.tazs_involved.extend(sfcta_mapping[taz])
         else:
             self.scenario_config = None
+            self.tazs_involved = None
+            self.tazs_involved_less = None
 
 
     def run(
@@ -128,12 +175,12 @@ class Model:
             while (len(traci.person.getTaxiReservations(3)) > 0 and traci.simulation.getMinExpectedNumber() > 0) or traci.simulation.getTime() < self.end_time + 3600:
                 if self.time == self.scenario_start:
                     # Change params
-                    self.update_scenario_parameters(self, self.scenario_config)
-                    print(f"🚨 Scenario activated! Time: {self.time} seconds")
+                    self.update_scenario_parameters(self.scenario_config)
+                    print(f"🚨 Scenario {self.scenario_config['name']} activated!\n")
                 if self.time == self.scenario_end:
                     # Restore params
-                    self.update_scenario_parameters(self, self.default_config)
-                    print(f"🚨 Scenario ended! Time: {self.time} seconds")        
+                    self.update_scenario_parameters(self.default_config)
+                    print(f"🚨 Scenario {self.scenario_config['name']} ended!\n")        
                 start_sumo = time.time()
                 traci.simulationStep()
                 self.time = int(traci.simulation.getTime())
@@ -210,10 +257,15 @@ class Model:
         None
         """
         # Update the parameters based on the provided configuration
-        for provider in parameters_config["providers"]:
-            surge_multiplier = RideServices.get_surge_multiplier(provider)
-            parameters_config["providers"][provider]["surge_multiplier"] = surge_multiplier
-        self.providers = parameters_config["providers"]
+        for provider_name, new_params in parameters_config["providers"].items():
+            # If provider exists, keep its surge multiplier
+            if provider_name in self.providers:
+                current_surges = self.providers[provider_name]["surge_multiplier"]
+            else:
+                current_surges = new_params["surge_multiplier"]
+            updated_params = new_params.copy()
+            updated_params["surge_multiplier"] = current_surges
+            self.providers[provider_name] = updated_params
         self.drivers_personality_distribution = parameters_config["drivers_personality_distribution"]
         self.drivers_acceptance_distribution = parameters_config["drivers_acceptance_distribution"]
         self.passengers_personality_distribution = parameters_config["passengers_personality_distribution"]
@@ -221,4 +273,33 @@ class Model:
         self.drivers_stop_probability = parameters_config["drivers_stop_probability"]
         self.timeout_p = parameters_config["timeouts"]["passenger"]
         self.timeout_d = parameters_config["timeouts"]["driver"]
-        # TODO support for flash mob scenario
+        self.slow_down = parameters_config["slow_down_perc"]
+        self.slow_mid = parameters_config["slow_mid_perc"]
+        if self.slow_down > 0:
+            # For each TAZ involved in the scenario, slow down speed of edges
+            for taz in self.tazs_involved:
+                if str(taz) not in self.taz_edge_mapping:
+                    continue
+                for edge_id in self.taz_edge_mapping[str(taz)]:
+                    speed = max(1, traci.edge.getLastStepMeanSpeed(edge_id) - (traci.edge.getLastStepMeanSpeed(edge_id) * self.slow_down))
+                    traci.edge.setMaxSpeed(edge_id, speed)
+            for taz in self.tazs_involved_less:
+                if str(taz) not in self.taz_edge_mapping:
+                    continue
+                for edge_id in self.taz_edge_mapping[str(taz)]:
+                    speed = max(1, traci.edge.getLastStepMeanSpeed(edge_id) - (traci.edge.getLastStepMeanSpeed(edge_id) * self.slow_mid))
+                    traci.edge.setMaxSpeed(edge_id, speed)
+        if self.scenario_config["slow_down_perc"] > 0 and self.time == self.scenario_end:
+            # For each TAZ involved in the scenario, restore default speed of edges
+            for taz in self.tazs_involved:
+                if str(taz) not in self.taz_edge_mapping:
+                    continue
+                for edge_id in self.taz_edge_mapping[str(taz)]:
+                    if edge_id in self.original_edge_speeds:
+                        traci.edge.setMaxSpeed(edge_id, self.original_edge_speeds[edge_id])
+            for taz in self.tazs_involved_less:
+                if str(taz) not in self.taz_edge_mapping:
+                    continue
+                for edge_id in self.taz_edge_mapping[str(taz)]:
+                    if edge_id in self.original_edge_speeds:
+                        traci.edge.setMaxSpeed(edge_id, self.original_edge_speeds[edge_id])
