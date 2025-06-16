@@ -15,3 +15,4 @@ analyze_output.py
 .vscode
 .DS_Store
 .venv
+__pycache__
