@@ -42,6 +42,7 @@ import json
 from shapely.geometry import Point, MultiPolygon, Polygon
 from scipy.spatial import cKDTree
 from sumolib import net
+from paths.data import SF_SFCTA_STANFORD_MAPPING_PATH
 from paths.sumoenv import SUMO_BIN_PATH, SUMO_SCENARIOS_PATH
 from paths.config import SCENARIOS_CONFIG_PATH, PARAMETERS_CONFIG_PATH, ZIP_ZONES_CONFIG_PATH
 from libraries.data_utils import read_sf_traffic_data
@@ -237,7 +238,9 @@ def sf_traffic_od_generation(
         start_date_str: str,
         end_date_str: str,
         start_time_str: str, 
-        end_time_str: str
+        end_time_str: str,
+        scenario_params: dict,
+        tazs_involved: Optional[list] = None
     ) -> Path:
     """
     Generates an Origin-Destination (OD) file from map-matched traffic data.
@@ -261,6 +264,10 @@ def sf_traffic_od_generation(
         Start time in 'HH:MM' format (e.g., '08:00').
     - end_time_str : str
         End time in 'HH:MM' format (e.g., '10:00').
+    - scenario_params : dict
+        Parameters for scenario injection.
+    - tazs_involved : list, optional
+        List of TAZs involved in the scenario. If None, all TAZs are considered.
 
     Returns
     -------
@@ -309,6 +316,45 @@ def sf_traffic_od_generation(
                 })
                 vehicle_id += 1
     od_df = pd.DataFrame(od_data)
+
+    # Apply traffic increase/decrease scenario
+    traffic_perc = scenario_params["traffic_perc"]
+    start = scenario_params["trigger_time"]
+    duration = scenario_params["duration_time"]
+    if traffic_perc != 0.0:
+        # Calculate base time (simulation start)
+        sim_start_time = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
+        window_start = sim_start_time + timedelta(seconds=start)
+        window_end = window_start + timedelta(seconds=duration)
+        # Split OD trips by time window
+        od_in_window = [trip for trip in od_data if window_start <= trip['origin_starting_time'] < window_end]
+        od_outside_window = [trip for trip in od_data if trip not in od_in_window]
+        # Restrict to locations involved in the scenario
+        if tazs_involved:
+            od_in_scope = [trip for trip in od_in_window if trip['origin_taz_id'] in tazs_involved or trip['destination_taz_id'] in tazs_involved]
+            od_out_of_scope = [trip for trip in od_in_window if trip not in od_in_scope]
+        else:
+            od_in_scope = od_in_window
+            od_out_of_scope = []
+        # Modify traffic in the scoped subset
+        if traffic_perc < 0:
+            retain_count = int((1.0 + traffic_perc) * len(od_in_scope))
+            od_in_scope = random.sample(od_in_scope, max(0, retain_count))
+        elif traffic_perc > 0:
+            additional_count = int(traffic_perc * len(od_in_scope))
+            if od_in_scope:
+                extra_trips = random.choices(od_in_scope, k=additional_count)
+                for trip in extra_trips:
+                    new_trip = trip.copy()
+                    new_trip['vehicle_id'] = vehicle_id
+                    # Keep new trip inside the time window
+                    time_shift = random.randint(10, 120)
+                    new_trip['origin_starting_time'] += pd.Timedelta(seconds=time_shift)
+                    if window_start <= new_trip['origin_starting_time'] < window_end:
+                        od_in_scope.append(new_trip)
+                        vehicle_id += 1
+        # Recombine all trip sets
+        od_data = od_outside_window + od_out_of_scope + od_in_scope
 
     # Format date and time parts
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -1372,7 +1418,7 @@ def inject_scenario_params(
         start_time_str: str,
         end_time_str: str,
         mode: str
-    ) -> None:
+    ) -> dict:
     """
     Injects a scenario (or modifies parameters) into the SUMO simulation environment by modifying
     "parameters_config.json" and input files.
@@ -1401,8 +1447,9 @@ def inject_scenario_params(
     
     Returns
     -------
-    dict
-        Updated parameters dictionary after injecting the scenario.
+    (dict, list)
+        - Updated parameters dictionary.
+        - List of TAZs involved in the scenario (None if all).
     """
     # Remove existing scenario file
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -1411,6 +1458,8 @@ def inject_scenario_params(
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
     timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
     folder_path = os.path.join(SUMO_SCENARIOS_PATH, scenario_name, mode, timeslot)
+    # Ensure the folder exists
+    os.makedirs(folder_path, exist_ok=True)
     for filename in os.listdir(folder_path):
         if filename.endswith(".json"):
             file_path = os.path.join(folder_path, filename)
@@ -1418,9 +1467,11 @@ def inject_scenario_params(
     # Load parameters and scenario configuration
     with open(Path(PARAMETERS_CONFIG_PATH), "r") as f:
         params = json.load(f)
-    with open(Path(SCENARIOS_CONFIG_PATH), "r") as f:
-        scenarios = json.load(f)
-        scenario_config = scenarios[scenario_name]
+    scenario_config = None
+    if scenario_name != "normal":
+        with open(Path(SCENARIOS_CONFIG_PATH), "r") as f:
+            scenarios = json.load(f)
+            scenario_config = scenarios[scenario_name]
     # If scenario_config is None, use default parameters
     if scenario_config:
         print(f"🔧  Injecting scenario '{scenario_name}'")
@@ -1428,15 +1479,26 @@ def inject_scenario_params(
         filename = "scenario_parameters_config.json"
         full_file_path = os.path.join(folder_path, filename)
         # Update parameters_config.json with scenario settings
-        deep_update(params, scenario_config)
+        params_update(params, scenario_config)
         with open(Path(full_file_path), "w") as f:
             json.dump(params, f, indent=4)
+    location = params["location"][0]
+    tazs_involved = None
+    if location in ["downtown", "midtown"]:
+        with open(Path(ZIP_ZONES_CONFIG_PATH), "r") as f:
+            zip_zones = json.load(f)
+            tazs_involved = []
+            with open(Path(SF_SFCTA_STANFORD_MAPPING_PATH), "r") as f:
+                sfcta_mapping = json.load(f)
+            for taz in zip_zones[location]:
+                if taz in sfcta_mapping:
+                    tazs_involved.extend(sfcta_mapping[taz])
     if scenario_config:
         print(f"✅  Scenario '{scenario_name}' injected successfully. Parameters config saved to: {full_file_path}")
-        return params
+        return params, tazs_involved
     else:
-        print(f"✅  Applied default parameters configuration")
-        return params
+        print("✅ Applied default parameters configuration")
+        return params, tazs_involved
 
 
 def filter_polygon_edges(
@@ -1494,10 +1556,10 @@ def generate_work_duration(starting: bool = False) -> int:
             return round(random.uniform(25201, 28800))
         
         
-def deep_update(d, u):
+def params_update(d, u):
     """Helper to recursively update dictionary 'd' with values from dictionary 'u'."""
     for k, v in u.items():
         if isinstance(v, dict) and isinstance(d.get(k), dict):
-            deep_update(d[k], v)
+            params_update(d[k], v)
         else:
             d[k] = v

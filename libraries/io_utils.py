@@ -117,7 +117,7 @@ def get_valid_int(
 
 
 def get_valid_scenario(prompt: str) -> str:
-    scenarios = ["normal"]
+    scenarios = ["normal", "underground_alarm"]
     while True:
         scenario = input(prompt).strip().lower()
         if scenario.isalnum():

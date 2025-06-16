@@ -8,7 +8,7 @@ This is a work-in-progress project, feel free to report any inconsistency or bug
 This repo is composed of 8 folders, a *main.py*, a *clean.sh* script to clean `.env` file and output directories, and a *requirements.txt* file.
 
 - `classes/`: contains simulation and multi-agent logic.
-- `config/`: contains `.json` files to configurate providers, personalities and acceptances.
+- `config/`: contains `.json` files to configurate parameters and scenarios.
 - `constants/`: contains paths for better readability.
 - `data/`: contains all input data for the simulator.
 - `doc/`: contains additional documentation of the project. It also contains the list of the days with no traffic data available from [SFMTA](https://data.sfgov.org/Transportation/SFMTA-Transit-Vehicle-Location-History-2021-/9722-grnf/data_preview).
@@ -29,7 +29,7 @@ This repo is composed of 8 folders, a *main.py*, a *clean.sh* script to clean `.
     - **END_DATE**: the date of the last day of the simulation in the format `YYYY-MM-DD`.
     - **START_TIME**: the time of the first day of the simulation in the format `HH:MM`.
     - **END_TIME**: the time of the last day of the simulation in the format `HH:MM`.
-    - **SCENARIO_NAME**: the name of the scenario to be created (e.g., `normal`).
+    - **SCENARIO_NAME**: the name of the scenario to be created (e.g., `normal`, `underground_alarm`).
     - **MODE**: `sumo` to run the simulation with *SUMO* logic only, `multi-agent` to run the simulation with multi-agent logic, or `multi-agent-social-groups` to run the simulation with both multi-agent logic and acceptance probabilities of social groups.
     - **ACTIVE_GUI**: `True` to run the simulation with the *SUMO* GUI, `False` otherwise.
     - **VERBOSE**: `True` to print detailed information about the simulation, `False` otherwise.
@@ -46,6 +46,14 @@ To run experiments in batch, you can use the `run.sh` bash script. This script w
 ## Extensibility
 
 The project is designed to be easily extensible and adaptable to different scenarios. The multi-agent model can be easily modified to include new features, without acting directly on the agents. One can simply modify the `.json` files in the `config/` folder to change the parameters of the agents (such as different acceptance probability distribution) or add other components (such as other different ride-hailing providers).
+
+### Scenarios
+
+The project includes a set of predefined disruptive scenarios. These scenarios are defined in the `config/scenarios_config.json` file and can be easily modified or extended. The disruptive scenarios include:
+
+- `underground_alarm`: a scenario where an underground alarm is triggered, thus causing a peak in ride requests and traffic.
+
+These are predefined scenarios, but you can easily add your own by modifying the `config/scenarios_config.json` file or even by directly modifying the `config/parameters_config.json` general file. The system will automatically detect the new scenario and run it accordingly.
 
 
 ## Classes

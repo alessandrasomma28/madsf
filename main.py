@@ -40,7 +40,7 @@ if start_date == end_date:
 else:
     start_time = get_or_prompt("START_TIME", lambda: get_valid_hour("⚙️  Enter simulation start hour (0-23): "))
     end_time = get_or_prompt("END_TIME", lambda: get_valid_hour("⚙️  Enter simulation end hour (1-23): ", end_hour_check=True))
-scenario = get_or_prompt("SCENARIO", lambda: get_valid_scenario("⚙️  Enter scenario name (normal): "))
+scenario = get_or_prompt("SCENARIO", lambda: get_valid_scenario("⚙️  Enter scenario name (normal, underground_alarm): "))
 mode = get_or_prompt("MODE", lambda: get_valid_mode("⚙️  Enter simulation mode (sumo, multi_agent, social_groups): "))
 agents_interval = 60    # Default agents interval
 activeGui = get_or_prompt("ACTIVE_GUI", lambda: get_valid_str("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")) == "yes"
@@ -77,16 +77,14 @@ SF_TRAFFIC_FILE_PATH = check_import_traffic(
 safe_edge_ids = get_strongly_connected_edges(sf_map_file_path=SUMO_NET_PATH)
 
 # 3. Check for scenario injection
-'''
-scenario_params = inject_scenario_params(
-    scenario=scenario,
+scenario_params, tazs_involved = inject_scenario_params(
+    scenario_name=scenario,
     start_date_str=start_date,
     end_date_str=end_date,
     start_time_str=start_time,
     end_time_str=end_time,
     mode=mode
 )
-'''
 
 # 4. Read traffic vehicle data set
 SF_TRAFFIC_VEHICLE_DAILYHOUR_PATH = extract_sf_traffic_timeslot(
@@ -121,7 +119,9 @@ SF_TRAFFIC_0D_PATH = sf_traffic_od_generation(
     start_date_str=start_date, 
     end_date_str=end_date, 
     start_time_str=start_time, 
-    end_time_str=end_time
+    end_time_str=end_time,
+    scenario_params=scenario_params,
+    tazs_involved=tazs_involved,
     )
 
 # 7. Generate routes file for traffic

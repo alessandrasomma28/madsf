@@ -2,69 +2,58 @@
     "underground_alarm": {
         "name": "Underground Alarm",
         "location": ["downtown"],
-        "trigger_time": 10800,
+        "trigger_time": 5400,
         "duration_time": 2400,
-        "parameters": {
-            "requests_perc": 0.5
-        }
+        "requests_perc": 0.5,
+        "traffic_perc": 0.25
     },
 
     "wildcat_strike": {
         "name": "Wildcat Strike",
         "location": ["all"],
-        "trigger_time": 10800,
+        "trigger_time": 5400,
         "duration_time": 3600,
-        "parameters": {
-            "drivers_perc": -0.5
-        }
+        "drivers_perc": -0.5
     },
 
     "flash_mob": {
         "name": "Flash Mob",
         "location": ["downtown", "midtown"],
-        "trigger_time": 10800,
+        "trigger_time": 5400,
         "duration_time": 2400,
-        "parameters": {
-            "slow_down_perc": 0.9,
-            "slow_mid_perc": 0.7
-        }
+        "slow_down_perc": 0.9,
+        "slow_mid_perc": 0.7
     },
 
     "greedy_drivers": {
         "name": "Greedy Drivers",
         "location": ["all"],
-        "trigger_time": 10800,
+        "trigger_time": 5400,
         "duration_time": 3600,
-        "parameters": {
-            "drivers_personality_distribution": {
-                "greedy": 0.8,
-                "normal": 0.15,
-                "hurry": 0.05
-            }
+        "drivers_personality_distribution": {
+            "greedy": 0.8,
+            "normal": 0.15,
+            "hurry": 0.05
         }
     },
 
     "budget_passengers": {
         "name": "Budget Passengers",
         "location": ["all"],
-        "trigger_time": 10800,
+        "trigger_time": 5400,
         "duration_time": 3600,
-        "parameters": {
-            "passengers_personality_distribution": {
-                "greedy": 0.8,
-                "normal": 0.15,
-                "hurry": 0.05
-            }
+        "passengers_personality_distribution": {
+            "greedy": 0.8,
+            "normal": 0.15,
+            "hurry": 0.05
         }
     },
 
     "boycott_tncs": {
         "name": "Boycott TNCs",
         "location": ["all"],
-        "trigger_time": 10800,
+        "trigger_time": 5400,
         "duration_time": 3600,
-        "parameters": {
-            "requests_perc": -0.5
-        }
+        "requests_perc": -0.5
     }
 }
