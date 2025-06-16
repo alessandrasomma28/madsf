@@ -13,7 +13,8 @@
         "location": ["all"],
         "trigger_time": 5400,
         "duration_time": 3600,
-        "drivers_perc": -0.5
+        "drivers_perc": -0.5,
+        "drivers_stop_probability": 0.5
     },
 
     "flash_mob": {

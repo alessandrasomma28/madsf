@@ -32,6 +32,7 @@ import random
 from itertools import cycle
 from datetime import datetime, time, timedelta
 import os
+import copy
 import ast
 import subprocess
 import pandas as pd
@@ -248,6 +249,7 @@ def sf_traffic_od_generation(
     This function:
     - Reads the map-matched traffic data with edge IDs.
     - Pairs each row's origin edge to a destination edge whose TAZ is within ±3 of the origin TAZ.
+    - Applies a traffic increase/decrease scenario based on the provided parameters.
     - Saves the resulting OD data in a structured folder format (sf_traffic_od_{YYMMDD}_{HHHH}.csv).
 
     Parameters
@@ -712,7 +714,7 @@ def map_coords_to_sumo_edges(
     centroid_edge_id_list = []
     centroid_lane_id_list = []
 
-    for idx, row in df.iterrows():
+    for _, row in df.iterrows():
         try:
             # Extract polygon and centroid coordinates
             polygon_coords = ast.literal_eval(row['polygon_coords'])
@@ -948,7 +950,9 @@ def generate_drt_vehicle_instances_from_lanes(
         start_time_str: str,
         end_time_str: str,
         sf_tnc_fleet_folder_path: str,
-        idle_mechanism: str
+        idle_mechanism: str,
+        scenario_params: dict,
+        tazs_involved: Optional[list] = None
     ) -> Path:
     """
     Generates a DRT fleet file with <vType> and <vehicle> entries, and dummy routes.
@@ -958,6 +962,7 @@ def generate_drt_vehicle_instances_from_lanes(
     - Calculates the total number of vehicles needed based on the ratio of requests to drivers.
     - Allocates vehicles per TAZ and hour based on the requests.
     - Generates 50% of drivers from the previous hour at simulation start.
+    - Applies a vehicle increase/decrease scenario based on the provided parameters.
     - Creates a SUMO .rou.xml file with <vehicle> entries for each allocated vehicle.
 
     Parameters
@@ -982,6 +987,10 @@ def generate_drt_vehicle_instances_from_lanes(
         Path to save the resulting SUMO .rou.xml file with <vehicle> entries.
     - idle_mechanism: str
         Idling mechanism for taxis ("stop" or "randomCircling").
+    - scenario_params : dict
+        Parameters for scenario injection.
+    - tazs_involved : list, optional
+        List of TAZs involved in the scenario. If None, all TAZs are considered.
 
     Returns
     -------
@@ -1091,6 +1100,7 @@ def generate_drt_vehicle_instances_from_lanes(
     # Generate vehicles per TAZ and hour based on request proportions
     types_cycle = cycle(vehicle_types)
     vehicle_counter = 0
+    vehicle_elements = []
     for taz, hour_data in vehicles_per_taz_hour.items():
         lanes_for_taz = start_lanes_by_taz.get(str(taz), [])
         if not lanes_for_taz:
@@ -1111,26 +1121,27 @@ def generate_drt_vehicle_instances_from_lanes(
                 base_offset = int((depart_datetime - sim_start).total_seconds())
                 depart_seconds = base_offset + random.randint(0, 3599)
                 if idle_mechanism == "randomCircling":
-                    vehicle = ET.SubElement(root, "vehicle", {
+                    el = ET.Element("vehicle", {
                         "id": f"taxi_{vehicle_counter}",
                         "depart": f"{depart_seconds:.2f}",
                         "type": vt["id"]
                     })
                     # ➔ Dummy initial route = just the edge where the vehicle is starting
-                    ET.SubElement(vehicle, "route", {"edges": edge_id})
-                    ET.SubElement(vehicle, "param", key="device.taxi.end", value=str(depart_seconds+generate_work_duration()))
+                    ET.SubElement(el, "route", {"edges": edge_id})
+                    ET.SubElement(el, "param", key="device.taxi.end", value=str(depart_seconds+generate_work_duration()))
                 elif idle_mechanism == "stop":
-                    trip = ET.SubElement(root, "trip", {
+                    el = ET.Element("trip", {
                         "id": f"taxi_{vehicle_counter}",
                         "depart": f"{depart_seconds:.2f}",
                         "type": vt["id"],
                         "personCapacity": "4"
                     })
                     # Lane where the vehicle is starting
-                    ET.SubElement(trip, "stop", {"lane": lane_id, "triggered": "person"})
-                    ET.SubElement(trip, "param", key="device.taxi.end", value=str(depart_seconds+generate_work_duration()))
+                    ET.SubElement(el, "stop", {"lane": lane_id, "triggered": "person"})
+                    ET.SubElement(el, "param", key="device.taxi.end", value=str(depart_seconds+generate_work_duration()))
                 else:
                     raise ValueError("Invalid idle mechanism, please choose 'stop' or 'randomCircling'")
+                vehicle_elements.append((depart_seconds, taz, el))
                 vehicle_counter += 1
 
     # Add 50% of previous hour's vehicles at time 0
@@ -1167,32 +1178,67 @@ def generate_drt_vehicle_instances_from_lanes(
             vt = next(types_cycle)
             edge_id = lane_id.split("_")[0]
             if idle_mechanism == "randomCircling":
-                vehicle = ET.SubElement(root, "vehicle", {
+                el = ET.Element("vehicle", {
                     "id": f"taxi_{vehicle_counter}",
                     "depart": "0.00",
                     "type": vt["id"]
                 })
-                ET.SubElement(vehicle, "route", {"edges": edge_id})
-                ET.SubElement(vehicle, "param", key="device.taxi.end", value=str(generate_work_duration()))
+                ET.SubElement(el, "route", {"edges": edge_id})
+                ET.SubElement(el, "param", key="device.taxi.end", value=str(generate_work_duration()))
             elif idle_mechanism == "stop":
-                trip = ET.SubElement(root, "trip", {
+                el = ET.Element("trip", {
                     "id": f"taxi_{vehicle_counter}",
                     "depart": "0.00",
                     "type": vt["id"],
                     "personCapacity": "4"
                 })
-                ET.SubElement(trip, "stop", {"lane": lane_id, "triggered": "person"})
-                ET.SubElement(trip, "param", key="device.taxi.end", value=str(generate_work_duration(starting = True)))
+                ET.SubElement(el, "stop", {"lane": lane_id, "triggered": "person"})
+                ET.SubElement(el, "param", key="device.taxi.end", value=str(generate_work_duration(starting = True)))
             else:
                 raise ValueError("Invalid idle mechanism, please choose 'stop' or 'randomCircling'")
+            vehicle_elements.append((depart_seconds, taz, el))
             vehicle_counter += 1
 
+    # Apply vehicles increase/decrease scenario
+    drivers_perc = scenario_params["drivers_perc"]
+    start = scenario_params["trigger_time"]
+    duration = scenario_params["duration_time"]
+    if drivers_perc != 0.0:
+        # Calculate base time (simulation start)
+        sim_start_time = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
+        window_start = sim_start_time + timedelta(seconds=start)
+        window_end = window_start + timedelta(seconds=duration)
+        in_scope = []
+        out_scope = []
+        for depart, taz, el in vehicle_elements:
+            if (window_start <= depart < window_end) and (tazs_involved is None or taz in tazs_involved):
+                in_scope.append((depart, taz, el))
+            else:
+                out_scope.append((depart, taz, el))
+        if drivers_perc < 0:
+            retain_count = int((1.0 + drivers_perc) * len(in_scope))
+            in_scope = random.sample(in_scope, max(0, retain_count))
+            vehicle_counter -= len(in_scope)
+        elif drivers_perc > 0:
+            additional_count = int(drivers_perc * len(in_scope))
+            if in_scope:
+                for i in range(additional_count):
+                    depart, taz, el = random.choice(in_scope)
+                    new_el = copy.deepcopy(el)
+                    new_depart = depart + random.randint(10, 120)
+                    new_el.attrib['id'] = f"taxi_{vehicle_counter}"
+                    new_el.attrib['depart'] = f"{new_depart:.2f}"
+                    vehicle_elements.append((new_depart, taz, new_el))
+                    vehicle_counter += 1
+        vehicle_elements = out_scope + in_scope
+    for _, _, el in sorted(vehicle_elements, key=lambda x: x[0]):
+        root.append(el)
+
+    # Create full folder path
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d").strftime("%y%m%d")
     start_hour = datetime.strptime(start_time_str, "%H:%M").strftime("%H")
     end_hour = datetime.strptime(end_time_str, "%H:%M").strftime("%H")
-
-    # Create full folder path
     timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
     full_folder_path = os.path.join(sf_tnc_fleet_folder_path, timeslot)
     os.makedirs(full_folder_path, exist_ok=True)
@@ -1269,7 +1315,9 @@ def generate_matched_drt_requests(
         start_time_str: str,
         end_time_str: str,
         sf_requests_folder_path: str,
-        valid_edge_ids: set
+        valid_edge_ids: set,
+        scenario_params: dict,
+        tazs_involved: Optional[list] = None
     ) -> Path:
     """
     Generates DRT requests for SUMO from TNC data and TAZ-edge mapping,
@@ -1281,6 +1329,7 @@ def generate_matched_drt_requests(
     - For each pickup, finds a valid dropoff edge in a different TAZ.
     - Creates a SUMO route XML structure with <person> entries.
     - Each person is assigned a departure time and a ride from pickup to dropoff.
+    - Applies a requests increase/decrease scenario based on the provided parameters.
     - The output is saved to the specified path.
 
     Parameters
@@ -1301,6 +1350,10 @@ def generate_matched_drt_requests(
         Path to save the resulting SUMO .rou.xml file with <person> requests.
     - valid_edge_ids: set
         Set of SUMO edge IDs validated for taxi routing (connected, non-junction, drivable).
+    - scenario_params : dict
+        Parameters for scenario injection.
+    - tazs_involved : list, optional
+        List of TAZs involved in the scenario. If None, all TAZs are considered.
 
     Returns
     -------
@@ -1339,6 +1392,33 @@ def generate_matched_drt_requests(
                     "depart_time": depart_time
                 })
 
+    # Apply requests increase/decrease scenario
+    requests_perc = scenario_params["requests_perc"]
+    start = scenario_params["trigger_time"]
+    duration = scenario_params["duration_time"]
+    if requests_perc != 0.0:
+        # Calculate base time (simulation start)
+        sim_start_time = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
+        window_start = sim_start_time + timedelta(seconds=start)
+        window_end = window_start + timedelta(seconds=duration)
+        in_scope = []
+        out_scope = []
+        for p in pickups_by_hour:
+            absolute_depart_time = sim_start + timedelta(seconds=p['depart_time'])
+            in_window = window_start <= absolute_depart_time < window_end
+            in_zone = tazs_involved is None or p['taz'] in tazs_involved
+            if in_window and in_zone:
+                in_scope.append(p)
+            else:
+                out_scope.append(p)
+        if requests_perc < 0:
+            keep_count = int((1.0 + requests_perc) * len(in_scope))
+            in_scope = random.sample(in_scope, max(0, keep_count))
+        elif requests_perc > 0:
+            extra_count = int(requests_perc * len(in_scope))
+            in_scope.extend(random.choices(in_scope, k=extra_count))
+        pickups_by_hour = out_scope + in_scope
+
     # Build dropoff list
     dropoffs_by_taz = defaultdict(list)
     for taz, hour_data in tnc_data.items():
@@ -1351,7 +1431,6 @@ def generate_matched_drt_requests(
             continue
         for hour, stats in hour_data.items():
             dropoffs_by_taz[taz].extend([edge] * stats['dropoffs'])
-
     dropoff_pool = [(taz, edge) for taz, edges in dropoffs_by_taz.items() for edge in edges]
     random.shuffle(dropoff_pool)
     dropoff_iter = iter(dropoff_pool)
@@ -1474,7 +1553,7 @@ def inject_scenario_params(
             scenario_config = scenarios[scenario_name]
     # If scenario_config is None, use default parameters
     if scenario_config:
-        print(f"🔧  Injecting scenario '{scenario_name}'")
+        print(f"🔧 Injecting scenario '{scenario_name}'")
         # Create full file path
         filename = "scenario_parameters_config.json"
         full_file_path = os.path.join(folder_path, filename)
@@ -1494,7 +1573,7 @@ def inject_scenario_params(
                 if taz in sfcta_mapping:
                     tazs_involved.extend(sfcta_mapping[taz])
     if scenario_config:
-        print(f"✅  Scenario '{scenario_name}' injected successfully. Parameters config saved to: {full_file_path}")
+        print(f"✅ Scenario '{scenario_name}' injected successfully. Parameters config saved to: {full_file_path}")
         return params, tazs_involved
     else:
         print("✅ Applied default parameters configuration")

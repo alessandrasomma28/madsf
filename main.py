@@ -121,7 +121,7 @@ SF_TRAFFIC_0D_PATH = sf_traffic_od_generation(
     start_time_str=start_time, 
     end_time_str=end_time,
     scenario_params=scenario_params,
-    tazs_involved=tazs_involved,
+    tazs_involved=tazs_involved
     )
 
 # 7. Generate routes file for traffic
@@ -184,7 +184,9 @@ SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     start_time_str=start_time, 
     end_time_str=end_time,
     sf_tnc_fleet_folder_path=SCENARIO_PATH,
-    idle_mechanism=idle_mechanism
+    idle_mechanism=idle_mechanism,
+    scenario_params=scenario_params,
+    tazs_involved=tazs_involved
     )
 
 # 13. Get valid edges for taxi routes
@@ -202,7 +204,9 @@ SF_TNC_REQUESTS_PATH = generate_matched_drt_requests(
     start_time_str=start_time, 
     end_time_str=end_time,
     valid_edge_ids=valid_edge_ids,
-    sf_requests_folder_path=SCENARIO_PATH
+    sf_requests_folder_path=SCENARIO_PATH,
+    scenario_params=scenario_params,
+    tazs_involved=tazs_involved
     )
 
 # 15. Configure output directory and run simulation
