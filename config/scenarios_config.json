@@ -2,9 +2,9 @@
     "underground_alarm": {
         "name": "Underground Alarm",
         "location": "downtown",
-        "trigger_time": 5400,
+        "trigger_time": 10800,
         "duration_time": 2400,
-        "requests_perc": 0.5,
+        "requests_perc": 1.0,
         "traffic_perc": 0.25
     },
 

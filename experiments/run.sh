@@ -2,10 +2,10 @@
 
 # Dates for the runs
 BASE_DATES=('2021-11-10' '2021-11-12' '2021-11-14' '2021-10-06' '2021-10-08' '2021-10-10' '2021-06-23' '2021-06-25' '2021-06-27')
-SCENARIO='normal'
+SCENARIO='underground_alarm'
 ACTIVE_GUI='no'
 VERBOSE='no'
-MODE='sumo'    # sumo, multi_agents, social_groups
+MODE='social_groups'    # sumo, multi_agent, social_groups
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_PATH="${ROOT_DIR}/.env"
 
@@ -22,8 +22,8 @@ minutes_to_time() {
 }
 
 # Durations in minutes
-DAY_DURATIONS=(720)     # 08:00–09:00, 08:00-11:00, 08:00–14:00, 08:00–20:00
-NIGHT_DURATIONS=(720)   # 20:00–21:00, 20:00-23:00, 20:00–02:00, 20:00–08:00
+DAY_DURATIONS=(360)     # 08:00–09:00, 08:00-11:00, 08:00–14:00, 08:00–20:00
+NIGHT_DURATIONS=(360)   # 20:00–21:00, 20:00-23:00, 20:00–02:00, 20:00–08:00
 DAY_START_MIN=$(time_to_minutes 08:00)
 NIGHT_START_MIN=$(time_to_minutes 20:00)
 
@@ -50,7 +50,7 @@ MODE=${MODE}
 ACTIVE_GUI=${ACTIVE_GUI}
 VERBOSE=${VERBOSE}
 EOF
-    echo "▶️  DAY [$MODE] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
+    echo "▶️  DAY [$MODE] [$SCENARIO] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
     set -a
     source "$ENV_PATH"
     set +a
@@ -85,7 +85,7 @@ MODE=${MODE}
 ACTIVE_GUI=${ACTIVE_GUI}
 VERBOSE=${VERBOSE}
 EOF
-    echo "▶️  NIGHT [$MODE] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
+    echo "▶️  NIGHT [$MODE] [$SCENARIO] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
     set -a
     source "$ENV_PATH"
     set +a
