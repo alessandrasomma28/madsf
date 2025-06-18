@@ -425,8 +425,10 @@ def read_tnc_stats_data(
     print(f"✅ TNC stats data read from {sf_rides_stats_path} and filtered to time window {start_date_str} {start_time_str} - {end_date_str} {end_time_str}")
 
     # Compute pickups and dropoffs across all zones and selected hours
+    '''
     total_pickups = sum(hour_data['pickups'] for zone in zone_data.values() for hour_data in zone.values())
     total_dropoffs = sum(hour_data['dropoffs'] for zone in zone_data.values() for hour_data in zone.values())
     print(f"🚕 Total pickups:  {total_pickups}, Total dropoffs: {total_dropoffs}")
+    '''
 
     return zone_data, zone_data_previous_hour
