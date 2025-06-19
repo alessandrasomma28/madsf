@@ -378,7 +378,6 @@ def sf_traffic_od_generation(
                     'origin_starting_time': origin_row['timestamp']
                 })
                 vehicle_id += 1
-    od_df = pd.DataFrame(od_data)
 
     # Apply traffic increase/decrease scenario
     traffic_perc = scenario_params["traffic_perc"]
@@ -417,6 +416,8 @@ def sf_traffic_od_generation(
                         vehicle_id += 1
         # Recombine all trip sets
         od_data = od_outside_window + od_out_of_scope + od_in_scope
+
+    od_df = pd.DataFrame(od_data)
 
     # Format date and time parts
     start_date = datetime.strptime(start_date_str, "%Y-%m-%d").strftime("%y%m%d")
@@ -1293,6 +1294,7 @@ def generate_drt_vehicle_instances_from_lanes(
                     vehicle_elements.append((new_depart, taz, new_el))
                     vehicle_counter += 1
         vehicle_elements = out_scope + in_scope
+
     for _, _, el in sorted(vehicle_elements, key=lambda x: x[0]):
         root.append(el)
 
@@ -1499,19 +1501,22 @@ def generate_matched_drt_requests(
     dropoff_iter = iter(dropoff_pool)
 
     # Generate requests
+    attempts = 0
     for pickup in pickups_by_hour:
         from_taz = pickup['taz']
         from_edge = pickup['edge']
         depart_time = pickup['depart_time']
         found = False
-        while True:
+        while attempts < len(pickups_by_hour):
             try:
                 to_taz, to_edge = next(dropoff_iter)
                 if to_taz != from_taz:
                     found = True
+                    attempts += 1
                     break
             except StopIteration:
-                break
+                random.shuffle(dropoff_pool)
+                dropoff_iter = iter(dropoff_pool)
         if not found:
             continue
         person = ET.Element("person", {

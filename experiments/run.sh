@@ -22,8 +22,8 @@ minutes_to_time() {
 }
 
 # Durations in minutes
-DAY_DURATIONS=(180)     # 08:00–09:00, 08:00-11:00, 08:00–14:00, 08:00–20:00
-NIGHT_DURATIONS=(180)   # 20:00–21:00, 20:00-23:00, 20:00–02:00, 20:00–08:00
+DAY_DURATIONS=(360)     # 08:00–09:00, 08:00-11:00, 08:00–14:00, 08:00–20:00
+NIGHT_DURATIONS=(360)   # 20:00–21:00, 20:00-23:00, 20:00–02:00, 20:00–08:00
 DAY_START_MIN=$(time_to_minutes 08:00)
 NIGHT_START_MIN=$(time_to_minutes 20:00)
 
