@@ -88,6 +88,9 @@ def check_import_traffic(
           average_speed
         WHERE
           vehicle_position_date_time BETWEEN '{start_datetime}' AND '{end_datetime}'
+          AND loc_X BETWEEN -122.52 AND -122.35
+          AND loc_Y BETWEEN 37.70 AND 37.82
+        ORDER BY vehicle_position_date_time
         LIMIT {limit}
     """
     url = f"{SF_TRAFFIC_BASE_URL}?$query={quote(query)}"

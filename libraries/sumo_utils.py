@@ -394,7 +394,7 @@ def sf_traffic_od_generation(
         od_outside_window = [trip for trip in od_data if trip not in od_in_window]
         # Restrict to locations involved in the scenario
         if tazs_involved:
-            od_in_scope = [trip for trip in od_in_window if trip['origin_taz_id'] in tazs_involved or trip['destination_taz_id'] in tazs_involved]
+            od_in_scope = [trip for trip in od_in_window if trip['origin_taz_id'] in tazs_involved]
             od_out_of_scope = [trip for trip in od_in_window if trip not in od_in_scope]
         else:
             od_in_scope = od_in_window
@@ -410,8 +410,7 @@ def sf_traffic_od_generation(
                 for trip in extra_trips:
                     new_trip = trip.copy()
                     new_trip['vehicle_id'] = vehicle_id
-                    # Keep new trip inside the time window
-                    time_shift = random.randint(10, 120)
+                    time_shift = random.randint(10, 60)
                     new_trip['origin_starting_time'] += pd.Timedelta(seconds=time_shift)
                     if window_start <= new_trip['origin_starting_time'] < window_end:
                         od_in_scope.append(new_trip)
@@ -1273,6 +1272,8 @@ def generate_drt_vehicle_instances_from_lanes(
         out_scope = []
         for depart, taz, el in vehicle_elements:
             if (window_start <= depart < window_end) and (tazs_involved is None or taz in tazs_involved):
+                scenario_depart = start + random.randint(0, int(duration))
+                el.attrib['depart'] = f"{scenario_depart:.2f}"
                 in_scope.append((depart, taz, el))
             else:
                 out_scope.append((depart, taz, el))
@@ -1469,6 +1470,7 @@ def generate_matched_drt_requests(
             in_window = window_start <= absolute_depart_time < window_end
             in_zone = tazs_involved is None or p['taz'] in tazs_involved
             if in_window and in_zone:
+                p["depart_time"] = start + random.randint(0, int(duration))
                 in_scope.append(p)
             else:
                 out_scope.append(p)
