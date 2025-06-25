@@ -1,4 +1,4 @@
-# SF Digital Mirror
+# SHE Digital Shadow
 
 This replication package replicates the results of **A Multi-Agent Approach for Engineering Digital Twins of Smart Human-Centric Ecosystems**.
 
@@ -15,8 +15,8 @@ This replication package includes 8 folders, a *main.py*, a *clean.sh* script to
 - `constants/`: contains paths for better readability.
 - `data/`: contains all input data for the simulator.
 - `doc/`: contains additional documentation of the project. It also contains the list of the days with no traffic data available from [SFMTA](https://data.sfgov.org/Transportation/SFMTA-Transit-Vehicle-Location-History-2021-/9722-grnf/data_preview).
-- `experiments/`: contains the results of the experiments regarding fidelity and efficiency.
-- `libraries/`: contains all the utility functions to generate the input for the simulation.
+- `experiments/`: contains the notebooks and the results of the experiments.
+- `libraries/`: contains all the utility functions to generate input and output of the simulation.
 - `sumoenv/`: contains the folder with input and output files, the SF net file, and the `sumocfg` file, which is automatically generated in *main.py*.
 
 
