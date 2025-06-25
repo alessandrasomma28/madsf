@@ -25,9 +25,8 @@ This replication package includes 8 folders, a *main.py*, a *clean.sh* script to
 ### Generating results
 
 1. Open project (`cd/path/to/this/project`), create a virtual environment with Python >=3.10 (`python3.10 -m venv .venv`) and activate it (`source .venv/bin/activate`).
-2. If needed, change paths indicated in `constants/sumoenv_constants.py`.
-3. Install requirements from *requirements.txt* file (`pip install -r requirements.txt`).
-4. Run python notebooks `.ipynb` in `experiments/` folder to generate the results of the experiments regarding fidelity, efficiency and extensibility. The results will be saved in the `experiments/` folder.
+2. Install requirements from *requirements.txt* file (`pip install -r requirements.txt`).
+3. Run python notebooks `.ipynb` in `experiments/` folder to generate the results of the experiments regarding fidelity, efficiency and extensibility. The results will be saved in the `experiments/` folder.
 
 ### Running simulations
 
