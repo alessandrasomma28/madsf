@@ -20,7 +20,7 @@ real traffic data using a SUMO network. It includes utilities for:
 14. get_valid_taxi_edges: Getting valid edges for taxi routes.
 15. generate_matched_drt_requests: Generating matched DRT requests based on TNC data and TAZ mapping.
 16. inject_scenario_params: Injecting a scenario (or modifying parameters) into the SUMO simulation environment.
-17. filter_polygon_edges: Filter edge list string, keeping only strongly connected edges
+17. filter_polygon_edges: Filter edge list string, keeping only strongly connected edges.
 18. filter_polygon_lanes: Filter lane list string, keeping only those lanes whose parent edge is in the strongly connected set.
 """
 

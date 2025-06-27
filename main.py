@@ -44,7 +44,7 @@ else:
     end_time = get_or_prompt("END_TIME", lambda: get_valid_hour("⚙️  Enter simulation end hour (1-23): ", end_hour_check=True))
 with open(Path(SCENARIOS_CONFIG_PATH), "r") as f:
     scenario_config_keys = list(json.load(f).keys())
-scenario_names = ["normal"].extend(scenario_config_keys)
+scenario_names = scenario_config_keys + ['normal']
 scenario = get_or_prompt("SCENARIO", lambda: get_valid_scenario(f"⚙️  Enter scenario name ({', '.join(scenario_names)}): ", scenario_names))
 mode = get_or_prompt("MODE", lambda: get_valid_mode("⚙️  Enter simulation mode (sumo, multi_agent, social_groups): "))
 activeGui = get_or_prompt("ACTIVE_GUI", lambda: get_valid_str("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")) == "yes"
