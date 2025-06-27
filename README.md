@@ -6,6 +6,7 @@ This replication package includes data and instructions on how to run, interpret
 
 To clone this repository, you can download the folder in `.zip` format (~ Mb, 'Download Repository' button at the top-right of this page), and extract it.
 
+
 ## Structure
 
 This replication package includes 8 folders, a *main.py*, a *clean.sh* script to clean `.env` file and output directories, and a *requirements.txt* file.
@@ -47,7 +48,6 @@ This replication package includes 8 folders, a *main.py*, a *clean.sh* script to
     
     Options will be saved in the `.env` file in the root folder of the project. If you want to change the options, you can edit the `.env` file directly or run *main.py* again after deleting the `.env` file.
 7. Inspect output folder `sumoenv/scenario/{scenario_name}/{mode}/{timeslot}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the `HTML` interactive line plot visualization `sf_final_metrics_visualization.html`.
-
 
 #### Running simulations in batch
 

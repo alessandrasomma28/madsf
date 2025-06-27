@@ -116,8 +116,10 @@ def get_valid_int(
             print("⚠️  Please enter an integer")
 
 
-def get_valid_scenario(prompt: str) -> str:
-    scenarios = ["normal", "underground_alarm", "flash_mob", "wildcat_strike", "greedy_drivers", "boycott_tncs", "budget_passengers"]
+def get_valid_scenario(
+        prompt: str,
+        scenarios: list
+        ) -> str:
     while True:
         scenario = input(prompt).strip().lower()
         if scenario.isalnum():

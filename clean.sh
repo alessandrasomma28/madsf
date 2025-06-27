@@ -37,3 +37,4 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 echo "✅ Directories and .env file cleaned"
+echo

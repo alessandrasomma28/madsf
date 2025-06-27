@@ -1,11 +1,13 @@
 import os
 import sys
+import json
 from datetime import datetime
 from pathlib import Path
 from classes.simulator import Simulator
 from paths.data import (SF_TRAFFIC_MAP_MATCHED_FOLDER_PATH, SF_RIDE_STATS_PATH, SF_TAZ_SHAPEFILE_PATH,
                         SF_TRAFFIC_VEHICLE_DAILY_FOLDER_PATH, SF_TAZ_COORDINATES_PATH, SF_TAZ_FOLDER_PATH)
 from paths.sumoenv import (SUMO_NET_PATH, SUMO_SCENARIOS_PATH, SUMO_CFGTEMPLATE_PATH, SUMO_POLY_PATH, SUMO_HOME_PATH)
+from paths.config import SCENARIOS_CONFIG_PATH
 os.environ["SUMO_HOME"] = SUMO_HOME_PATH
 sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
 from libraries.io_utils import get_valid_date, get_valid_hour, get_valid_scenario, get_valid_str, get_or_prompt, \
@@ -40,23 +42,26 @@ if start_date == end_date:
 else:
     start_time = get_or_prompt("START_TIME", lambda: get_valid_hour("⚙️  Enter simulation start hour (0-23): "))
     end_time = get_or_prompt("END_TIME", lambda: get_valid_hour("⚙️  Enter simulation end hour (1-23): ", end_hour_check=True))
-scenario = get_or_prompt("SCENARIO", lambda: get_valid_scenario("⚙️  Enter scenario name (normal, underground_alarm, flash_mob, wildcat_strike, greedy_drivers, boycott_tncs, budget_passengers): "))
+with open(Path(SCENARIOS_CONFIG_PATH), "r") as f:
+    scenario_config_keys = list(json.load(f).keys())
+scenario_names = ["normal"].extend(scenario_config_keys)
+scenario = get_or_prompt("SCENARIO", lambda: get_valid_scenario(f"⚙️  Enter scenario name ({', '.join(scenario_names)}): ", scenario_names))
 mode = get_or_prompt("MODE", lambda: get_valid_mode("⚙️  Enter simulation mode (sumo, multi_agent, social_groups): "))
-agents_interval = 60    # Default agents interval
 activeGui = get_or_prompt("ACTIVE_GUI", lambda: get_valid_str("⚙️  Do you want to run the simulation with the GUI? (yes/no) ")) == "yes"
 verboseMode = get_or_prompt("VERBOSE", lambda: get_valid_str("⚙️  Do you want to run the simulation in verbose mode? (yes/no) ")) == "yes"
 SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}/{mode}"
 os.makedirs(SCENARIO_PATH, exist_ok=True)
+agents_interval = 60                # Default agents interval
 radius = 500                        # Radius (meters) for map matching
 n_start_lanes = 20                  # Number of possible start lanes for taxis in each TAZ
 peak_vehicles = 5700                # Peak number of DRT vehicles in a day
 max_vehicles = 45000                # Maximum number of drivers available in one day
-# Dispatch algorithm to use (e.g., "traci", "greedy")
+# Dispatch algorithm to use ("traci", "greedy")
 if mode in ["multi_agent", "social_groups"]:   
     dispatch_algorithm = "traci"
 elif mode == "sumo":
     dispatch_algorithm = "greedy"      
-idle_mechanism = "randomCircling"   # Idle mechanism to use (e.g., "randomCircling", "stop")
+idle_mechanism = "randomCircling"   # Idle mechanism to use ("randomCircling", "stop")
 sumoSimulator = Simulator(
     net_file_path=SUMO_NET_PATH, 
     config_template_path=SUMO_CFGTEMPLATE_PATH, 
