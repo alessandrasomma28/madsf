@@ -115,7 +115,7 @@ All the input files for the simulation are automatically generated in `main.py`.
 
 Additionally, `main.py` generates the *SUMO* configuration file `sumo_config.sumocfg`, which contains the simulation parameters and the input files to be used.
 
-The simulation is then run with a real-time interaction between *SUMO* and the multi-agent model. The *SUMO* logic handles the traffic and the routing of all the vehicles, while the multi-agent model handles the ride-hailing service. The two components interact with each other through [*TraCI*](https://sumo.dlr.de/docs/TraCI.html).
+The simulation is then run with a real-time interaction between *SUMO* and the multi-agent model. The *SUMO* logic handles the traffic and the routing of all the vehicles, while the multi-agent model handles the ride-hailing services. The two components interact with each other through [*TraCI*](https://sumo.dlr.de/docs/TraCI.html).
 
 ![](doc/General_architecture.png)
 
