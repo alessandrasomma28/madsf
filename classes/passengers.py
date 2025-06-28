@@ -51,9 +51,6 @@ class Passengers:
         self.__personality_distribution = self.model.passengers_personality_distribution
         self.__acceptance_distribution = self.model.passengers_acceptance_distribution
         self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
-        self.__assigned_requests = set(traci.person.getTaxiReservations(4))
-        self.__logged_unassigned = len(self.__unassigned_requests)
-        self.__logged_assigned = len(self.__assigned_requests)
         self.__canceled_number = 0
         self.__accept = self.__reject = 0
         # Reset the canceled requests 60 seconds after the surge multiplier computation
@@ -73,6 +70,8 @@ class Passengers:
 
         # --- Update unassigned requests ---
         self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
+        self.__logged_unassigned = len(self.__unassigned_requests)
+        self.__logged_assigned = len(set(traci.person.getTaxiReservations(4)))
         self.__unassigned_request_ids = {res.id for res in self.__unassigned_requests}
         if self.model.verbose:
             print(f"☝🏻 {len(self.__unassigned_request_ids)} unassigned requests")
