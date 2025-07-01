@@ -6,7 +6,8 @@ count_traffic.py
 .env
 *.pdf
 *.key
-*.png
+doc/Lyft pricing.png
+doc/Uber pricing.png
 *.pyc
 .vscode
 .DS_Store
