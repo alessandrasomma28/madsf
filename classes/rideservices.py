@@ -171,6 +171,7 @@ class RideServices:
                 offer_key = (res_id, taxi_id)
                 provider = self.model.drivers.get_driver_provider(taxi_id)
                 surge_multiplier = self.__providers[provider]["surge_multiplier"]
+                max_surge = self.__providers[provider]["max_surge"]
                 # Check if the offer with the same provider already exists in cache
                 if provider in cached_offer_by_provider:
                     travel_time, route_length, price = cached_offer_by_provider[provider]
@@ -200,7 +201,8 @@ class RideServices:
                     "route_length": route_length,
                     "surge": surge_multiplier,
                     "price": price,
-                    "provider": provider
+                    "provider": provider,
+                    "max_surge": max_surge
                 }
                 self.__generated_offers += 1
                 provider_offer_counts[provider] += 1
