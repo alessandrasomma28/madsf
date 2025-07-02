@@ -112,12 +112,17 @@ class Drivers:
                 # Get personality and acceptance ranges of the driver
                 personality = self.__drivers_with_personality.get(driver_id)
                 surge = offer["surge"]
-                acceptance_ranges = self.__acceptance_distribution[personality]
-                acceptance = next((perc for low, up, perc in acceptance_ranges if low < surge <= up), 0)
-                # Compute dynamic acceptance based on demand pressure
-                greediness = demand_pressure / surge
-                dynamic_acceptance = max(0, min(1, acceptance - greediness))
-                accepted = random.random() <= dynamic_acceptance
+                max_surge = offer["max_surge"]
+                if max_surge > 1.0:
+                    acceptance_ranges = self.__acceptance_distribution[personality]
+                    acceptance = next((perc for low, up, perc in acceptance_ranges if low < surge <= up), 0)
+                    # Compute dynamic acceptance based on demand pressure
+                    greediness = demand_pressure / surge
+                    dynamic_acceptance = max(0, min(1, acceptance - greediness))
+                    accepted = random.random() <= dynamic_acceptance
+                else:
+                    # If max surge is 1.0 (flat rate), always accept
+                    accepted = True
             else:
                 # Always accept if no social groups
                 accepted = True

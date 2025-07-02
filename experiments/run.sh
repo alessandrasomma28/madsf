@@ -5,7 +5,7 @@ BASE_DATES=('2021-11-10' '2021-11-12' '2021-11-14' '2021-10-06' '2021-10-08' '20
 SCENARIO='normal'
 ACTIVE_GUI='no'
 VERBOSE='no'
-MODE='multi_agent'    # sumo, multi_agent, social_groups
+MODE='social_groups'    # sumo, multi_agent, social_groups
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_PATH="${ROOT_DIR}/.env"
 
