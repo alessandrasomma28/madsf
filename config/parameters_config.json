@@ -34,7 +34,7 @@
             "service_fee": 5.31,
             "surge_multiplier": 1.0,
             "max_surge": 5.0,
-            "share": 0.75
+            "share": 0.65
         },
         "Lyft": {
             "base_price": 2.24,
@@ -44,6 +44,16 @@
             "service_fee": 3.60,
             "surge_multiplier": 1.0,
             "max_surge": 8.0,
+            "share": 0.85
+        },
+        "Flat": {
+            "base_price": 4.15,
+            "min_price": 4.15,
+            "cost_per_min": 0.65,
+            "cost_per_km": 2.02,
+            "service_fee": 0.00,
+            "surge_multiplier": 1.0,
+            "max_surge": 1.0,
             "share": 1.0
         }
     },

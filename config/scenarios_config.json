@@ -1,4 +1,34 @@
 {
+    "stress_test_1": {
+        "name": "Stress Test 1",
+        "location": "downtown",
+        "trigger_time": 10800,
+        "duration_time": 3600,
+        "requests_perc": 1.0,
+        "traffic_perc": 1.0,
+        "drivers_perc": 1.0
+    },
+
+    "stress_test_2": {
+        "name": "Stress Test 2",
+        "location": "midtown",
+        "trigger_time": 10800,
+        "duration_time": 3600,
+        "requests_perc": 1.0,
+        "traffic_perc": 1.0,
+        "drivers_perc": 1.0
+    },
+
+    "stress_test_3": {
+        "name": "Stress Test 3",
+        "location": "all",
+        "trigger_time": 10800,
+        "duration_time": 3600,
+        "requests_perc": 1.0,
+        "traffic_perc": 1.0,
+        "drivers_perc": 1.0
+    },
+    
     "underground_alarm": {
         "name": "Underground Alarm",
         "location": "downtown",
