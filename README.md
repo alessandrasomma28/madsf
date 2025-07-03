@@ -54,7 +54,7 @@ This replication package includes 8 folders, a *main.py*, a *clean.sh* script to
 To run simulations in batch, you can use the `run.sh` bash script. This script will run the simulation for all the specified durations (both during 'day' shift and 'night' shift), modes and days. To change settings, simply modify the parameters list at the beginning of the script. **NOTE: Be sure to run the script from the project root folder to effectively load the `.env` file (i.e., `./experiments/run.sh`).**
 
 
-## Extensibility
+## How-to-extend instructions
 
 The project is designed to be easily extensible and adaptable to different scenarios. The multi-agent model can be easily modified to include new features, without acting directly on the agents. The user can simply modify the `.json` files in the `config/` folder to change the parameters of the agents (such as different acceptance probability distribution) or add other components (such as other different ride-hailing providers). It is also possible to specify the zones of the city where some of the parameters apply, such as the traffic, ride requests, and driver availability.
 
