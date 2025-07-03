@@ -27,7 +27,7 @@ This replication package includes 8 folders, a *main.py*, a *clean.sh* script to
 
 1. Open project (`cd/path/to/this/project`), create a virtual environment with Python >=3.10 (`python3.10 -m venv .venv`) and activate it (`source .venv/bin/activate`).
 2. Install requirements from *requirements.txt* file (`pip install -r requirements.txt`).
-3. Run python notebooks `.ipynb` in `experiments/` folder to generate the results of the experiments regarding fidelity, efficiency and extensibility. The results will be saved in the `experiments/results/` folder.
+3. Run python notebooks `.ipynb` in `experiments/` folder to generate the results of the experiments regarding responsiveness, fidelity, scalability and extensibility. The results will be saved in the `experiments/results/` folder.
 
 ### Running simulations
 
@@ -47,7 +47,7 @@ This replication package includes 8 folders, a *main.py*, a *clean.sh* script to
     - **VERBOSE**: `True` to print detailed information about the simulation, `False` otherwise.
     
     Options will be saved in the `.env` file in the root folder of the project. If you want to change the options, you can edit the `.env` file directly or run *main.py* again after deleting the `.env` file.
-7. Inspect output folder `sumoenv/scenario/{scenario_name}/{mode}/{timeslot}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the `HTML` interactive line plot visualization `sf_final_metrics_visualization.html`.
+7. Inspect output folder `sumoenv/scenarios/{scenario_name}/{mode}/{timeslot}`. The final CSV metrics file will be saved as `sf_final_metrics.csv` and can be inspected with the `HTML` interactive line plot visualization `sf_final_metrics_visualization.html`.
 
 #### Running simulations in batch
 
