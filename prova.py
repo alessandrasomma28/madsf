@@ -1,7 +1,7 @@
 import os
 
 def check_xml_in_deep_subfolders(root_dir):
-    for dirpath, dirnames, filenames in os.walk(root_dir):
+    for dirpath, _, filenames in os.walk(root_dir):
         # Skip the root level — only check deeper subfolders
         if dirpath == root_dir:
             continue
@@ -13,7 +13,7 @@ def check_xml_in_deep_subfolders(root_dir):
             print(f"❌ No XML found in: {dirpath}")
 
 # Example usage
-check_xml_in_deep_subfolders('/Users/beyzaeken/Desktop/sfdigitalmirror/sumoenv/scenarios/normal')
+check_xml_in_deep_subfolders('/Users/beyzaeken/Desktop/sfdigitalmirror/sumoenv/scenarios/normal_flat')
 '''
 import pandas as pd
 
