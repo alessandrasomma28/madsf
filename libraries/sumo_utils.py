@@ -1238,7 +1238,7 @@ def generate_drt_vehicle_instances_from_lanes(
             lane_index += 1
             vt = next(types_cycle)
             edge_id = lane_id.split("_")[0]
-            depart_seconds = "0.00"
+            depart_seconds = 0
             if idle_mechanism == "randomCircling":
                 el = ET.Element("vehicle", {
                     "id": f"taxi_{vehicle_counter}",
