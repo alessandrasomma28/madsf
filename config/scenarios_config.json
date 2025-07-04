@@ -56,6 +56,14 @@
         "slow_mid_perc": 0.7
     },
 
+    "long_rides": {
+        "name": "Long Rides",
+        "location": "all",
+        "trigger_time": 10800,
+        "duration_time": 3600,
+        "rides_length": 10.0
+    },
+
     "greedy_drivers": {
         "name": "Greedy Drivers",
         "location": "all",

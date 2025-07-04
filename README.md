@@ -69,6 +69,7 @@ These parameters include:
 - `requests_perc`: the percentage of ride requests to be generated during the event (can also specify zone).
 - `drivers_perc`: the percentage of drivers to be generated during the event (can also specify zone).
 - `traffic_perc`: the percentage of traffic to be generated during the event (can also specify zone).
+- `rides_length`: the multiplier of the length of the rides during the event (can also specify zone).
 - `slow_down_perc`: the percentage of speed reduction for traffic vehicles in the downtown area during the event (can also specify zone).
 - `slow_mid_perc`: the percentage of speed reduction for traffic vehicles in the midtown area during the event (can also specify zone).
 - `drivers_personality_distribution`: the probability distribution of drivers' personalities.
@@ -86,8 +87,9 @@ The project includes a set of predefined disruptive scenarios indicated with int
 The disruptive scenarios include:
 
 - `Underground alarm`: A 200% peak of requests and a 50% peak of traffic in the downtown area of the city.
-- `Flash mob`: A sudden decrease of speed in the midtown area of the city (-90% in downtown and -70% in the nearby zones).
 - `Wildcat strike`: A drop of drivers availability, implemented with a 50% decrease of drivers available in the zone.
+- `Flash mob`: A sudden decrease of speed in the midtown area of the city (-90% in downtown and -70% in the nearby zones).
+- `Long rides`: A sudden increase of the range of rides to 10 times the standard range (that is, 3 TAZs radius).
 - `Greedy drivers`: A sudden increase of ‘greedy drivers’ to 80%, who decline ride requests also with standard fares, when perceiving an increasing number of ride requests.
 - `Boycott TNCs`: A boycott of Transportation Network Companies by passengers, resulting in a 50% decrease of passengers requests.
 - `Budget passengers`: A sudden increase of ‘budget passengers’ to 80%, who are more likely to reject ride offers and wait longer for a ride.

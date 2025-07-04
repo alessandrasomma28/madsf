@@ -57,6 +57,7 @@
     "requests_perc": 0.0,
     "drivers_perc": 0.0,
     "traffic_perc": 0.0,
+    "rides_length": 1.0,
     "slow_down_perc": 0.0,
     "slow_mid_perc": 0.0,
     "location": "all"
