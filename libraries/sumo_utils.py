@@ -1238,10 +1238,11 @@ def generate_drt_vehicle_instances_from_lanes(
             lane_index += 1
             vt = next(types_cycle)
             edge_id = lane_id.split("_")[0]
+            depart_seconds = "0.00"
             if idle_mechanism == "randomCircling":
                 el = ET.Element("vehicle", {
                     "id": f"taxi_{vehicle_counter}",
-                    "depart": "0.00",
+                    "depart": f"{depart_seconds:.2f}",
                     "type": vt["id"]
                 })
                 ET.SubElement(el, "route", {"edges": edge_id})
@@ -1249,7 +1250,7 @@ def generate_drt_vehicle_instances_from_lanes(
             elif idle_mechanism == "stop":
                 el = ET.Element("trip", {
                     "id": f"taxi_{vehicle_counter}",
-                    "depart": "0.00",
+                    "depart": f"{depart_seconds:.2f}",
                     "type": vt["id"],
                     "personCapacity": "4"
                 })
@@ -1264,15 +1265,13 @@ def generate_drt_vehicle_instances_from_lanes(
     drivers_perc = scenario_params["drivers_perc"]
     start = scenario_params["trigger_time"]
     duration = scenario_params["duration_time"]
+    end = start + duration
     if drivers_perc != 0.0:
         # Calculate base time (simulation start)
-        sim_start_time = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
-        window_start = sim_start_time + timedelta(seconds=start)
-        window_end = window_start + timedelta(seconds=duration)
         in_scope = []
         out_scope = []
         for depart, taz, el in vehicle_elements:
-            if (window_start <= depart < window_end) and (tazs_involved is None or taz in tazs_involved):
+            if (start <= depart < end) and (tazs_involved is None or taz in tazs_involved):
                 scenario_depart = start + random.randint(0, int(duration))
                 el.attrib['depart'] = f"{scenario_depart:.2f}"
                 in_scope.append((depart, taz, el))
