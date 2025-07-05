@@ -2,7 +2,7 @@
 
 # Dates for the runs
 BASE_DATES=('2021-11-10' '2021-11-12' '2021-11-14' '2021-10-06' '2021-10-08' '2021-10-10' '2021-06-23' '2021-06-25' '2021-06-27')
-SCENARIO='stress_test_1'
+SCENARIO='stress_test_2'
 ACTIVE_GUI='no'
 VERBOSE='no'
 MODE='social_groups'    # sumo, multi_agent, social_groups

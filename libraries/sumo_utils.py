@@ -354,43 +354,76 @@ def sf_traffic_od_generation(
     for edge, taz in edge_to_taz.items():
         taz_to_edges[taz].append(edge)
 
+    # Generate OD data
+    od_data = []
+    vehicle_id = 0
     # Check for long rides scenario
     rides_length = scenario_params["rides_length"]
     start = scenario_params["trigger_time"]
     duration = scenario_params["duration_time"]
-
-    # Generate OD data
-    od_data = []
-    vehicle_id = 0
-    sim_start_time = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
-    window_start = sim_start_time + timedelta(seconds=start)
-    window_end = window_start + timedelta(seconds=duration)
-    for _, origin_row in df.iterrows():
-        origin_edge = origin_row['edge_id']
-        origin_taz = origin_row['assigned_taz']
-        if window_start <= origin_row['timestamp'] < window_end:
-            rides_length = scenario_params["rides_length"]
-        else:
-            rides_length = 1.0
-        if pd.notna(origin_edge) and pd.notna(origin_taz) and str(origin_edge).strip() != '':
-            origin_taz = int(origin_taz)
-            possible_dest_edges = []
-            if ((window_start <= origin_row['timestamp'] < window_end) and (tazs_involved is None or origin_taz in tazs_involved)):
-                # Apply eventual increased rides length to the TAZ range
-                taz_range = min(980, max(1, rides_length*3))
-                if origin_taz - taz_range < 0:
-                    start_taz = 1
-                elif origin_taz + taz_range > 981:
-                    end_taz = 981
-                else:
-                    start_taz = origin_taz - taz_range
-                    end_taz = origin_taz + taz_range + 1
+    if start > 0 and rides_length != 1.0:
+        sim_start_time = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
+        window_start = sim_start_time + timedelta(seconds=start)
+        window_end = window_start + timedelta(seconds=duration)
+        for _, origin_row in df.iterrows():
+            origin_edge = origin_row['edge_id']
+            origin_taz = origin_row['assigned_taz']
+            if window_start <= origin_row['timestamp'] < window_end:
+                rides_length = scenario_params["rides_length"]
             else:
-                start_taz = max(1, origin_taz - 3)
-                end_taz = min(980, origin_taz + 4)
-            # Iterate through the TAZ range to find possible destination edges
-            for taz_candidate in range(start_taz, end_taz):
-                possible_dest_edges = taz_to_edges.get(taz_candidate, [])
+                rides_length = 1.0
+            if pd.notna(origin_edge) and pd.notna(origin_taz) and str(origin_edge).strip() != '':
+                origin_taz = int(origin_taz)
+                possible_dest_edges = []
+                if ((window_start <= origin_row['timestamp'] < window_end) and (tazs_involved is None or origin_taz in tazs_involved)):
+                    # Apply eventual increased rides length to the TAZ range
+                    taz_range = int(min(981, max(1, rides_length*3)))
+                    start_taz = max(1, origin_taz - taz_range)
+                    end_taz = min(981, origin_taz + taz_range)
+                    # Iterate through the TAZ range to find possible destination edges
+                    for taz_candidate in range(start_taz, end_taz):
+                        if abs(taz_candidate - origin_taz) <= rides_length * 3:
+                            continue
+                        possible_dest_edges.extend(taz_to_edges.get(taz_candidate, []))
+                        # Remove self-loop destinations
+                        possible_dest_edges = [e for e in possible_dest_edges if e != origin_edge]
+                        if possible_dest_edges:
+                            dest_edge = random.choice(possible_dest_edges)
+                            od_data.append({
+                                'vehicle_id': vehicle_id,
+                                'origin_edge_id': origin_edge,
+                                'origin_taz_id': origin_taz,
+                                'destination_edge_id': dest_edge,
+                                'destination_taz_id': edge_to_taz.get(dest_edge),
+                                'origin_starting_time': origin_row['timestamp']
+                            })
+                            vehicle_id += 1
+                else:
+                    for taz_candidate in range(origin_taz - 3, origin_taz + 4):
+                        possible_dest_edges.extend(taz_to_edges.get(taz_candidate, []))
+                    # Remove self-loop destinations
+                    possible_dest_edges = [e for e in possible_dest_edges if e != origin_edge]
+                    if possible_dest_edges:
+                        dest_edge = random.choice(possible_dest_edges)
+                        od_data.append({
+                            'vehicle_id': vehicle_id,
+                            'origin_edge_id': origin_edge,
+                            'origin_taz_id': origin_taz,
+                            'destination_edge_id': dest_edge,
+                            'destination_taz_id': edge_to_taz.get(dest_edge),
+                            'origin_starting_time': origin_row['timestamp']
+                        })
+                        vehicle_id += 1
+    else:
+        for _, origin_row in df.iterrows():
+            origin_edge = origin_row['edge_id']
+            origin_taz = origin_row['assigned_taz']
+            if pd.notna(origin_edge) and pd.notna(origin_taz) and str(origin_edge).strip() != '':
+                origin_taz = int(origin_taz)
+                possible_dest_edges = []
+                for taz_candidate in range(origin_taz - 3, origin_taz + 4):
+                    possible_dest_edges.extend(taz_to_edges.get(taz_candidate, []))
+                # Remove self-loop destinations
                 possible_dest_edges = [e for e in possible_dest_edges if e != origin_edge]
                 if possible_dest_edges:
                     dest_edge = random.choice(possible_dest_edges)
@@ -1691,7 +1724,7 @@ def filter_polygon_lanes(
 def generate_work_duration(starting: bool = False) -> int:
     """
     Generates a taxi work duration (in hours) based on the following distribution:
-    - 51% work between 10 minutes and 2 hours.
+    - 51% work between 20 minutes and 2 hours.
     - 30% work between 2 and 5 hours.
     - 12% work between 5 and 7 hours.
     - 7% work between 7 and 8 hours.
@@ -1716,7 +1749,7 @@ def generate_work_duration(starting: bool = False) -> int:
             return round(random.uniform(7201, 18000))
     else:
         if r < 0.51:
-            return round(random.uniform(600, 7200))
+            return round(random.uniform(1200, 7200))
         elif 0.51 <= r < 0.81:
             return round(random.uniform(7201, 18000))
         elif 0.81 <= r < 0.93:
