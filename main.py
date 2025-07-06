@@ -109,8 +109,8 @@ SF_TRAFFIC_VEHICLE_DAILYHOUR_PATH = extract_sf_traffic_timeslot(
     )
 
 # 6. Map and TAZ matching - traffic
-start = start_date.replace("-", "")
-end = end_date.replace("-", "")
+start = start_date.replace("-", "")[2:]
+end = end_date.replace("-", "")[2:]
 SF_TRAFFIC_EDGE_PATH = sf_traffic_map_matching(
     sf_map_file_path=SUMO_NET_PATH,
     sf_real_traffic_data_path=SF_TRAFFIC_VEHICLE_DAILYHOUR_PATH,

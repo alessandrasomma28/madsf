@@ -264,7 +264,7 @@ def extract_sf_traffic_timeslot(
     Path
         Full path to the saved CSV file containing the filtered data.
     """
-    # Read dataset
+
     df = pd.read_csv(input_csv_path)
     column_renames = {
         "vehicle_position_date_time": "timestamp",
@@ -294,7 +294,7 @@ def extract_sf_traffic_timeslot(
     timeslot = f"{start_date}{start_hour}_{end_date}{end_hour}"
 
     # Create folder path for the specific date
-    date_folder_path = os.path.join(output_csv_folder, f"{start_date}-{end_date}")
+    date_folder_path = os.path.join(output_csv_folder, f"{start_date}_{end_date}")
     os.makedirs(date_folder_path, exist_ok=True)  # Will not recreate if already exists
 
     # Final file path

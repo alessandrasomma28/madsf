@@ -13,7 +13,7 @@ def check_xml_in_deep_subfolders(root_dir):
             print(f"❌ No XML found in: {dirpath}")
 
 # Example usage
-check_xml_in_deep_subfolders('/Users/beyzaeken/Desktop/sfdigitalmirror/sumoenv/scenarios/normal_flat')
+check_xml_in_deep_subfolders('/Users/beyzaeken/Desktop/sfdigitalmirror/sumoenv/scenarios')
 '''
 import pandas as pd
 
