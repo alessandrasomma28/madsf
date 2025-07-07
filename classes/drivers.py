@@ -99,7 +99,7 @@ class Drivers:
             if self.model.rideservices.is_passenger_accepted(res_id, driver_id):
                 offers_by_driver[driver_id].append((res_id, offer))
         # Compute demand pressure for dynamic acceptance
-        total_requests = len(traci.person.getTaxiReservations(3))
+        total_requests = self.model.rideservices.get_unassigned_requests()
         demand_pressure = (total_requests - len(self.__idle_drivers)) / len(self.__idle_drivers) if self.__idle_drivers else total_requests
         if demand_pressure < 0:
             demand_pressure = 0

@@ -19,6 +19,7 @@ It supports the following operations:
 12. is_passenger_accepted: Returns True if the passenger has accepted a specific offer.
 13. get_acceptances: Returns the dictionary of all acceptances.
 14. remove_acceptance: Removes an acceptance from the acceptances dict.
+15. get_unassigned_requests: Returns the number of unassigned requests.
 """
 
 
@@ -49,6 +50,7 @@ class RideServices:
         ):
         self.model = model
         self.logger = logger
+        self.__unassigned_surge = []
         self.__rides_not_served = 0
         self.__generated_offers = 0
         self.__partial_acceptances = 0
@@ -88,7 +90,7 @@ class RideServices:
         now = int(self.model.time)
         idle_taxis = self.model.drivers.get_idle_drivers()
         unassigned = sorted(self.model.passengers.get_unassigned_requests(), key=lambda r: r.reservationTime)
-        unassigned_surge = traci.person.getTaxiReservations(3)
+        self.__unassigned_surge = traci.person.getTaxiReservations(3)
         canceled = self.model.passengers.get_canceled_requests()
         idle_by_provider = self.model.drivers.get_idle_drivers_by_provider()
 
@@ -108,7 +110,7 @@ class RideServices:
             # Map provider -> share probability
             shares = dict(zip(provider_names, provider_probs))
             for provider in self.__providers:
-                requests_share = int((len(unassigned_surge) + len(canceled)) * shares[provider])
+                requests_share = int((len(self.__unassigned_surge) + len(canceled)) * shares[provider])
                 idle_count = len(idle_by_provider.get(provider, set()))
                 self.__providers[provider]["surge_multiplier"] = self.__compute_surge_multiplier(
                     requests_share, idle_count, provider
@@ -538,3 +540,17 @@ class RideServices:
         None
         """
         self.__acceptances.pop(key, None)
+
+
+    def get_unassigned_requests(
+            self
+        ) -> int:
+        """
+        Returns the number of unassigned requests.
+
+        Returns
+        -------
+        int
+            The number of unassigned requests.
+        """
+        return len(self.__unassigned_surge)

@@ -2,10 +2,10 @@
 
 # Dates for the runs
 BASE_DATES=('2021-11-10' '2021-11-12' '2021-11-14' '2021-10-06' '2021-10-08' '2021-10-10' '2021-06-23' '2021-06-25' '2021-06-27')
-SCENARIO='wildcat_strike'
+SCENARIO='stress_test_1'
 ACTIVE_GUI='no'
 VERBOSE='no'
-MODE='social_groups'               # Available modes: sumo, multi_agent, social_groups
+MODE='social_groups'    # Available modes: sumo, multi_agent, social_groups
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_PATH="${ROOT_DIR}/.env"
 
@@ -22,8 +22,8 @@ minutes_to_time() {
 }
 
 # Durations in minutes
-DAY_DURATIONS=(360)     # 60 = 08:00–09:00, 180 = 08:00-11:00, 360 = 08:00–14:00, 720 = 08:00–20:00
-NIGHT_DURATIONS=(360)   # 60 = 20:00–21:00, 180 = 20:00-23:00, 360 = 20:00–02:00, 720 = 20:00–08:00
+DAY_DURATIONS=(180)     # 60 = 08:00–09:00, 180 = 08:00-11:00, 360 = 08:00–14:00, 720 = 08:00–20:00
+NIGHT_DURATIONS=(180)   # 60 = 20:00–21:00, 180 = 20:00-23:00, 360 = 20:00–02:00, 720 = 20:00–08:00
 DAY_START_MIN=$(time_to_minutes 08:00)
 NIGHT_START_MIN=$(time_to_minutes 20:00)
 
