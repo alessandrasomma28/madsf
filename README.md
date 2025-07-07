@@ -14,11 +14,11 @@ This replication package includes 8 folders, a *main.py*, a *clean.sh* script to
 - `classes/`: contains simulation and multi-agent logic.
 - `config/`: contains `.json` files to configurate parameters and scenarios.
 - `constants/`: contains paths for better readability.
-- `data/`: contains all input data for the simulator.
+- `data/`: contains all raw input data for the digital shadow.
 - `doc/`: contains additional documentation of the project. It also contains the list of the days with no traffic data available from [SFMTA](https://data.sfgov.org/Transportation/SFMTA-Transit-Vehicle-Location-History-2021-/9722-grnf/data_preview).
 - `experiments/`: contains the notebooks and the results of the experiments.
 - `libraries/`: contains all the utility functions to generate input and output of the simulation.
-- `sumoenv/`: contains the folder with input and output files, the SF net file, and the `sumocfg` file, which is automatically generated in *main.py*.
+- `sumoenv/`: contains the folders with input and output files, the SF net file, and the template for the `sumocfg` file, which is automatically generated for each execution in *main.py*.
 
 
 ## How-to-run instructions
@@ -35,7 +35,7 @@ This replication package includes 8 folders, a *main.py*, a *clean.sh* script to
 2. Open project (`cd/path/to/this/project`), create a virtual environment with Python >=3.10 (`python3.10 -m venv .venv`) and activate it (`source .venv/bin/activate`).
 3. If needed, change paths indicated in `constants/sumoenv_constants.py`.
 4. Install requirements from *requirements.txt* file (`pip install -r requirements.txt`).
-5. Run simulation by simply executing *main.py*.
+5. Execute the Digital Shadow by simply running *main.py*.
 6. Follow the instructions in the terminal to initialize the simulation:
     - **START_DATE**: the date of the first day of the simulation in the format `YYYY-MM-DD`.
     - **END_DATE**: the date of the last day of the simulation in the format `YYYY-MM-DD`.
@@ -69,7 +69,7 @@ These parameters include:
 - `requests_perc`: the percentage of ride requests to be generated during the event (can also specify zone).
 - `drivers_perc`: the percentage of drivers to be generated during the event (can also specify zone).
 - `traffic_perc`: the percentage of traffic to be generated during the event (can also specify zone).
-- `rides_length`: the multiplier of the length of the rides during the event (can also specify zone).
+- `rides_length`: the multiplication factor of the length of the rides during the event (can also specify zone).
 - `slow_down_perc`: the percentage of speed reduction for traffic vehicles in the downtown area during the event (can also specify zone).
 - `slow_mid_perc`: the percentage of speed reduction for traffic vehicles in the midtown area during the event (can also specify zone).
 - `drivers_personality_distribution`: the probability distribution of drivers' personalities.
@@ -86,13 +86,13 @@ The project includes a set of predefined disruptive scenarios indicated with int
 
 The disruptive scenarios include:
 
-- `Underground alarm`: A 200% peak of requests and a 50% peak of traffic in the downtown area of the city.
-- `Wildcat strike`: A drop of drivers availability, implemented with a 50% decrease of drivers available in the zone.
-- `Flash mob`: A sudden decrease of speed in the midtown area of the city (-90% in downtown and -70% in the nearby zones).
-- `Long rides`: A sudden increase of the range of rides to 10 times the standard range (that is, 3 TAZs radius).
-- `Greedy drivers`: A sudden increase of ‘greedy drivers’ to 80%, who decline ride requests also with standard fares, when perceiving an increasing number of ride requests.
+- `Underground Alarm`: A 200% peak of requests and a 50% peak of traffic in the downtown area of the city.
+- `Wildcat Strike`: A drop of drivers availability, implemented with a 50% decrease of drivers available in the zone.
+- `Flash Mob`: A sudden decrease of speed in the midtown area of the city (-90% in downtown and -70% in the nearby zones).
+- `Long Rides`: A sudden increase of the range of rides to 10 times the standard range (that is, 3 TAZs radius).
+- `Greedy Drivers`: A sudden increase of ‘greedy drivers’ to 80%, who decline ride requests also with standard fares, when perceiving an increasing number of ride requests.
 - `Boycott TNCs`: A boycott of Transportation Network Companies by passengers, resulting in a 50% decrease of passengers requests.
-- `Budget passengers`: A sudden increase of ‘budget passengers’ to 80%, who are more likely to reject ride offers and wait longer for a ride.
+- `Budget Passengers`: A sudden increase of ‘budget passengers’ to 80%, who are more likely to reject ride offers and wait longer for a ride.
 
 These are predefined scenarios, but you can easily add your own by modifying the `config/scenarios_config.json` file or even by directly modifying the `config/parameters_config.json` general file. The system will automatically detect the new scenario and run it accordingly.
 

@@ -158,7 +158,8 @@ class RideServices:
                 for dist_sq, taxi_id in heapq.nsmallest(self.__max_offers_per_reservation, taxis_radius)
             ]
             if not closest_taxis:
-                self.__rides_not_served += 1
+                if res_id not in canceled:
+                    self.__rides_not_served += 1
                 if self.model.verbose:
                     print(f"⚠️ No taxis available for reservation {res_id} — skipping")
                 continue

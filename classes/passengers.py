@@ -53,7 +53,7 @@ class Passengers:
         self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
         self.__canceled_number = 0
         self.__accept = self.__reject = 0
-        # Reset the canceled requests 60 seconds after the surge multiplier computation
+        # Reset the canceled requests every 360 seconds
         if self.model.time % (300 + self.model.agents_interval) == 0:
             self.__canceled = set()
 
