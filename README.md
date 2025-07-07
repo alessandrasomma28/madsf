@@ -13,7 +13,7 @@ This replication package includes 8 folders, a *main.py*, a *clean.sh* script to
 
 - `classes/`: contains simulation and multi-agent logic.
 - `config/`: contains `.json` files to configurate parameters and scenarios.
-- `constants/`: contains paths for better readability.
+- `paths/`: contains paths for better readability.
 - `data/`: contains all raw input data for the digital shadow.
 - `doc/`: contains additional documentation of the project. It also contains the list of the days with no traffic data available from [SFMTA](https://data.sfgov.org/Transportation/SFMTA-Transit-Vehicle-Location-History-2021-/9722-grnf/data_preview).
 - `experiments/`: contains the notebooks and the results of the experiments.

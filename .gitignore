@@ -4,6 +4,7 @@ sumoenv/sf_old.net.xml
 check_traffic.py
 count_traffic.py
 count_experiments.py
+**/scenario_parameters_config.json
 **/sumo_log.txt
 **/sumo_config.sumocfg
 **/sf_final_metrics_visualization.html
