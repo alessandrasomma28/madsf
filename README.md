@@ -51,7 +51,7 @@ This replication package includes 8 folders, a *main.py*, a *clean.sh* script to
 
 #### Running simulations in batch
 
-To run simulations in batch, you can use the `run.sh` bash script. This script will run the simulation for all the specified durations (both during 'day' shift and 'night' shift), modes and days. To change settings, simply modify the parameters list at the beginning of the script. **NOTE: Be sure to run the script from the project root folder to effectively load the `.env` file (i.e., `./experiments/run.sh`).**
+To run simulations in batch, you can use the `run.sh` bash script. This script will run the simulation for all the specified durations (both during 'day' shift and 'night' shift), modes and days. To change settings, simply modify the parameters list at the beginning of the script. **NOTE: Be sure to run the script from the project root folder to effectively load the `.env` file (i.e., `./experiments/run.sh` or `bash experiments/run.sh`).**
 
 
 ## How-to-extend instructions

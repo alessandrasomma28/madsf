@@ -1,0 +1,3 @@
+mode,date,traffic_input,pickup_input,dropoff_input,traffic_output,pickup_output,dropoff_output,traffic_error,pickup_error,dropoff_error,canceled_rides,pickup_scaled_error,dropoff_scaled_error,geh_traffic,geh_pickup,geh_dropoff
+social_groups,21111008_21111011,275033,38649,38756,232410,13593,13598,15.5,64.83,64.91,24812,0.63,0.89,48.85,0.72,1.02
+social_groups,21111020_21111023,191105,50384,50409,162448,24387,24387,15.0,51.6,51.62,25938,0.12,0.17,39.35,0.15,0.22

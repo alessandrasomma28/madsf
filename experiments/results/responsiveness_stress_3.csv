@@ -1,0 +1,3 @@
+mode,date,elapsed_seconds,elapsed_minutes,sumo_time,sumo_minutes,agents_time,agents_minutes,sumo_perc_time,agents_perc_time
+social_groups,21111008_21111011,2595.98,43.27,1002.47,16.71,1318.38,21.97,0.39,0.51
+social_groups,21111020_21111023,2674.5,44.58,698.19,11.64,1647.17,27.45,0.26,0.62

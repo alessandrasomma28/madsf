@@ -144,21 +144,17 @@ class RideServices:
                 print(f"⚠️ Failed to get position for reservation {res_id}: {reservation}")
                 continue
 
-            # Filter nearby taxis using bounding box and Euclidean distance
-            taxis_radius = []
-            for taxi_id, (tx, ty) in taxi_positions.items():
-                dx, dy = tx - pax_x, ty - pax_y
-                if abs(dx) > self.__miles_radius_max or abs(dy) > self.__miles_radius_max:
-                    continue
-                dist_sq = dx * dx + dy * dy
-                if dist_sq <= self.__radius_square:
-                    taxis_radius.append((dist_sq, taxi_id))
-            
-            # Get top 8 closest taxis
-            closest_taxis = [
-                (math.sqrt(dist_sq), taxi_id)
-                for dist_sq, taxi_id in heapq.nsmallest(self.__max_offers_per_reservation, taxis_radius)
-            ]
+            # Filter nearby taxis using bounding box and Euclidean distance and get top 8 closest taxis
+            def nearby_taxis():
+                for taxi_id, (tx, ty) in taxi_positions.items():
+                    if abs(tx - pax_x) > self.__miles_radius_max or abs(ty - pax_y) > self.__miles_radius_max:
+                        continue
+                    dx, dy = tx - pax_x, ty - pax_y
+                    dist_sq = dx * dx + dy * dy
+                    if dist_sq <= self.__radius_square:
+                        yield (dist_sq, taxi_id)
+            closest_taxis = heapq.nsmallest(self.__max_offers_per_reservation, nearby_taxis())
+            [(math.sqrt(dist_sq), taxi_id) for dist_sq, taxi_id in closest_taxis]
             if not closest_taxis:
                 if res_id not in canceled:
                     self.__rides_not_served += 1
