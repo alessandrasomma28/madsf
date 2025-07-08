@@ -1,4 +1,4 @@
-# SHE Digital Shadow
+# San Francisco Ride-Hailing Digital Shadow
 
 This replication package replicates the results of **A Multi-Agent Approach for Engineering Digital Twins of Smart Human-Centric Ecosystems**.
 

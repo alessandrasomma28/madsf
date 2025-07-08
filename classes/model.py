@@ -188,7 +188,6 @@ class Model:
                 self.sumo_time += (end_sumo - start_sumo)
                 if self.time % agents_interval == 0:
                     start_agents = time.time()
-                    self.agents_time 
                     print(f"Simulation time: {self.time} seconds\n")
                     start = time.time()
                     self.passengers.step()
@@ -218,7 +217,6 @@ class Model:
                 self.sumo_time += (end_sumo - start_sumo)
                 if self.time % agents_interval == 0:
                     start_agents = time.time()
-                    self.agents_time 
                     print(f"Simulation time: {self.time} seconds\n")
                     start = time.time()
                     self.passengers.step()
