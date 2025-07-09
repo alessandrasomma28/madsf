@@ -1340,15 +1340,14 @@ def generate_drt_vehicle_instances_from_lanes(
             vehicle_counter -= len(in_scope)
         elif drivers_perc > 0:
             additional_count = int(drivers_perc * len(in_scope))
-            if in_scope:
-                for i in range(additional_count):
-                    depart, taz, el = random.choice(in_scope)
-                    new_el = copy.deepcopy(el)
-                    new_depart = depart + random.randint(10, 120)
-                    new_el.attrib['id'] = f"taxi_{vehicle_counter}"
-                    new_el.attrib['depart'] = f"{new_depart:.2f}"
-                    vehicle_elements.append((new_depart, taz, new_el))
-                    vehicle_counter += 1
+            for _ in range(additional_count):
+                depart, taz, el = random.choice(in_scope)
+                new_el = copy.deepcopy(el)
+                new_depart = depart + random.randint(10, 60)
+                new_el.attrib['id'] = f"taxi_{vehicle_counter}"
+                new_el.attrib['depart'] = f"{new_depart:.2f}"
+                in_scope.append((new_depart, taz, new_el))
+                vehicle_counter += 1
         vehicle_elements = out_scope + in_scope
 
     for _, _, el in sorted(vehicle_elements, key=lambda x: x[0]):

@@ -124,59 +124,57 @@ class RideServices:
         provider_surge_totals = defaultdict(float)
         tot_res = 0
         # Iterate over all passenger requests
-        for reservation, (pax_x, pax_y) in unassigned:
+        for reservation in unassigned:
+            pax_x, pax_y = reservation
             tot_res += 1
             res_id = reservation.id
 
-            # Get top 8 closest drivers in the bounding box
-            def nearby_drivers():
-                for driver_id, (tx, ty) in idle_drivers:
-                    if abs(tx - pax_x) > self.__miles_radius_max or abs(ty - pax_y) > self.__miles_radius_max:
-                        continue
-                    dx, dy = tx - pax_x, ty - pax_y
-                    dist_sq = dx * dx + dy * dy
-                    if dist_sq <= self.__radius_square:
-                        yield (dist_sq, driver_id)
-            closest_drivers = heapq.nsmallest(self.__max_offers_per_reservation, nearby_drivers())
-            [(math.sqrt(dist_sq), driver_id) for dist_sq, driver_id in closest_drivers]
+            # Filter and sort top 8 closest drivers
+            closest_drivers = heapq.nsmallest(
+                self.__max_offers_per_reservation,
+                (
+                    (dx * dx + dy * dy, driver_id)
+                    for driver_id, (tx, ty) in idle_drivers
+                    if abs(tx - pax_x) <= self.__miles_radius_max and abs(ty - pax_y) <= self.__miles_radius_max
+                    if (dx := tx - pax_x)**2 + (dy := ty - pax_y)**2 <= self.__radius_square
+                )
+            )
             if not closest_drivers:
                 if res_id not in canceled:
                     self.__rides_not_served += 1
                 if self.model.verbose:
                     print(f"⚠️ No taxis available for reservation {res_id} — skipping")
                 continue
-            
+
             # Create offers
             from_edge = reservation.fromEdge
             to_edge = reservation.toEdge
             cached_offer_by_provider = {}
-            for radius, driver_id in closest_drivers:
-                offer_key = (res_id, driver_id)
+            for dist_sq, driver_id in closest_drivers:
                 provider = self.model.drivers.get_driver_provider(driver_id)
+                offer_key = (res_id, driver_id)
                 surge_multiplier = self.__providers[provider]["surge_multiplier"]
                 max_surge = self.__providers[provider]["max_surge"]
                 # Check if the offer with the same provider already exists in cache
                 if provider in cached_offer_by_provider:
                     travel_time, route_length, price = cached_offer_by_provider[provider]
-                    # Update statistics
-                    offer_stats["radius"] += radius
-                    offer_stats["time"] += travel_time
-                    offer_stats["length"] += route_length
-                    offer_stats["surge"] += surge_multiplier
-                    offer_stats["price"] += price
                 else:
                     try:
-                        travel_time, route_length, price = self.__compute_offer(from_edge, to_edge, surge_multiplier, provider)
+                        travel_time, route_length, price = self.__compute_offer(
+                            from_edge, to_edge, surge_multiplier, provider
+                        )
                         cached_offer_by_provider[provider] = (travel_time, route_length, price)
-                        # Update statistics
-                        offer_stats["radius"] += radius
-                        offer_stats["time"] += travel_time
-                        offer_stats["length"] += route_length
-                        offer_stats["surge"] += surge_multiplier
-                        offer_stats["price"] += price
                     except traci.TraCIException as e:
                         print(f"⚠️ Failed to compute route for offer {offer_key}: {e}")
                         continue
+
+                # Update statistics
+                radius = math.sqrt(dist_sq)
+                offer_stats["radius"] += radius
+                offer_stats["time"] += travel_time
+                offer_stats["length"] += route_length
+                offer_stats["surge"] += surge_multiplier
+                offer_stats["price"] += price
                 self.__offers[offer_key] = {
                     "timestamp": now,
                     "radius": radius,
