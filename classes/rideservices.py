@@ -89,7 +89,7 @@ class RideServices:
         # Load information from drivers and passengers agents
         now = int(self.model.time)
         idle_taxis = self.model.drivers.get_idle_drivers()
-        unassigned = sorted(self.model.passengers.get_unassigned_requests(), key=lambda r: r.reservationTime)
+        unassigned = sorted(self.model.passengers.get_unassigned_requests(), key=lambda r: r[0].reservationTime)
         self.__unassigned_surge = traci.person.getTaxiReservations(3)
         canceled = self.model.passengers.get_canceled_requests()
         idle_by_provider = self.model.drivers.get_idle_drivers_by_provider()
@@ -132,19 +132,11 @@ class RideServices:
         provider_surge_totals = defaultdict(float)
         tot_res = 0
         # Iterate over all passenger requests
-        for reservation in unassigned:
+        for reservation, (pax_x, pax_y) in unassigned:
             tot_res += 1
             res_id = reservation.id
-            person_id = reservation.persons[0]
 
-            # Get passenger position
-            try:
-                pax_x, pax_y = traci.person.getPosition(person_id)
-            except traci.TraCIException:
-                print(f"⚠️ Failed to get position for reservation {res_id}: {reservation}")
-                continue
-
-            # Filter nearby taxis using bounding box and Euclidean distance and get top 8 closest taxis
+            # Get top 8 closest taxis in the bounding box
             def nearby_taxis():
                 for taxi_id, (tx, ty) in taxi_positions.items():
                     if abs(tx - pax_x) > self.__miles_radius_max or abs(ty - pax_y) > self.__miles_radius_max:

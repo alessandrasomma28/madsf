@@ -50,7 +50,7 @@ class Passengers:
         self.__timeout = self.model.timeout_p
         self.__personality_distribution = self.model.passengers_personality_distribution
         self.__acceptance_distribution = self.model.passengers_acceptance_distribution
-        self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
+        self.__unassigned_requests = set()
         self.__canceled_number = 0
         self.__accept = self.__reject = 0
         # Reset the canceled requests every 300 seconds (time to update surge multiplier)
@@ -60,7 +60,7 @@ class Passengers:
         # --- Remove timed-out requests ---
         now = int(self.model.time)
         acceptances = self.model.rideservices.get_acceptances()
-        for res in self.__unassigned_requests:
+        for res in set(traci.person.getTaxiReservations(3)):
             if (now - int(res.reservationTime) >= self.__timeout) and all(res.id != key[0] for key in acceptances) and res.id not in self.__canceled:
                 traci.person.remove(res.persons[0])
                 # Add to canceled set for surge multiplier computation
@@ -68,11 +68,18 @@ class Passengers:
                 # Increment the canceled requests counter for logging
                 self.__canceled_number += 1
 
-        # --- Update unassigned requests ---
-        self.__unassigned_requests = set(traci.person.getTaxiReservations(3))
+        # --- Update unassigned requests ---        
+        unassigned_requests = set(traci.person.getTaxiReservations(3))
+        for res in unassigned_requests:
+            try:
+                pax_x, pax_y = traci.person.getPosition(res.persons[0])
+                self.__unassigned_requests.add((res, (pax_x, pax_y)))
+            except traci.TraCIException:
+                print(f"⚠️ Failed to get position for reservation {res_id}: {res}")
+                continue
         self.__logged_unassigned = len(self.__unassigned_requests)
         self.__logged_assigned = len(set(traci.person.getTaxiReservations(4)))
-        self.__unassigned_request_ids = {res.id for res in self.__unassigned_requests}
+        self.__unassigned_request_ids = {res.id for res, _ in self.__unassigned_requests}
         if self.model.verbose:
             print(f"☝🏻 {len(self.__unassigned_request_ids)} unassigned requests")
 
@@ -159,7 +166,7 @@ class Passengers:
             if best_driver_id:
                 reservations_to_remove.add(res_id)
         # Update the internal counter
-        self.__unassigned_requests = {r for r in self.__unassigned_requests if r.id not in reservations_to_remove}
+        self.__unassigned_requests = {(r, coords) for (r, coords) in self.__unassigned_requests if r.id not in reservations_to_remove}
 
         # --- Log status ---
         if self.model.verbose:

@@ -377,12 +377,12 @@ def sf_traffic_od_generation(
                 possible_dest_edges = []
                 if ((window_start <= origin_row['timestamp'] < window_end) and (tazs_involved is None or origin_taz in tazs_involved)):
                     # Apply eventual increased rides length to the TAZ range
-                    taz_range = int(min(981, max(1, rides_length*3)))
+                    taz_range = int(min(981, max(1, rides_length*5)))
                     start_taz = max(1, origin_taz - taz_range)
                     end_taz = min(981, origin_taz + taz_range)
                     # Iterate through the TAZ range to find possible destination edges
                     for taz_candidate in range(start_taz, end_taz):
-                        if abs(taz_candidate - origin_taz) <= rides_length * 3:
+                        if abs(taz_candidate - origin_taz) <= rides_length * 5:
                             continue
                         possible_dest_edges.extend(taz_to_edges.get(taz_candidate, []))
                         # Remove self-loop destinations
@@ -399,7 +399,7 @@ def sf_traffic_od_generation(
                             })
                             vehicle_id += 1
                 else:
-                    for taz_candidate in range(origin_taz - 3, origin_taz + 4):
+                    for taz_candidate in range(origin_taz - 5, origin_taz + 6):
                         possible_dest_edges.extend(taz_to_edges.get(taz_candidate, []))
                     # Remove self-loop destinations
                     possible_dest_edges = [e for e in possible_dest_edges if e != origin_edge]
@@ -421,7 +421,7 @@ def sf_traffic_od_generation(
             if pd.notna(origin_edge) and pd.notna(origin_taz) and str(origin_edge).strip() != '':
                 origin_taz = int(origin_taz)
                 possible_dest_edges = []
-                for taz_candidate in range(origin_taz - 3, origin_taz + 4):
+                for taz_candidate in range(origin_taz - 5, origin_taz + 6):
                     possible_dest_edges.extend(taz_to_edges.get(taz_candidate, []))
                 # Remove self-loop destinations
                 possible_dest_edges = [e for e in possible_dest_edges if e != origin_edge]
@@ -461,7 +461,8 @@ def sf_traffic_od_generation(
         elif traffic_perc > 0:
             additional_count = int(traffic_perc * len(od_in_scope))
             if od_in_scope:
-                extra_trips = random.choices(od_in_scope, k=additional_count)
+                base_trips = list(od_in_scope)
+                extra_trips = random.choices(base_trips, k=additional_count)
                 for trip in extra_trips:
                     new_trip = trip.copy()
                     new_trip['vehicle_id'] = vehicle_id
