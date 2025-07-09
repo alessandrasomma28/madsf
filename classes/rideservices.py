@@ -88,7 +88,7 @@ class RideServices:
 
         # Load information from drivers and passengers agents
         now = int(self.model.time)
-        idle_taxis = self.model.drivers.get_idle_drivers()
+        idle_drivers = self.model.drivers.get_idle_drivers()
         unassigned = sorted(self.model.passengers.get_unassigned_requests(), key=lambda r: r[0].reservationTime)
         self.__unassigned_surge = traci.person.getTaxiReservations(3)
         canceled = self.model.passengers.get_canceled_requests()
@@ -130,7 +130,7 @@ class RideServices:
 
             # Get top 8 closest drivers in the bounding box
             def nearby_drivers():
-                for driver_id, (tx, ty) in idle_taxis.items():
+                for driver_id, (tx, ty) in idle_drivers:
                     if abs(tx - pax_x) > self.__miles_radius_max or abs(ty - pax_y) > self.__miles_radius_max:
                         continue
                     dx, dy = tx - pax_x, ty - pax_y

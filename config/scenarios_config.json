@@ -5,7 +5,8 @@
         "trigger_time": 0,
         "duration_time": 10800,
         "requests_perc": 0.5,
-        "traffic_perc": 0.5
+        "traffic_perc": 0.5,
+        "drivers_perc": 0.5
     },
 
     "stress_test_2": {
@@ -14,7 +15,8 @@
         "trigger_time": 0,
         "duration_time": 10800,
         "requests_perc": 0.5,
-        "traffic_perc": 0.5
+        "traffic_perc": 0.5,
+        "drivers_perc": 0.5
     },
 
     "stress_test_3": {
@@ -23,7 +25,8 @@
         "trigger_time": 0,
         "duration_time": 10800,
         "requests_perc": 0.5,
-        "traffic_perc": 0.5
+        "traffic_perc": 0.5,
+        "drivers_perc": 0.5
     },
     
     "underground_alarm": {

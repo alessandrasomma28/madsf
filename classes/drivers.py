@@ -57,7 +57,7 @@ class Drivers:
         self.__idle_drivers = set()
         self.__pickup_drivers = set(traci.vehicle.getTaxiFleet(1))
         self.__busy_drivers = set(traci.vehicle.getTaxiFleet(2))
-        self.__logged_idle = len(self.__idle_drivers)
+        self.__logged_idle = len(set(traci.vehicle.getTaxiFleet(0)))
         self.__logged_pickup = len(self.__pickup_drivers)
         self.__logged_busy = len(self.__busy_drivers)
         self.__accept = 0

@@ -2,7 +2,7 @@
 
 # Dates for the runs
 BASE_DATES=('2021-11-10' '2021-11-12' '2021-11-14' '2021-10-06' '2021-10-08' '2021-10-10' '2021-06-23' '2021-06-25' '2021-06-27')
-SCENARIOS=('stress_test_1' 'stress_test_2')
+SCENARIOS=('stress_test_3')
 ACTIVE_GUI='no'
 VERBOSE='no'
 MODE='social_groups'    # Available modes: sumo, multi_agent, social_groups
@@ -52,41 +52,6 @@ ACTIVE_GUI=${ACTIVE_GUI}
 VERBOSE=${VERBOSE}
 EOF
       echo "▶️  DAY [$MODE] [$SCENARIO] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
-      set -a
-      source "$ENV_PATH"
-      set +a
-      python "${ROOT_DIR}/main.py"
-      "${ROOT_DIR}/clean.sh"
-    done
-
-    # === NIGHT RUNS ===
-    for DURATION in "${NIGHT_DURATIONS[@]}"; do
-      START_TIME=$(minutes_to_time $NIGHT_START_MIN)
-      END_MIN=$((NIGHT_START_MIN + DURATION))
-      if [ $END_MIN -lt 1440 ]; then
-        END_DATE=$BASE_DATE
-        END_TIME=$(minutes_to_time $END_MIN)
-      else
-        END_DATE=$(date -j -v+1d -f "%Y-%m-%d" "$BASE_DATE" "+%Y-%m-%d")
-        END_TIME=$(minutes_to_time $((END_MIN % 1440)))
-      fi
-      FOLDER_NAME="$(date -jf "%Y-%m-%d %H:%M" "${BASE_DATE} ${START_TIME}" "+%y%m%d%H")_$(date -jf "%Y-%m-%d %H:%M" "${END_DATE} ${END_TIME}" "+%y%m%d%H")"
-      FOLDER_PATH="${ROOT_DIR}/sumoenv/scenarios/${SCENARIO}/${MODE}/${FOLDER_NAME}"
-      if [ -d "$FOLDER_PATH" ]; then
-        echo "⏭️  Skipping existing NIGHT run: $FOLDER_NAME"
-        continue
-      fi
-      cat <<EOF > "$ENV_PATH"
-START_DATE=${BASE_DATE}
-END_DATE=${END_DATE}
-START_TIME=${START_TIME}
-END_TIME=${END_TIME}
-SCENARIO=${SCENARIO}
-MODE=${MODE}
-ACTIVE_GUI=${ACTIVE_GUI}
-VERBOSE=${VERBOSE}
-EOF
-      echo "▶️  NIGHT [$MODE] [$SCENARIO] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
       set -a
       source "$ENV_PATH"
       set +a
