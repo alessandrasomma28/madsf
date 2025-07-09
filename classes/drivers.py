@@ -54,7 +54,7 @@ class Drivers:
         self.__acceptance_distribution = self.model.drivers_acceptance_distribution
         self.__providers = self.model.providers
         self.__stop_probability = self.model.drivers_stop_probability
-        self.__idle_drivers = set(traci.vehicle.getTaxiFleet(0))
+        self.__idle_drivers = set()
         self.__pickup_drivers = set(traci.vehicle.getTaxiFleet(1))
         self.__busy_drivers = set(traci.vehicle.getTaxiFleet(2))
         self.__logged_idle = len(self.__idle_drivers)
@@ -63,16 +63,23 @@ class Drivers:
         self.__accept = 0
         self.__reject = 0
         self.__removed = 0
+        
+        # --- Update idle drivers ---
+        idle_drivers = set(traci.vehicle.getTaxiFleet(0))
+        for driver_id in idle_drivers:
+            try:
+                driver_position = traci.vehicle.getPosition(driver_id)
+                self.__idle_drivers.add((driver_id, driver_position))
+            except traci.TraCIException:
+                print(f"⚠️ Failed to get position for taxi {driver_id}")
+        for driver_id, _ in self.__idle_drivers:
+            self.__driver_idle_time[driver_id] = self.__driver_idle_time.get(driver_id, 0) + self.model.agents_interval
         if self.model.verbose:
             print(f"🚕 {len(self.__idle_drivers)} idle drivers")
-        
-        # --- Update idle times ---
-        for driver_id in self.__idle_drivers:
-            self.__driver_idle_time[driver_id] = self.__driver_idle_time.get(driver_id, 0) + self.model.agents_interval
 
         # --- Assign providers and personalities ---
         provider_counts = {provider: 0 for provider in self.__providers}
-        for driver_id in self.__idle_drivers:
+        for driver_id, _ in self.__idle_drivers:
             # Assign provider based on the configured market share
             if driver_id not in self.__drivers_with_provider:
                 probability = random.random()
@@ -95,7 +102,7 @@ class Drivers:
         # --- Process offers ---
         # Group offers by driver
         offers_by_driver = defaultdict(list)
-        for (res_id, driver_id), offer in self.model.rideservices.get_offers_for_drivers(self.__idle_drivers).items():
+        for (res_id, driver_id), offer in self.model.rideservices.get_offers_for_drivers({driver_id for driver_id, _ in self.__idle_drivers}).items():            
             if self.model.rideservices.is_passenger_accepted(res_id, driver_id):
                 offers_by_driver[driver_id].append((res_id, offer))
         # Compute demand pressure for dynamic acceptance
@@ -130,7 +137,7 @@ class Drivers:
             if accepted:
                 self.model.rideservices.accept_offer(key, "driver")
                 self.__accept += 1
-                self.__idle_drivers.discard(driver_id)
+                self.__idle_drivers = {item for item in self.__idle_drivers if item[0] != driver_id}
                 # Reset the driver's removal probability
                 self.__driver_removal_prob[driver_id] = 0.0
             else:
@@ -145,10 +152,10 @@ class Drivers:
                         self.__driver_removal_prob.pop(driver_id, None)
                         self.__drivers_with_provider.pop(driver_id, None)
                         self.__drivers_with_personality.pop(driver_id, None)
-                        self.__idle_drivers.discard(driver_id)
+                        self.__idle_drivers = {item for item in self.__idle_drivers if item[0] != driver_id}
                         self.__removed += 1
                         continue
-                self.__idle_drivers.discard(driver_id)
+                self.__idle_drivers = {item for item in self.__idle_drivers if item[0] != driver_id}
 
         # --- Log status ---
         if self.model.verbose:
@@ -188,7 +195,7 @@ class Drivers:
             A dictionary where keys are provider names and values are sets of driver IDs that are idle under that provider.
         """
         result = {provider: set() for provider in self.__providers}
-        for driver_id in self.__idle_drivers:
+        for driver_id, _ in self.__idle_drivers:
             provider = self.__drivers_with_provider.get(driver_id)
             if provider:
                 result[provider].add(driver_id)

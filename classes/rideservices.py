@@ -119,14 +119,6 @@ class RideServices:
             for provider, conf in self.__providers.items():
                 print(f"💵 Surge multiplier value for {provider}: {conf['surge_multiplier']}")
 
-        # Pre-compute and cache positions of all idle taxis
-        taxi_positions = {}
-        for taxi_id in idle_taxis:
-            try:
-                taxi_positions[taxi_id] = traci.vehicle.getPosition(taxi_id)
-            except traci.TraCIException:
-                print(f"⚠️ Failed to get position for taxi {taxi_id}")
-
         offer_stats = defaultdict(float)
         provider_offer_counts = Counter()
         provider_surge_totals = defaultdict(float)
@@ -136,18 +128,18 @@ class RideServices:
             tot_res += 1
             res_id = reservation.id
 
-            # Get top 8 closest taxis in the bounding box
-            def nearby_taxis():
-                for taxi_id, (tx, ty) in taxi_positions.items():
+            # Get top 8 closest drivers in the bounding box
+            def nearby_drivers():
+                for driver_id, (tx, ty) in idle_taxis.items():
                     if abs(tx - pax_x) > self.__miles_radius_max or abs(ty - pax_y) > self.__miles_radius_max:
                         continue
                     dx, dy = tx - pax_x, ty - pax_y
                     dist_sq = dx * dx + dy * dy
                     if dist_sq <= self.__radius_square:
-                        yield (dist_sq, taxi_id)
-            closest_taxis = heapq.nsmallest(self.__max_offers_per_reservation, nearby_taxis())
-            [(math.sqrt(dist_sq), taxi_id) for dist_sq, taxi_id in closest_taxis]
-            if not closest_taxis:
+                        yield (dist_sq, driver_id)
+            closest_drivers = heapq.nsmallest(self.__max_offers_per_reservation, nearby_drivers())
+            [(math.sqrt(dist_sq), driver_id) for dist_sq, driver_id in closest_drivers]
+            if not closest_drivers:
                 if res_id not in canceled:
                     self.__rides_not_served += 1
                 if self.model.verbose:
@@ -158,9 +150,9 @@ class RideServices:
             from_edge = reservation.fromEdge
             to_edge = reservation.toEdge
             cached_offer_by_provider = {}
-            for radius, taxi_id in closest_taxis:
-                offer_key = (res_id, taxi_id)
-                provider = self.model.drivers.get_driver_provider(taxi_id)
+            for radius, driver_id in closest_drivers:
+                offer_key = (res_id, driver_id)
+                provider = self.model.drivers.get_driver_provider(driver_id)
                 surge_multiplier = self.__providers[provider]["surge_multiplier"]
                 max_surge = self.__providers[provider]["max_surge"]
                 # Check if the offer with the same provider already exists in cache
