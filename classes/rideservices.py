@@ -124,8 +124,7 @@ class RideServices:
         provider_surge_totals = defaultdict(float)
         tot_res = 0
         # Iterate over all passenger requests
-        for reservation in unassigned:
-            pax_x, pax_y = reservation
+        for reservation, (pax_x, pax_y) in unassigned:
             tot_res += 1
             res_id = reservation.id
 
