@@ -28,6 +28,16 @@
         "traffic_perc": 0.5,
         "drivers_perc": 0.5
     },
+
+    "stress_test_4": {
+        "name": "Stress Test 4",
+        "location": "all",
+        "trigger_time": 0,
+        "duration_time": 10800,
+        "requests_perc": 0.25,
+        "traffic_perc": 0.25,
+        "drivers_perc": 0.25
+    },
     
     "underground_alarm": {
         "name": "Underground Alarm",
