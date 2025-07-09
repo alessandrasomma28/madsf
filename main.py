@@ -23,7 +23,7 @@ if not os.path.exists(Path(".env")):
     for var in ["START_DATE", "END_DATE", "START_TIME", "END_TIME", "SCENARIO", "MODE", "ACTIVE_GUI", "VERBOSE"]:
         if var in os.environ:
             del os.environ[var]
-print("\n✨ Welcome to the SF Ride-Hailing Digital Mirror Setup! ✨\n")
+print("\n✨ Welcome to the SF Ride-Hailing Digital Shadow Setup! ✨\n")
 load_env(override=True)
 start_date = get_or_prompt("START_DATE", lambda: get_valid_date("⚙️  Enter simulation start date (MM-DD, between 01-01 and 12-30): "))
 start_date_prompt = start_date[5:]
@@ -68,7 +68,7 @@ sumoSimulator = Simulator(
     taz_file_path=SUMO_POLY_PATH,
     verbose=verboseMode
     )
-print("\n🚀 Computing input for the SF Ride-Hailing Digital Mirror...\n")
+print("\n🚀 Computing input for the SF Ride-Hailing Digital Shadow...\n")
 
 # 1. Map network edges to their TAZs
 map_net_to_tazs(
