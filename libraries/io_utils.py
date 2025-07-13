@@ -259,6 +259,7 @@ def generate_output_csv(
         "rides_waiting_durations": [],
         "rides_durations": [],
         "rides_lengths": [],
+        "rides_failed": 0,
         "rides_not_served": 0,
         "expected_rides_durations": 0.0,
         "expected_rides_lengths": 0.0,
@@ -308,6 +309,8 @@ def generate_output_csv(
                         ts["rides_waiting_durations"].append(waiting_durations)
                         ts["rides_durations"].append(duration)
                         ts["rides_lengths"].append(route_length)
+                elif vehicle == "NULL":
+                    ts["rides_failed"] += 1 if t == request else 0
     # <tripinfo> - traffic and drivers
     for trip in root.findall("tripinfo"):
         trip_id = trip.attrib.get("id")
@@ -490,6 +493,7 @@ def generate_output_csv(
             "rides_length_expected_avg": stats["expected_rides_lengths"],
             "rides_dispatched": stats["taxis_dispatched"],
             "rides_partial_acceptances": stats["partial_acceptances"],
+            "rides_failed": stats["rides_failed"],
             "rides_not_served": stats["rides_not_served"],
             "rides_offers_generated": stats["offers_generated"],
             "rides_offers_radius_avg": stats["offers_radius"],

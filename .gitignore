@@ -19,6 +19,9 @@ count_experiments.py
 sumoenv/scenarios/normal/**/sf_traffic_od_*.csv
 sumoenv/scenarios/normal_flat/**/sf_traffic_od_*.csv
 sumoenv/scenarios/wildcat_strike/**/sf_traffic_od_*.csv
+sumoenv/scenarios/stress_test_1/**/sf_traffic_od_*.csv
+sumoenv/scenarios/stress_test_2/**/sf_traffic_od_*.csv
+sumoenv/scenarios/stress_test_3/**/sf_traffic_od_*.csv
 .env
 *.pdf
 *.key

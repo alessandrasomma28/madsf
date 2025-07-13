@@ -128,7 +128,7 @@ class RideServices:
             tot_res += 1
             res_id = reservation.id
 
-            # Filter and sort top 8 closest drivers
+            # Filter and sort closest drivers
             closest_drivers = heapq.nsmallest(
                 self.__max_offers_per_reservation,
                 (

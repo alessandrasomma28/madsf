@@ -1,17 +1,17 @@
 {
     "stress_test_1": {
         "name": "Stress Test 1",
-        "location": "downtown",
+        "location": "all",
         "trigger_time": 0,
         "duration_time": 10800,
-        "requests_perc": 0.5,
-        "traffic_perc": 0.5,
-        "drivers_perc": 0.5
+        "requests_perc": 0.25,
+        "traffic_perc": 0.25,
+        "drivers_perc": 0.25
     },
 
     "stress_test_2": {
         "name": "Stress Test 2",
-        "location": "midtown",
+        "location": "all",
         "trigger_time": 0,
         "duration_time": 10800,
         "requests_perc": 0.5,
@@ -24,19 +24,9 @@
         "location": "all",
         "trigger_time": 0,
         "duration_time": 10800,
-        "requests_perc": 0.5,
-        "traffic_perc": 0.5,
-        "drivers_perc": 0.5
-    },
-
-    "stress_test_4": {
-        "name": "Stress Test 4",
-        "location": "all",
-        "trigger_time": 0,
-        "duration_time": 10800,
-        "requests_perc": 0.25,
-        "traffic_perc": 0.25,
-        "drivers_perc": 0.25
+        "requests_perc": 1.0,
+        "traffic_perc": 1.0,
+        "drivers_perc": 1.0
     },
     
     "underground_alarm": {

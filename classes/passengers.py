@@ -59,9 +59,8 @@ class Passengers:
 
         # --- Remove timed-out requests ---
         now = int(self.model.time)
-        acceptances = self.model.rideservices.get_acceptances()
         for res in set(traci.person.getTaxiReservations(3)):
-            if (now - int(res.reservationTime) >= self.__timeout) and all(res.id != key[0] for key in acceptances) and res.id not in self.__canceled:
+            if (now - int(res.reservationTime) >= self.__timeout) and res.id not in self.__canceled:
                 traci.person.remove(res.persons[0])
                 # Add to canceled set for surge multiplier computation
                 self.__canceled.add(res.id)
