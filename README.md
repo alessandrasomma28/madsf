@@ -4,7 +4,7 @@ This replication package replicates the results of **A Multi-Agent Approach for 
 
 This replication package includes data and instructions on how to run, interpret and obtain the results presented in our work.
 
-To clone this repository, you can download the folder in `.zip` format (~940 MB, 'Download Repository' button at the top-right of this page), and extract it.
+To clone this repository, you can download the folder in `.zip` format (~922 MB, 'Download Repository' button at the top-right of this page), and extract it.
 
 
 ## Structure
