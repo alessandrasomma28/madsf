@@ -1119,8 +1119,6 @@ def generate_drt_vehicle_instances_from_lanes(
     ------
     ValueError: If idle_mechanism is not "stop" or "randomCircling".
     """
-    # Compute simulation start time
-    sim_start = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
 
     # Flatten pickups across all TAZs and hours
     total_requests = 0
@@ -1226,27 +1224,21 @@ def generate_drt_vehicle_instances_from_lanes(
             continue
         lane_index = 0
         total_lanes = len(lanes_for_taz)
-        for hour, num_vehicles in hour_data.items():
+        for abs_hour, num_vehicles in hour_data.items():
             for _ in range(num_vehicles):
                 lane_id = lanes_for_taz[lane_index % total_lanes]
                 lane_index += 1
                 vt = next(types_cycle)
                 edge_id = lane_id.split("_")[0]
-                depart_date = sim_start.date()
-                if hour < sim_start.hour:
-                    depart_date += timedelta(days=1)
-                depart_datetime = datetime.combine(depart_date, time(hour=hour))
-                base_offset = int((depart_datetime - sim_start).total_seconds())
-                depart_seconds = base_offset + random.randint(0, 3599)
+                depart_seconds = int(abs_hour * 3600 + random.randint(0, 3599))
                 if idle_mechanism == "randomCircling":
                     el = ET.Element("vehicle", {
                         "id": f"taxi_{vehicle_counter}",
                         "depart": f"{depart_seconds:.2f}",
                         "type": vt["id"]
                     })
-                    # ➔ Dummy initial route = just the edge where the vehicle is starting
                     ET.SubElement(el, "route", {"edges": edge_id})
-                    ET.SubElement(el, "param", key="device.taxi.end", value=str(depart_seconds+generate_work_duration()))
+                    ET.SubElement(el, "param", key="device.taxi.end", value=str(depart_seconds + generate_work_duration()))
                 elif idle_mechanism == "stop":
                     el = ET.Element("trip", {
                         "id": f"taxi_{vehicle_counter}",
@@ -1254,13 +1246,13 @@ def generate_drt_vehicle_instances_from_lanes(
                         "type": vt["id"],
                         "personCapacity": "4"
                     })
-                    # Lane where the vehicle is starting
                     ET.SubElement(el, "stop", {"lane": lane_id, "triggered": "person"})
-                    ET.SubElement(el, "param", key="device.taxi.end", value=str(depart_seconds+generate_work_duration()))
+                    ET.SubElement(el, "param", key="device.taxi.end", value=str(depart_seconds + generate_work_duration()))
                 else:
                     raise ValueError("Invalid idle mechanism, please choose 'stop' or 'randomCircling'")
                 vehicle_elements.append((depart_seconds, taz, el))
                 vehicle_counter += 1
+
 
     # Add 50% of previous hour's vehicles at time 0
     prev_total_pickups = sum(metrics.get('pickups', 0) for taz_data in tnc_previous_hour_data.values() for metrics in taz_data.values())
@@ -1485,25 +1477,27 @@ def generate_matched_drt_requests(
     # Compute simulation start time
     sim_start = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
 
-    # Build pickup list
+   # Build pickup list
     pickups_by_hour = []
     for taz, hour_data in tnc_data.items():
         if taz not in taz_edge_mapping:
             print(f"Pickup warning: TAZ {taz} not found in edge mapping.")
             continue
-        edge = random.choice(taz_edge_mapping[taz]['polygon_edge_ids'])
-        if edge not in valid_edge_ids or edge.startswith(":"):
-            print(f"Pickup warning: Edge {edge} not valid for TAZ {taz}.")
+        # Get candidate edges for this TAZ
+        candidate_edges = taz_edge_mapping[taz].get('polygon_edge_ids') or []
+        candidate_edges = [e for e in candidate_edges if e in valid_edge_ids and not e.startswith(":")]
+        if not candidate_edges:
+            # Fallback to centroid edge if present
+            cent = taz_edge_mapping[taz].get('centroid_edge_id')
+            if cent and cent in valid_edge_ids and not cent.startswith(":"):
+                candidate_edges = [cent]
+        if not candidate_edges:
+            print(f"Pickup warning: No valid edges for TAZ {taz}.")
             continue
-        for hour, stats in hour_data.items():
-            # Roll over to next day if hour is earlier than sim start hour
-            pickup_date = sim_start.date()
-            if hour < sim_start.hour:
-                pickup_date += timedelta(days=1)
-            pickup_datetime = datetime.combine(pickup_date, time(hour=hour))
-            base_offset = int((pickup_datetime - sim_start).total_seconds())
-            for _ in range(stats['pickups']):
-                # Interpret 'hour' as actual hour-of-day
+        edge = random.choice(candidate_edges)
+        for abs_hour, stats in hour_data.items():
+            base_offset = abs_hour * 3600
+            for _ in range(stats.get('pickups', 0)):
                 depart_time = base_offset + random.randint(0, 3599)
                 pickups_by_hour.append({
                     "taz": taz,
@@ -1545,12 +1539,23 @@ def generate_matched_drt_requests(
         if taz not in taz_edge_mapping:
             print(f"Dropoff warning: TAZ {taz} not found in edge mapping.")
             continue
-        edge = random.choice(taz_edge_mapping[taz]['polygon_edge_ids'])
-        if edge not in valid_edge_ids or edge.startswith(":"):
-            print(f"Dropoff warning: Edge {edge} not valid for TAZ {taz}.")
+        candidate_edges = taz_edge_mapping[taz].get('polygon_edge_ids') or []
+        candidate_edges = [e for e in candidate_edges if e in valid_edge_ids and not e.startswith(":")]
+        if not candidate_edges:
+            cent = taz_edge_mapping[taz].get('centroid_edge_id')
+            if cent and cent in valid_edge_ids and not cent.startswith(":"):
+                candidate_edges = [cent]
+        if not candidate_edges:
+            print(f"Dropoff warning: No valid edges for TAZ {taz}.")
             continue
-        for hour, stats in hour_data.items():
-            dropoffs_by_taz[taz].extend([edge] * stats['dropoffs'])
+        # Total dropoffs in this TAZ across the whole window
+        total_drop = sum(stats.get('dropoffs', 0) for stats in hour_data.values())
+        if total_drop <= 0:
+            continue
+        # Replicate edges to match dropoff count (uniform over candidate edges)
+        for _ in range(total_drop):
+            dropoffs_by_taz[taz].append(random.choice(candidate_edges))
+
     dropoff_pool = [(taz, edge) for taz, edges in dropoffs_by_taz.items() for edge in edges]
     random.shuffle(dropoff_pool)
     dropoff_iter = iter(dropoff_pool)

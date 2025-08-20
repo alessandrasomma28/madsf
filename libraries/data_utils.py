@@ -371,59 +371,53 @@ def read_tnc_stats_data(
             all_rows.append(row)
 
     # Index by (day_of_week, hour, taz)
-    data_by_key = {}
-    for row in all_rows:
-        key = (row['day_of_week'], row['hour'], row['taz'])
-        data_by_key[key] = {'pickups': row['pickups'], 'dropoffs': row['dropoffs']}
+    data_by_key = {(r['day_of_week'], r['hour'], r['taz']): {'pickups': r['pickups'], 'dropoffs': r['dropoffs']}
+                   for r in all_rows}
+    all_taz = sorted({r['taz'] for r in all_rows})
 
-    # Initialize dictionaries to hold the output
-    zone_data = {}
-    zone_data_previous_hour = {}
-
-    # For each simulation day, determine hours to include from that day
-    for sim_day_index in range(num_days):
-        sim_date = start_date + timedelta(days=sim_day_index)
-        sim_day_of_week = sim_date.weekday()
+    # Build timeline of hours
+    timeline = []  # list of (sim_date, std_hour, abs_hour)
+    abs_hour = 0
+    for i in range(num_days):
+        sim_date = start_date + timedelta(days=i)
         if num_days == 1:
-            selected_std_hours = list(range(start_hour, end_hour))
+            hours = list(range(start_hour, end_hour))
         else:
-            if sim_day_index == 0:
-                selected_std_hours = list(range(start_hour, 24))
-            elif sim_day_index == num_days - 1:
-                selected_std_hours = list(range(0, end_hour))
+            if i == 0:
+                hours = list(range(start_hour, 24))
+            elif i == num_days - 1:
+                hours = list(range(0, end_hour))
             else:
-                selected_std_hours = list(range(0, 24))
-        selected_dataset_hours = {h: std for h, std in dataset_hour_map.items() if std in selected_std_hours}
-        # Filter rows for this day and hour
-        for row in all_rows:
-            taz = row['taz']
-            hour = row['hour']
-            day = row['day_of_week']
-            if day == sim_day_of_week and hour in selected_dataset_hours:
-                std_hour = selected_dataset_hours[hour]
-                if taz not in zone_data:
-                    zone_data[taz] = {}
-                zone_data[taz][std_hour] = {
-                    'pickups': row['pickups'],
-                    'dropoffs': row['dropoffs']
-                }
-    # Also get previous hour for this hour (possibly from previous weekday)
-    first_std_hour = start_hour
-    first_sim_date = start_date
-    first_day_of_week = first_sim_date.weekday()
-    first_dataset_hour = next((h for h, std in dataset_hour_map.items() if std == first_std_hour), None)
-    if first_dataset_hour is not None:
-        prev_dataset_hour = first_dataset_hour - 1
-        prev_day = first_day_of_week
-        if prev_dataset_hour < 3:
-            prev_dataset_hour = 26
-            prev_day = (first_day_of_week - 1) % 7
-        for row in all_rows:
-            taz = row['taz']
-            if (prev_day, prev_dataset_hour, taz) in data_by_key:
-                if taz not in zone_data_previous_hour:
-                    zone_data_previous_hour[taz] = {}
-                zone_data_previous_hour[taz][first_std_hour] = data_by_key[(prev_day, prev_dataset_hour, taz)]
+                hours = list(range(0, 24))
+        for std_hour in hours:
+            timeline.append((sim_date, std_hour, abs_hour))
+            abs_hour += 1
+
+    # Fill zone_data with absolute-hour keys
+    zone_data: dict[int, dict[int, dict]] = {}
+    for sim_date, std_hour, abs_hour in timeline:
+        day_of_week = sim_date.weekday()
+        ds_hour = next((h for h, s in dataset_hour_map.items() if s == std_hour), None)
+        if ds_hour is None:
+            continue
+        for taz in all_taz:
+            key = (day_of_week, ds_hour, taz)
+            if key in data_by_key:
+                zone_data.setdefault(taz, {})[abs_hour] = data_by_key[key]
+    
+    # Build previous-hour for the very first hour (abs_hour=0)
+    zone_data_previous_hour: dict[int, dict[int, dict]] = {}
+    if timeline:
+        first_date, first_std_hour, first_abs_hour = timeline[0]
+        prev_std_hour = (first_std_hour - 1) % 24
+        prev_date = first_date if first_std_hour > 0 else (first_date - timedelta(days=1))
+        prev_dow = prev_date.weekday()
+        prev_ds_hour = next((h for h, s in dataset_hour_map.items() if s == prev_std_hour), None)
+        if prev_ds_hour is not None:
+            for taz in all_taz:
+                key = (prev_dow, prev_ds_hour, taz)
+                if key in data_by_key:
+                    zone_data_previous_hour.setdefault(taz, {})[0] = data_by_key[key]
 
     print(f"✅ TNC stats data read from {sf_rides_stats_path} and filtered to time window {start_date_str} {start_time_str} - {end_date_str} {end_time_str}")
 

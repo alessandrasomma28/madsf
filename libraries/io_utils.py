@@ -358,6 +358,24 @@ def generate_output_csv(
 
     # Process queue.xml
     print("Processing queue.xml...")
+    context = ET.iterparse(queue, events=("end",))
+    for event, elem in context:
+        if elem.tag == "data":
+            timestep = int(float(elem.attrib.get("timestep")))
+            lanes = elem.find("lanes")
+            durations, lengths = [], []
+            if lanes is not None:
+                for lane in lanes.findall("lane"):
+                    durations.append(float(lane.attrib.get("queueing_time")))
+                    lengths.append(float(lane.attrib.get("queueing_length")))
+            n = len(durations)
+            avg_durations = sum(durations) / n if n > 0 else 0.0
+            avg_length = sum(lengths) / n if n > 0 else 0.0
+            ts = timestamps[timestep]
+            ts["avg_queuing_durations"] = avg_durations
+            ts["avg_queuing_length"] = avg_length
+            elem.clear()
+    '''
     tree = ET.parse(queue)
     root = tree.getroot()
     for data in root.findall("data"):
@@ -374,6 +392,7 @@ def generate_output_csv(
         ts = timestamps[timestep]
         ts["avg_queuing_durations"] = avg_durations
         ts["avg_queuing_length"] = avg_length
+    '''
 
     # Process multi_agent_infos.xml
     if mode in ["multi_agent", "social_groups"]:

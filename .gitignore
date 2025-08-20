@@ -32,3 +32,4 @@ doc/Uber pricing.png
 .DS_Store
 .venv
 __pycache__
+.idea

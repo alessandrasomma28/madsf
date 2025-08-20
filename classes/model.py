@@ -172,7 +172,7 @@ class Model:
             self.scenario_start = self.scenario_config["trigger_time"]
             self.duration_time = self.scenario_config["duration_time"]
             self.scenario_end = self.scenario_config["trigger_time"] + self.scenario_config["duration_time"]
-            while (len(traci.person.getTaxiReservations(3)) > 0 and traci.simulation.getMinExpectedNumber() > 0) or traci.simulation.getTime() < self.end_time + 3600:
+            while traci.simulation.getTime() < self.end_time + 3600:
                 if self.time == self.scenario_start:
                     # Change params
                     self.update_scenario_parameters(self.scenario_config)
@@ -209,7 +209,7 @@ class Model:
             return (self.sumo_time, self.agents_time)
         else:
             # If no scenario injection, run the simulation normally
-            while (len(traci.person.getTaxiReservations(3)) > 0 and traci.simulation.getMinExpectedNumber() > 0) or traci.simulation.getTime() < self.end_time + 3600:
+            while traci.simulation.getTime() < self.end_time + 3600:
                 start_sumo = time.time()
                 traci.simulationStep()
                 self.time = int(traci.simulation.getTime())
