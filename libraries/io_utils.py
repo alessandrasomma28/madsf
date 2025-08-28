@@ -19,6 +19,7 @@ It includes utilities for:
 
 
 import os
+import re
 from collections import defaultdict
 from datetime import datetime
 from dotenv import load_dotenv, set_key
@@ -122,7 +123,7 @@ def get_valid_scenario(
         ) -> str:
     while True:
         scenario = input(prompt).strip().lower()
-        if scenario.isalnum():
+        if re.match(r'^[a-zA-Z0-9_]+$', scenario):
             if scenario in scenarios:
                 return scenario
             else:
