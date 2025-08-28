@@ -77,7 +77,7 @@ class Simulator:
         This function:
         - Creates a folder structure based on the date and time slot.
         - Sets the output directory path, route file paths, date part, and timeslot part.
-        - Sets the route file paths for traffic, taxi, and passenger data.
+        - Sets the route file paths for traffic, DRT vehicles, and passenger data.
         - Sets the simulation end time in seconds.
 
         Parameters
@@ -87,7 +87,7 @@ class Simulator:
         - sf_traffic_route_file_path: str
             Path to the route file.
         - sf_tnc_fleet_file_path: str
-            Path to the taxi route file.
+            Path to the DRT route file.
         - sf_tnc_requests_file_path: str
             Path to the passenger requests file.
         - start_date_str: str

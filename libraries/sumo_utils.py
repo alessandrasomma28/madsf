@@ -17,7 +17,7 @@ real traffic data using a SUMO network. It includes utilities for:
 11. generate_vehicle_start_lanes_from_taz_polygons: Mapping points inside each TAZ polygon to the nearest lane.
 12. compute_requests_vehicles_ratio: Computing the ratio of TNC requests to TNC vehicles.
 13. generate_drt_vehicle_instances_from_lanes: Generating a DRT fleet file with <vType> and <vehicle> entries.
-14. get_valid_taxi_edges: Getting valid edges for taxi routes.
+14. get_valid_edges: Getting valid edges for DRT routes.
 15. generate_matched_drt_requests: Generating matched DRT requests based on TNC data and TAZ mapping.
 16. inject_scenario_params: Injecting a scenario (or modifying parameters) into the SUMO simulation environment.
 17. filter_polygon_edges: Filter edge list string, keeping only strongly connected edges.
@@ -1368,16 +1368,16 @@ def generate_drt_vehicle_instances_from_lanes(
     return full_path
 
 
-def get_valid_taxi_edges(
+def get_valid_edges(
         net_file: str,
         safe_edge_ids: set = None
     ) -> set:
     """
-    Extracts usable edge IDs where taxis can drive. Uses sumolib (static network loading).
+    Extracts usable edge IDs where DRT vehicles can drive. Uses sumolib (static network loading).
 
     This function:
     - Reads the SUMO network file.
-    - Iterates through edges and checks if they are valid for taxi routing.
+    - Iterates through edges and checks if they are valid for routing.
     - Filters out edges that are internal, dead-end, or not strongly connected.
     - Returns a set of valid edge IDs.
 
@@ -1413,7 +1413,7 @@ def get_valid_taxi_edges(
                 valid_edges.add(edge.getID())
                 break  # No need to check other lanes once we find one good
 
-    print(f"✅ Found {len(valid_edges)} valid taxi edges")
+    print(f"✅ Found {len(valid_edges)} valid edges")
 
     return valid_edges
 
@@ -1460,7 +1460,7 @@ def generate_matched_drt_requests(
     - sf_requests_folder_path: str
         Path to save the resulting SUMO .rou.xml file with <person> requests.
     - valid_edge_ids: set
-        Set of SUMO edge IDs validated for taxi routing (connected, non-junction, drivable).
+        Set of SUMO edge IDs validated for routing (connected, non-junction, drivable).
     - scenario_params : dict
         Parameters for scenario injection.
     - tazs_involved : list, optional
@@ -1728,7 +1728,7 @@ def filter_polygon_lanes(
 
 def generate_work_duration(starting: bool = False) -> int:
     """
-    Generates a taxi work duration (in hours) based on the following distribution:
+    Generates a work duration (in hours) based on the following distribution:
     - 51% work between 20 minutes and 2 hours.
     - 30% work between 2 and 5 hours.
     - 12% work between 5 and 7 hours.

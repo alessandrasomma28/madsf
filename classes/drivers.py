@@ -71,7 +71,7 @@ class Drivers:
                 driver_position = traci.vehicle.getPosition(driver_id)
                 self.__idle_drivers.add((driver_id, driver_position))
             except traci.TraCIException:
-                print(f"⚠️ Failed to get position for taxi {driver_id}")
+                print(f"⚠️ Failed to get position for DRT vehicle {driver_id}")
         for driver_id, _ in self.__idle_drivers:
             self.__driver_idle_time[driver_id] = self.__driver_idle_time.get(driver_id, 0) + self.model.agents_interval
         if self.model.verbose:

@@ -5,8 +5,8 @@ This module defines the RideServices class, which manages ride offers and accept
 It supports the following operations:
 
 1. step: Advances the ride services logic by generating new offers and checking for matches.
-2. __generate_offers: Internal method to create offers for unassigned reservations and nearby idle taxis.
-3. __check_matches: Internal method to dispatch taxis when both driver and passenger have accepted an offer.
+2. __generate_offers: Internal method to create offers for unassigned reservations and nearby idle DRT vehicles.
+3. __check_matches: Internal method to dispatch DRT vehicles when both driver and passenger have accepted an offer.
 4. __compute_offer: Computes travel time, route length, and price of a reservation.
 5. __compute_surge_multiplier: Computes the price multiplication factor based on the ratio between
     number of offers for passengers and number of available drivers.
@@ -69,16 +69,16 @@ class RideServices:
 
     def __generate_offers(self) -> None:
         """
-        Generates ride offers by matching unassigned passenger requests with the closest available idle taxis.
+        Generates ride offers by matching unassigned passenger requests with the closest available idle DRT vehicles.
 
         This function:
         - Compute the surge multiplier according to unassigned requests and available drivers for all providers.
         - Iterates over all unassigned passenger ride requests.
         - Attempts to retrieve the passenger's current position; skips the request if unsuccessful.
-        - Calculates the radius from each idle taxi to the passenger's position, skipping taxis with unavailable positions or farther than 10 miles.
-        - Selects up to 8 closest taxis.
-        - Creates ride offers for each selected taxi, including radius, travel time, route length, price information, and provider.
-        - Skips requests if no taxis are available.
+        - Calculates the radius from each idle DRT vehicle to the passenger's position, skipping DRT vehicles with unavailable positions or farther than 10 miles.
+        - Selects up to 8 closest DRT vehicles.
+        - Creates ride offers for each selected DRT vehicle, including radius, travel time, route length, price information, and provider.
+        - Skips requests if no DRT vehicles are available.
         - Updates the logger with average metrics for each provider.
         
         Returns
@@ -142,7 +142,7 @@ class RideServices:
                 if res_id not in canceled:
                     self.__rides_not_served += 1
                 if self.model.verbose:
-                    print(f"⚠️ No taxis available for reservation {res_id} — skipping")
+                    print(f"⚠️ No DRT vehicles available for reservation {res_id} — skipping")
                 continue
 
             # Create offers
@@ -210,12 +210,12 @@ class RideServices:
 
     def __check_matches(self) -> None:
         """
-        Dispatches taxis for fully accepted matches and cleans up conflicting entries.
+        Dispatches DRT vehicles for fully accepted matches and cleans up conflicting entries.
         This function:
-        - Checks for fully accepted taxi-passenger matches.
-        - Dispatches taxis for these matches.
+        - Checks for fully accepted driver-passenger matches.
+        - Dispatches DRT vehicles for these matches.
         - Removes all related acceptances to prevent conflicts.
-        - Updates the logger with the number of dispatched taxis and other metrics.
+        - Updates the logger with the number of dispatched DRT vehicles and other metrics.
 
         Returns
         -------
@@ -230,16 +230,16 @@ class RideServices:
             if "driver" in agents and "passenger" in agents
         ]
         if self.model.verbose:
-            print(f"🚕 Dispatching {len(matched_keys)} taxis")
+            print(f"🚕 Dispatching {len(matched_keys)} DRT vehicles")
         # Count partial acceptances for log
         self.__partial_acceptances = sum(1 for agents, _ in self.__acceptances.values() if len(agents) == 1)
 
-        # For each match try to dispatch the taxi
+        # For each match try to dispatch the DRT vehicles
         for res_id, driver_id in matched_keys:
             try:
                 traci.vehicle.dispatchTaxi(driver_id, [res_id])
             except traci.TraCIException as e:
-                print(f"❌ DispatchTaxi failed: {e} — driver: {driver_id}, res_id: {res_id}")
+                print(f"❌ Method DispatchTaxi failed: {e} — driver: {driver_id}, res_id: {res_id}")
             except Exception as e:
                 print(f"❌ Unknown error during dispatch: {e}")
 

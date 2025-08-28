@@ -16,9 +16,9 @@ from libraries.data_utils import extract_sf_traffic_timeslot, read_tnc_stats_dat
 from libraries.sumo_utils import sf_traffic_map_matching, sf_traffic_od_generation, sf_traffic_routes_generation, \
     export_taz_coords, map_coords_to_sumo_edges, get_strongly_connected_edges, generate_matched_drt_requests, \
     add_sf_traffic_taz_matching, generate_vehicle_start_lanes_from_taz_polygons, generate_drt_vehicle_instances_from_lanes, \
-    get_valid_taxi_edges, map_taz_to_edges, compute_requests_vehicles_ratio, inject_scenario_params, map_net_to_tazs
+    get_valid_edges, map_taz_to_edges, compute_requests_vehicles_ratio, inject_scenario_params, map_net_to_tazs
 
-# 0. Set initial variables and initialize Simulator class
+# 0. Set parameters and initialize Simulator class
 if not os.path.exists(Path(".env")):
     for var in ["START_DATE", "END_DATE", "START_TIME", "END_TIME", "SCENARIO", "MODE", "ACTIVE_GUI", "VERBOSE"]:
         if var in os.environ:
@@ -53,7 +53,7 @@ SCENARIO_PATH = f"{SUMO_SCENARIOS_PATH}/{scenario}/{mode}"
 os.makedirs(SCENARIO_PATH, exist_ok=True)
 agents_interval = 60                # Default agents interval
 radius = 500                        # Radius (meters) for map matching
-n_start_lanes = 20                  # Number of possible start lanes for taxis in each TAZ
+n_start_lanes = 20                  # Number of possible start lanes for DRT vehicles in each TAZ
 peak_vehicles = 5700                # Peak number of DRT vehicles in a day
 max_vehicles = 45000                # Maximum number of drivers available in one day
 # Dispatch algorithm to use ("traci", "greedy")
@@ -98,7 +98,7 @@ scenario_params, tazs_involved = inject_scenario_params(
     mode=mode
 )
 
-# 5. Read traffic vehicle data set
+# 5. Read traffic dataset
 SF_TRAFFIC_VEHICLE_DAILYHOUR_PATH = extract_sf_traffic_timeslot(
     input_csv_path=SF_TRAFFIC_FILE_PATH,
     start_date_str=start_date,
@@ -136,7 +136,7 @@ SF_TRAFFIC_0D_PATH = sf_traffic_od_generation(
     tazs_involved=tazs_involved
     )
 
-# 8. Generate routes file for traffic
+# 8. Generate route file for traffic
 SF_TRAFFIC_ROUTE_PATH = sf_traffic_routes_generation(
     sf_traffic_od_path=SF_TRAFFIC_0D_PATH,
     sf_traffic_routes_folder_path=SCENARIO_PATH,
@@ -185,7 +185,7 @@ ratio_requests_vehicles = compute_requests_vehicles_ratio(
     max_total_drivers=max_vehicles
     )
 
-# 13. Generate taxi trips
+# 13. Generate DRT trips
 SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     start_lanes_by_taz=start_lanes_by_taz,
     ratio_requests_vehicles=ratio_requests_vehicles,
@@ -201,8 +201,8 @@ SF_TNC_FLEET_PATH = generate_drt_vehicle_instances_from_lanes(
     tazs_involved=tazs_involved
     )
 
-# 14. Get valid edges for taxi routes
-valid_edge_ids = get_valid_taxi_edges(
+# 14. Get valid edges for DRT routes
+valid_edge_ids = get_valid_edges(
     net_file=SUMO_NET_PATH, 
     safe_edge_ids=safe_edge_ids
     )
