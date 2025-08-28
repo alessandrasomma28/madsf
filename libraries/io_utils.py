@@ -301,7 +301,7 @@ def generate_output_csv(
             for t in range(request, arrival + 1):
                 ts = timestamps[t]
                 ts["passengers_new"] += 1 if t == request else 0
-                if vehicle != "NULL":
+                if vehicle != "NULL" and depart > 0:
                     ts["passengers_departures"] += 1 if t == depart else 0
                     ts["rides_in_progress"] += 1 if depart < t < arrival else 0
                     if t == arrival:
@@ -309,7 +309,7 @@ def generate_output_csv(
                         ts["rides_waiting_durations"].append(waiting_durations)
                         ts["rides_durations"].append(duration)
                         ts["rides_lengths"].append(route_length)
-                elif vehicle == "NULL":
+                else:
                     ts["rides_failed"] += 1 if t == request else 0
     # <tripinfo> - traffic and drivers
     for trip in root.findall("tripinfo"):
