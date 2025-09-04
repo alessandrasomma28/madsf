@@ -361,6 +361,8 @@ def sf_traffic_od_generation(
     rides_length = scenario_params["rides_length"]
     start = scenario_params["trigger_time"]
     duration = scenario_params["duration_time"]
+    if scenario_params["name"] in ["Flash Mob Long Rides", "Underground Alarm Long Rides"]:
+        tazs_involved = None
     if start > 0 and rides_length != 1.0:
         sim_start_time = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
         window_start = sim_start_time + timedelta(seconds=start)
@@ -375,7 +377,8 @@ def sf_traffic_od_generation(
             if pd.notna(origin_edge) and pd.notna(origin_taz) and str(origin_edge).strip() != '':
                 origin_taz = int(origin_taz)
                 possible_dest_edges = []
-                if ((window_start <= origin_row['timestamp'] < window_end) and (tazs_involved is None or origin_taz in tazs_involved)):
+                if (window_start <= origin_row['timestamp'] < window_end):
+                #if ((window_start <= origin_row['timestamp'] < window_end) and (tazs_involved is None or origin_taz in tazs_involved)):
                     # Apply eventual increased rides length to the TAZ range
                     taz_range = int(min(981, max(1, rides_length*5)))
                     start_taz = max(1, origin_taz - taz_range)
@@ -1509,6 +1512,8 @@ def generate_matched_drt_requests(
     requests_perc = scenario_params["requests_perc"]
     start = scenario_params["trigger_time"]
     duration = scenario_params["duration_time"]
+    if scenario_params["name"] == "Flash Mob Boycott TNCs":
+        tazs_involved = None
     if requests_perc != 0.0:
         # Calculate base time (simulation start)
         sim_start_time = datetime.strptime(f"{start_date_str} {start_time_str}", "%Y-%m-%d %H:%M")
