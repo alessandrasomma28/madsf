@@ -23,6 +23,7 @@ sumoenv/scenarios/wildcat_strike/**/sf_traffic_od_*.csv
 sumoenv/scenarios/stress_test_1/**/sf_traffic_od_*.csv
 sumoenv/scenarios/stress_test_2/**/sf_traffic_od_*.csv
 sumoenv/scenarios/stress_test_3/**/sf_traffic_od_*.csv
+sumoenv/scenarios/normal/social_groups/21110722_21111501
 doc/Lyft pricing.png
 doc/Uber pricing.png
 TODO.md
