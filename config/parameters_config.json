@@ -50,7 +50,8 @@
     "drivers_stop_probability": 0.1,
     "timeouts": {
         "passenger": 900,
-        "driver": 600
+        "driver": 600,
+        "ride_pickup": 1200
     },
     "trigger_time": 0.0,
     "duration_time": 0.0,

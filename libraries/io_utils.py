@@ -314,6 +314,9 @@ def generate_output_csv(
                     ts["rides_failed"] += 1 if t == request else 0
     # <tripinfo> - traffic and drivers
     for trip in root.findall("tripinfo"):
+        vaporized = trip.attrib.get("vaporized")
+        if vaporized == "traci":
+            continue  # Skip vaporized trips
         trip_id = trip.attrib.get("id")
         depart = int(float(trip.attrib.get("depart")))
         arrival = int(float(trip.attrib.get("arrival")))

@@ -47,7 +47,7 @@ class Passengers:
 
     def step(self) -> None:
         # --- Initialize step ---
-        self.__timeout = self.model.timeout_p
+        self.__timeout_p = self.model.timeout_p
         self.__personality_distribution = self.model.passengers_personality_distribution
         self.__acceptance_distribution = self.model.passengers_acceptance_distribution
         self.__unassigned_requests = set()
@@ -60,8 +60,13 @@ class Passengers:
         # --- Remove timed-out requests ---
         now = int(self.model.time)
         for res in set(traci.person.getTaxiReservations(3)):
-            if (now - int(res.reservationTime) >= self.__timeout) and res.id not in self.__canceled:
-                traci.person.remove(res.persons[0])
+            if (now - int(res.reservationTime) >= self.__timeout_p) and res.id not in self.__canceled:
+                for pid in list(res.persons):
+                    try:
+                        traci.person.remove(pid)
+                    except traci.TraCIException:
+                        pass
+                self.__passengers_with_personality.pop(res.id, None)
                 # Add to canceled set for surge multiplier computation
                 self.__canceled.add(res.id)
                 # Increment the canceled requests counter for logging
@@ -74,7 +79,7 @@ class Passengers:
                 pax_x, pax_y = traci.person.getPosition(res.persons[0])
                 self.__unassigned_requests.add((res, (pax_x, pax_y)))
             except traci.TraCIException:
-                print(f"⚠️ Failed to get position for reservation {res_id}: {res}")
+                print(f"⚠️ Failed to get position for reservation {res.id}: {res}")
                 continue
         self.__logged_unassigned = len(self.__unassigned_requests)
         self.__logged_assigned = len(set(traci.person.getTaxiReservations(4)))

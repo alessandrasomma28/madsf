@@ -61,6 +61,7 @@ class Model:
             timeouts = self.default_config["timeouts"]
             self.timeout_p = timeouts["passenger"]
             self.timeout_d = timeouts["driver"]
+            self.timeout_r = timeouts["ride_pickup"]
         self.sumocfg_path = sumocfg_path
         self.end_time = end_time
         self.output_dir_path = output_dir_path
@@ -271,6 +272,7 @@ class Model:
         self.drivers_stop_probability = parameters_config["drivers_stop_probability"]
         self.timeout_p = parameters_config["timeouts"]["passenger"]
         self.timeout_d = parameters_config["timeouts"]["driver"]
+        self.timeout_r = parameters_config["timeouts"]["ride_pickup"]
         self.slow_down = parameters_config["slow_down_perc"]
         self.slow_mid = parameters_config["slow_mid_perc"]
         if self.slow_down > 0:

@@ -454,7 +454,7 @@ class RideServices:
         Parameters
         ----------
         key: tuple
-            Key (res_id, offer) of the offer to remove.
+            Key (res_id, driver_id) of the offer to remove.
 
         Returns
         -------

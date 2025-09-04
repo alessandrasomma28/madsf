@@ -17,19 +17,22 @@ count_experiments.py
 **/sf_passenger_requests_*.rou.xml
 **/sf_routes_*.rou.xml
 sumoenv/scenarios/normal/**/sf_traffic_od_*.csv
+sumoenv/scenarios/normal/**/raw_output.zip
 sumoenv/scenarios/normal_flat/**/sf_traffic_od_*.csv
 sumoenv/scenarios/wildcat_strike/**/sf_traffic_od_*.csv
 sumoenv/scenarios/stress_test_1/**/sf_traffic_od_*.csv
 sumoenv/scenarios/stress_test_2/**/sf_traffic_od_*.csv
 sumoenv/scenarios/stress_test_3/**/sf_traffic_od_*.csv
-.env
-*.pdf
-*.key
 doc/Lyft pricing.png
 doc/Uber pricing.png
-*.pyc
+TODO.md
+.env
 .vscode
 .DS_Store
 .venv
-__pycache__
 .idea
+.history
+__pycache__
+*.pdf
+*.key
+*.pyc
