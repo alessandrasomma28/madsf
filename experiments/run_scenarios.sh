@@ -3,7 +3,7 @@
 # Dates for the runs
 BASE_DATES=('2021-11-10')
 # Scenarios to run
-SCENARIOS=('underground_alarm' 'wildcat_strike' 'flash_mob' 'long_rides' 'greedy_drivers' 'budget_passengers' 'boycott_tncs')
+SCENARIOS=('underground_alarm' 'wildcat_strike' 'flash_mob' 'long_rides' 'greedy_drivers' 'budget_passengers' 'boycott_tncs' 'underground_alarm_greedy' 'wildcat_strike_greedy' 'flash_mob_greedy' 'long_rides_greedy' 'greedy_drivers_greedy' 'budget_passengers_greedy' 'boycott_tncs_greedy' 'underground_alarm_long_rides' 'wildcat_strike_long_rides' 'wildcat_strike_budget_passengers' 'wildcat_strike_boycott_tncs' 'flash_mob_long_rides' 'flash_mob_boycott_tncs')
 ACTIVE_GUI='no'
 VERBOSE='no'
 MODE='social_groups'    # Available modes: sumo, multi_agent, social_groups
@@ -24,19 +24,19 @@ minutes_to_time() {
 
 # Durations in minutes
 DURATIONS=(480)     # 480 = 08:00–16:00 d
-DAY_START_MIN=$(time_to_minutes 08:00)
+START_MIN=$(time_to_minutes 08:00)
 
 for SCENARIO in "${SCENARIOS[@]}"; do
   for BASE_DATE in "${BASE_DATES[@]}"; do
 
-    for DURATION in "${DAY_DURATIONS[@]}"; do
-      START_TIME=$(minutes_to_time $DAY_START_MIN)
-      END_MIN=$((DAY_START_MIN + DURATION))
+    for DURATION in "${DURATIONS[@]}"; do
+      START_TIME=$(minutes_to_time $START_MIN)
+      END_MIN=$((START_MIN + DURATION))
       END_TIME=$(minutes_to_time $END_MIN)
       FOLDER_NAME="$(date -jf "%Y-%m-%d %H:%M" "${BASE_DATE} ${START_TIME}" "+%y%m%d%H")_$(date -jf "%Y-%m-%d %H:%M" "${BASE_DATE} ${END_TIME}" "+%y%m%d%H")"
       FOLDER_PATH="${ROOT_DIR}/sumoenv/scenarios/${SCENARIO}/${MODE}/${FOLDER_NAME}"
       if [ -d "$FOLDER_PATH" ]; then
-        echo "⏭️  Skipping existing DAY run: $FOLDER_NAME"
+        echo "⏭️  Skipping existing run: $FOLDER_NAME"
         continue
       fi
       cat <<EOF > "$ENV_PATH"
@@ -49,7 +49,7 @@ MODE=${MODE}
 ACTIVE_GUI=${ACTIVE_GUI}
 VERBOSE=${VERBOSE}
 EOF
-      echo "▶️  DAY [$MODE] [$SCENARIO] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
+      echo "▶️  [$MODE] [$SCENARIO] $START_TIME-$END_TIME on $BASE_DATE (${DURATION} min)"
       set -a
       source "$ENV_PATH"
       set +a
