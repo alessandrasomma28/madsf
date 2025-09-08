@@ -71,8 +71,8 @@
         "duration_time": 3600,
         "drivers_personality_distribution": {
             "greedy": 0.8,
-            "normal": 0.15,
-            "hurry": 0.05
+            "normal": 0.95,
+            "hurry": 1.0
         }
     },
 
@@ -83,8 +83,8 @@
         "duration_time": 3600,
         "passengers_personality_distribution": {
             "greedy": 0.8,
-            "normal": 0.15,
-            "hurry": 0.05
+            "normal": 0.95,
+            "hurry": 1.0
         }
     },
 
@@ -105,8 +105,8 @@
         "traffic_perc": 0.5,
         "drivers_personality_distribution": {
             "greedy": 0.8,
-            "normal": 0.15,
-            "hurry": 0.05
+            "normal": 0.95,
+            "hurry": 1.0
         }
     },
 
@@ -119,8 +119,8 @@
         "drivers_stop_probability": 0.5,
         "drivers_personality_distribution": {
             "greedy": 0.8,
-            "normal": 0.15,
-            "hurry": 0.05
+            "normal": 0.95,
+            "hurry": 1.0
         }
     },
 
@@ -133,8 +133,8 @@
         "slow_mid_perc": 0.7,
         "drivers_personality_distribution": {
             "greedy": 0.8,
-            "normal": 0.15,
-            "hurry": 0.05
+            "normal": 0.95,
+            "hurry": 1.0
         }
     },
 
@@ -146,8 +146,8 @@
         "rides_length": 10.0,
         "drivers_personality_distribution": {
             "greedy": 0.8,
-            "normal": 0.15,
-            "hurry": 0.05
+            "normal": 0.95,
+            "hurry": 1.0
         }
     },
 
@@ -158,13 +158,13 @@
         "duration_time": 3600,
         "passengers_personality_distribution": {
             "greedy": 0.8,
-            "normal": 0.15,
-            "hurry": 0.05
+            "normal": 0.95,
+            "hurry": 1.0
         },
         "drivers_personality_distribution": {
             "greedy": 0.8,
-            "normal": 0.15,
-            "hurry": 0.05
+            "normal": 0.95,
+            "hurry": 1.0
         }
     },
 
@@ -176,8 +176,8 @@
         "requests_perc": -0.5,
         "drivers_personality_distribution": {
             "greedy": 0.8,
-            "normal": 0.15,
-            "hurry": 0.05
+            "normal": 0.95,
+            "hurry": 1.0
         }
     },
 
@@ -210,8 +210,8 @@
         "drivers_stop_probability": 0.5,
         "passengers_personality_distribution": {
             "greedy": 0.8,
-            "normal": 0.15,
-            "hurry": 0.05
+            "normal": 0.95,
+            "hurry": 1.0
         }
     },
 

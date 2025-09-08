@@ -174,6 +174,7 @@ class Model:
             self.duration_time = self.scenario_config["duration_time"]
             self.scenario_end = self.scenario_config["trigger_time"] + self.scenario_config["duration_time"]
             while traci.simulation.getTime() < self.end_time + 3600:
+                self.time = int(traci.simulation.getTime())
                 if self.time == self.scenario_start:
                     # Change params
                     self.update_scenario_parameters(self.scenario_config)
@@ -184,7 +185,6 @@ class Model:
                     print(f"🚨 Scenario {self.scenario_config['name']} ended!\n")        
                 start_sumo = time.time()
                 traci.simulationStep()
-                self.time = int(traci.simulation.getTime())
                 end_sumo = time.time()
                 self.sumo_time += (end_sumo - start_sumo)
                 if self.time % agents_interval == 0:
@@ -211,9 +211,9 @@ class Model:
         else:
             # If no scenario injection, run the simulation normally
             while traci.simulation.getTime() < self.end_time + 3600:
+                self.time = int(traci.simulation.getTime())
                 start_sumo = time.time()
                 traci.simulationStep()
-                self.time = int(traci.simulation.getTime())
                 end_sumo = time.time()
                 self.sumo_time += (end_sumo - start_sumo)
                 if self.time % agents_interval == 0:
@@ -278,7 +278,7 @@ class Model:
         if self.slow_down > 0:
             # For each TAZ involved in the scenario, slow down speed of edges
             for taz in self.tazs_involved:
-                if str(taz) not in self.taz_edge_mapping:
+                if str(taz) not in self.taz_edge_mapping and self.time == self.scenario_start:
                     continue
                 for edge_id in self.taz_edge_mapping[str(taz)]:
                     speed = max(1, traci.edge.getLastStepMeanSpeed(edge_id) - (traci.edge.getLastStepMeanSpeed(edge_id) * self.slow_down))

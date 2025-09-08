@@ -3,7 +3,7 @@
 # Dates for the runs
 BASE_DATES=('2021-11-10')
 # Scenarios to run
-SCENARIOS=('underground_alarm' 'wildcat_strike' 'flash_mob' 'long_rides' 'greedy_drivers' 'budget_passengers' 'boycott_tncs' 'underground_alarm_greedy' 'wildcat_strike_greedy' 'flash_mob_greedy' 'long_rides_greedy' 'greedy_drivers_greedy' 'budget_passengers_greedy' 'boycott_tncs_greedy' 'underground_alarm_long_rides' 'wildcat_strike_long_rides' 'wildcat_strike_budget_passengers' 'wildcat_strike_boycott_tncs' 'flash_mob_long_rides' 'flash_mob_boycott_tncs')
+SCENARIOS=('underground_alarm' 'wildcat_strike' 'flash_mob' 'long_rides' 'greedy_drivers' 'budget_passengers' 'boycott_tncs' 'underground_alarm_greedy' 'wildcat_strike_greedy' 'flash_mob_greedy' 'long_rides_greedy' 'budget_passengers_greedy' 'boycott_tncs_greedy' 'underground_alarm_long_rides' 'wildcat_strike_long_rides' 'wildcat_strike_budget_passengers' 'wildcat_strike_boycott_tncs' 'flash_mob_long_rides' 'flash_mob_boycott_tncs')
 ACTIVE_GUI='no'
 VERBOSE='no'
 MODE='social_groups'    # Available modes: sumo, multi_agent, social_groups
