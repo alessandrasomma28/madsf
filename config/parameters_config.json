@@ -1,4 +1,5 @@
 {
+    "name": "normal",
     "drivers_personality_distribution": {
         "hurry": 0.21,
         "normal": 0.76,
